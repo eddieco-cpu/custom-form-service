@@ -1,0 +1,26 @@
+name: custom-form-service
+
+services:
+  postgres:
+    image: postgres:17.11-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PostgreSql__Database:?PostgreSql__Database must be set}
+      POSTGRES_USER: ${PostgreSql__Username:?PostgreSql__Username must be set}
+      POSTGRES_PASSWORD: ${PostgreSql__Password:?PostgreSql__Password must be set}
+    ports:
+      - "127.0.0.1:${PostgreSql__Port:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  postgres_data:
+    name: custom-form-service-postgres-data

@@ -58,6 +58,16 @@ public sealed class EngineeringEndpointsTests
         StringAssert.Contains(configuration, "/openapi/v1.json");
     }
 
+    [TestMethod]
+    public async Task Database_readiness_reports_healthy()
+    {
+        var response = await _client.GetAsync("/health/ready");
+        var body = await response.Content.ReadAsStringAsync();
+
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        Assert.AreEqual("Healthy", body);
+    }
+
     private sealed record HealthPayload(string Status);
 }
 
