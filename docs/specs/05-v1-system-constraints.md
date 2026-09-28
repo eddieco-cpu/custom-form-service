@@ -82,7 +82,7 @@ Repository 可以提供不含秘密的設定範例與啟動說明。
 - 每次受保護請求都必須驗證格式、Signature、Issuer、Audience 與 Expiration。
 - JWT 合法後仍須讀取 User，確認存在且 status=active。
 - JWT 內的 displayName、avatarUrl 或其他可變 Profile 資料不得作為目前資料真相。
-- Token Lifetime 是 Server Configuration；V1 不提供 Refresh Token。
+- Token Lifetime 是 Server Configuration，V1 固定為 24 小時（1,440 分鐘）；所有環境必須使用此值。V1 不提供 Refresh Token。
 - JWT 過期後必須重新登入。
 
 V1 不提供 Session Store、Token Revocation List、Token Version 或全裝置強制登出。Logout 只清除目前 Client 的 Cookie。

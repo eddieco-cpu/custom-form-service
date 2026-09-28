@@ -30,7 +30,7 @@ public static class AuthenticationServiceCollectionExtensions
             .Validate(
                 options => !string.Equals(options.SigningKey, "replace-with-at-least-32-random-characters", StringComparison.Ordinal),
                 "The example JWT signing key must be replaced before the API starts.")
-            .Validate(options => options.LifetimeMinutes > 0, "JWT lifetime must be positive.")
+            .Validate(options => options.LifetimeMinutes == 24 * 60, "V1 JWT lifetime must be 1440 minutes.")
             .ValidateOnStart();
 
         services

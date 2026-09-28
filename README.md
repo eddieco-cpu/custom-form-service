@@ -52,7 +52,7 @@ Get-Content .env | ForEach-Object {
 
 Do not commit `.env`. The committed `.env.example` contains placeholders only.
 
-Replace `Jwt__SigningKey` with a private random value of at least 32 bytes. `Jwt__Issuer`, `Jwt__Audience`, and `Jwt__LifetimeMinutes` have non-secret defaults in `appsettings.json` and can also be overridden through environment variables. `Cors__AllowedOrigins__0` is the explicit local browser-client origin; add more numbered entries only for known clients. Credentialed CORS never accepts a wildcard origin.
+Replace `Jwt__SigningKey` with a private random value of at least 32 bytes. `Jwt__Issuer` and `Jwt__Audience` have non-secret defaults in `appsettings.json`. The formal V1 access-token lifetime is 24 hours, represented by `Jwt__LifetimeMinutes=1440`; startup rejects a different value. `Cors__AllowedOrigins__0` is the explicit local browser-client origin; add more numbered entries only for known clients. Credentialed CORS never accepts a wildcard origin.
 
 ## Start and inspect PostgreSQL
 

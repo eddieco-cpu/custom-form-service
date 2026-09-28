@@ -88,7 +88,7 @@ public sealed class CustomFormServiceApiFactory(string environment = "Developmen
                 ["Jwt:Issuer"] = JwtIssuer,
                 ["Jwt:Audience"] = JwtAudience,
                 ["Jwt:SigningKey"] = JwtSigningKey,
-                ["Jwt:LifetimeMinutes"] = "60"
+                ["Jwt:LifetimeMinutes"] = "1440"
             });
         });
     }

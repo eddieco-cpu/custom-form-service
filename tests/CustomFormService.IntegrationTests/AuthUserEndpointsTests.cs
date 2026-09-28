@@ -79,6 +79,9 @@ public sealed class AuthUserEndpointsTests
         Assert.IsFalse(setCookie.Contains("secure", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(setCookie.Contains("domain=", StringComparison.OrdinalIgnoreCase));
         var cookie = setCookie.Split(';', 2)[0];
+        var encodedToken = cookie.Split('=', 2)[1];
+        var issuedToken = new JwtSecurityTokenHandler().ReadJwtToken(encodedToken);
+        Assert.AreEqual(TimeSpan.FromHours(24), issuedToken.ValidTo - issuedToken.ValidFrom);
 
         var me = await SendWithCookieAsync(HttpMethod.Get, "/api/v1/users/me", cookie);
         Assert.AreEqual(HttpStatusCode.OK, me.StatusCode);
