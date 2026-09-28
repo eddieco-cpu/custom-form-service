@@ -52,7 +52,7 @@ V1 沒有全域角色表或 RBAC。Owner、Respondent 等稱呼是使用者相�
 | Progress | Owner 查詢不同 Respondent 人數 |
 | Statistics | Closed 後依 Visibility 與 Identity Policy 取得聚合結果 |
 
-完整 API 共 18 支 Endpoint，分別定義於 API Contract Part A 與 Part B。
+完整 API 共 18 支 Endpoint，分別定義於 API Contract Part A、Part B 與 Part C（03a、03b、03c）。
 
 ## 4. Form Lifecycle
 

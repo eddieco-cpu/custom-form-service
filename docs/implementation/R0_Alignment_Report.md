@@ -136,7 +136,7 @@ Round 依賴為：`R0 → R1 → R2 → R3 → R4 → R5 → R6 → R7 → R8 �
 
 ### 9.1 規格衝突或缺失
 
-沒有發現阻塞 R1 的權威規格衝突或缺失。唯一非阻塞的文件內索引不一致是：`00-v1-overview.md` §3 將 18 支 API 說成「Part A 與 Part B」定義，但同檔 §12、03a §1/§7 與實作計畫 §1 均明確為 Part A、Part B、Part C（03a、03b、03c）。00 是導覽，03a–03c 是 API 權威，因此本報告及後續實作均以三份 API Contract 為準。建議專案負責人日後修正 00 §3 的索引文字；本 Round 不修改正式規格。
+沒有阻塞 R1 的權威規格衝突或缺失。R0 Review 已確認並修正原先的非阻塞索引不一致：`00-v1-overview.md` §3 現已明確列出 Part A、Part B、Part C（03a、03b、03c），與同檔 §12、03a §1/§7 及實作計畫 §1 一致。後續實作以三份 API Contract 為準。
 
 ### 9.2 可由實作者自行決定的技術細節
 
@@ -171,6 +171,8 @@ R1 驗收應在乾淨環境依 README 實跑 `dotnet restore`、`dotnet build`�
 | 既有程式與測試 | repository tree、solution/project/tool manifest 搜尋 | PASS：尚未建立，符合 R0 範圍 |
 
 未驗證：NuGet restore、Docker image pull、Compose start、PostgreSQL 連線、Migration、OpenAPI、health endpoint、任何 18 支 V1 Endpoint、Google Provider 與正式 HTTPS；它們全都屬後續 Round，未在 R0 提前執行。
+
+R0 closeout 最終 Git 狀態：`## master`，工作樹乾淨；本次 commit 只包含 `00-v1-overview.md` 的 API 文件索引修正與本報告更新。沒有阻塞 R1 的未決問題。
 
 ## 12. References
 
