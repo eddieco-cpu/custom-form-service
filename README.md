@@ -1,6 +1,6 @@
 # Custom Form Service
 
-This repository contains the ASP.NET Core backend for the V1 custom form service. The current implementation provides the R2 local PostgreSQL infrastructure and engineering health endpoints, without database schema or business API behavior.
+This repository contains the ASP.NET Core backend for the V1 custom form service. The current implementation provides the R3 EF Core domain schema, PostgreSQL migration, local database infrastructure, and engineering health endpoints without business API behavior.
 
 ## Prerequisites
 
@@ -14,6 +14,8 @@ This repository contains the ASP.NET Core backend for the V1 custom form service
 | --- | --- |
 | Target framework | `net10.0` |
 | .NET SDK | `10.0.400`, with `latestPatch` roll-forward |
+| Entity Framework Core | `10.0.11` |
+| repository-local dotnet-ef | `10.0.11` |
 | Microsoft.AspNetCore.OpenApi | `10.0.11` |
 | Npgsql.EntityFrameworkCore.PostgreSQL | `10.0.3` |
 | Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore | `10.0.11` |
@@ -63,13 +65,38 @@ The Compose project has one `postgres` service. It uses `postgres:17.11-alpine`,
 Run these commands from the repository root:
 
 ```powershell
+dotnet tool restore
 dotnet restore CustomFormService.sln
+dotnet ef database update `
+  --project src/CustomFormService.Api/CustomFormService.Api.csproj `
+  --startup-project src/CustomFormService.Api/CustomFormService.Api.csproj
 dotnet build CustomFormService.sln --no-restore --configuration Debug
 dotnet test CustomFormService.sln --no-build --configuration Debug
 dotnet format CustomFormService.sln --verify-no-changes --no-restore
 ```
 
-The environment variables from `.env` must be imported before `dotnet test` because the integration suite verifies the database readiness endpoint against the running PostgreSQL container.
+The environment variables from `.env` must be imported before the EF Core and test commands. The integration suite verifies both database readiness and the complete V1 PostgreSQL schema against the running container.
+
+## Database schema and migration
+
+`InitialV1Schema` creates the seven V1 Domain Tables:
+
+- `users`
+- `user_identities`
+- `forms`
+- `questions`
+- `options`
+- `responses`
+- `answers`
+
+EF Core also creates `__EFMigrationsHistory`. The migration contains schema only and does not insert seed data. Use the repository-local tool to inspect migration state:
+
+```powershell
+dotnet tool restore
+dotnet ef migrations list `
+  --project src/CustomFormService.Api/CustomFormService.Api.csproj `
+  --startup-project src/CustomFormService.Api/CustomFormService.Api.csproj
+```
 
 ## Run locally
 
@@ -133,6 +160,6 @@ docker compose up -d --force-recreate postgres
 
 `docker compose down` removes the container and network but preserves the named volume. `docker compose down -v` permanently removes the Compose volumes and their database data; do not use `-v` for the regular development database.
 
-## R2 boundaries
+## R3 boundaries
 
-R2 intentionally contains an empty `ApplicationDbContext` only. It contains no Domain Entity, DbSet, Migration, Domain Table, seed data, Authentication, or V1 business endpoint. Domain schema creation belongs to R3 after explicit authorization.
+R3 contains the seven formal Domain Entities, Fluent API mappings, PostgreSQL enums, and the `InitialV1Schema` migration. It includes no seed data, Authentication implementation, Google Authentication flow, Form behavior, Submission behavior, Statistics behavior, or `/api/v1` business endpoint.

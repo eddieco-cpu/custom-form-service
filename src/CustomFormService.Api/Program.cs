@@ -19,7 +19,7 @@ builder.Services
 builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
 {
     var postgres = serviceProvider.GetRequiredService<IOptions<PostgreSqlOptions>>().Value;
-    options.UseNpgsql(postgres.BuildConnectionString());
+    options.UseNpgsql(postgres.BuildConnectionString(), PostgreSqlEnumMappings.Configure);
 });
 builder.Services
     .AddHealthChecks()
