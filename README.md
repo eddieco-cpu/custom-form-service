@@ -1,6 +1,6 @@
 # Custom Form Service
 
-This repository contains the ASP.NET Core backend for the V1 custom form service. The current implementation provides the R3 EF Core domain schema, PostgreSQL migration, local database infrastructure, and engineering health endpoints without business API behavior.
+This repository contains the ASP.NET Core backend for the V1 custom form service. The current implementation includes the R3 PostgreSQL schema and the R4 Email/Password authentication and current-user APIs.
 
 ## Prerequisites
 
@@ -17,10 +17,12 @@ This repository contains the ASP.NET Core backend for the V1 custom form service
 | Entity Framework Core | `10.0.11` |
 | repository-local dotnet-ef | `10.0.11` |
 | Microsoft.AspNetCore.OpenApi | `10.0.11` |
+| Microsoft.AspNetCore.Authentication.JwtBearer | `10.0.11` |
 | Npgsql.EntityFrameworkCore.PostgreSQL | `10.0.3` |
 | Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore | `10.0.11` |
 | Swashbuckle.AspNetCore | `10.2.3` |
 | MSTest.Sdk | `4.0.2` |
+| Microsoft.NET.Test.Sdk / runner | `18.0.1` / VSTest |
 | Microsoft.AspNetCore.Mvc.Testing | `10.0.11` |
 
 Trust the local development certificate once, if needed:
@@ -49,6 +51,8 @@ Get-Content .env | ForEach-Object {
 ```
 
 Do not commit `.env`. The committed `.env.example` contains placeholders only.
+
+Replace `Jwt__SigningKey` with a private random value of at least 32 bytes. `Jwt__Issuer`, `Jwt__Audience`, and `Jwt__LifetimeMinutes` have non-secret defaults in `appsettings.json` and can also be overridden through environment variables. `Cors__AllowedOrigins__0` is the explicit local browser-client origin; add more numbered entries only for known clients. Credentialed CORS never accepts a wildcard origin.
 
 ## Start and inspect PostgreSQL
 
@@ -118,11 +122,40 @@ Development endpoints:
 
 OpenAPI JSON and Swagger UI are available only when `ASPNETCORE_ENVIRONMENT=Development`. `/health` and `/health/ready` are engineering endpoints and are not among the 18 V1 business API endpoints under `/api/v1`. `/health/ready` returns HTTP 200 with `Healthy` only when the API can connect to PostgreSQL.
 
+## R4 Email Authentication and User APIs
+
+R4 provides these formal V1 endpoints:
+
+- `POST /api/v1/auth/register`
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/logout`
+- `GET /api/v1/users/me`
+- `PATCH /api/v1/users/me`
+
+Registration creates an active user but does not sign in. Login returns the public User resource and sets the system JWT in the `access_token` HttpOnly cookie; the token is never returned in the JSON body. Protected requests accept this cookie only and recheck that the user still exists and is active. Logout clears the client cookie even when the incoming cookie is missing, invalid, or expired.
+
+The following PowerShell example uses synthetic data and keeps the cookie in an in-memory web session:
+
+```powershell
+$body = @{ email = 'local-test@example.test'; password = 'local password'; displayName = 'Local Test' } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri http://localhost:5000/api/v1/auth/register -ContentType application/json -Body $body
+
+$login = @{ email = 'local-test@example.test'; password = 'local password' } | ConvertTo-Json
+Invoke-WebRequest -Method Post -Uri http://localhost:5000/api/v1/auth/login -ContentType application/json -Body $login -SessionVariable authSession
+Invoke-RestMethod -Uri http://localhost:5000/api/v1/users/me -WebSession $authSession
+
+$profile = @{ displayName = 'Updated Local Test' } | ConvertTo-Json
+Invoke-RestMethod -Method Patch -Uri http://localhost:5000/api/v1/users/me -ContentType application/json -Body $profile -WebSession $authSession
+Invoke-WebRequest -Method Post -Uri http://localhost:5000/api/v1/auth/logout -WebSession $authSession
+```
+
+Delete the synthetic user from the local database after manual verification if you do not want to retain it. Google Authentication remains part of the formal V1 contract and is deferred to the separate G1 round; R4 does not expose a placeholder Google endpoint.
+
 ## Configuration
 
 `src/CustomFormService.Api/appsettings.Development.example.json` is a secret-free example for the standard API ports. `Properties/launchSettings.json` applies those ports for `dotnet run --launch-profile https`.
 
-Future passwords, signing keys, connection strings, tokens, and provider credentials must be supplied through environment variables or a secret store and must not be committed.
+Passwords, signing keys, connection strings, tokens, and provider credentials must be supplied through environment variables or a secret store and must not be committed.
 
 ## DBeaver connection
 
@@ -160,6 +193,6 @@ docker compose up -d --force-recreate postgres
 
 `docker compose down` removes the container and network but preserves the named volume. `docker compose down -v` permanently removes the Compose volumes and their database data; do not use `-v` for the regular development database.
 
-## R3 boundaries
+## Current boundaries
 
-R3 contains the seven formal Domain Entities, Fluent API mappings, PostgreSQL enums, and the `InitialV1Schema` migration. It includes no seed data, Authentication implementation, Google Authentication flow, Form behavior, Submission behavior, Statistics behavior, or `/api/v1` business endpoint.
+The database still contains the seven formal Domain Entities and the unchanged `InitialV1Schema` migration. R4 adds no migration or seed data. Google Authentication, Form behavior, Submission behavior, Statistics behavior, refresh tokens, email verification, password reset, sessions, and RBAC are not implemented in this round.

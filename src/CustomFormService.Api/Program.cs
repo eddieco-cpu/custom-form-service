@@ -1,12 +1,37 @@
+using System.Text.Json.Serialization;
+using CustomFormService.Api.Authentication;
+using CustomFormService.Api.Contracts.Errors;
 using CustomFormService.Api.Infrastructure.Persistence;
+using CustomFormService.Api.Middleware;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow;
+    });
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context => ApiErrors.InvalidModelState(context.ModelState);
+});
 builder.Services.AddOpenApi();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<CurrentUserContext>();
+builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddSingleton<PasswordCredentialService>();
+builder.Services
+    .AddOptions<PasswordHasherOptions>()
+    .BindConfiguration("PasswordHashing")
+    .Validate(options => options.IterationCount >= 100_000, "Password hash iteration count must be at least 100000.")
+    .ValidateOnStart();
+builder.Services.AddV1Authentication(builder.Configuration);
+builder.Services.AddV1Cors(builder.Configuration);
 builder.Services
     .AddOptions<PostgreSqlOptions>()
     .BindConfiguration(PostgreSqlOptions.SectionName)
@@ -27,6 +52,8 @@ builder.Services
 
 var app = builder.Build();
 
+app.UseMiddleware<ApiExceptionMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -41,6 +68,10 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+
+app.UseCors(V1Cors.PolicyName);
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 app.MapHealthChecks("/health/ready", new HealthCheckOptions
