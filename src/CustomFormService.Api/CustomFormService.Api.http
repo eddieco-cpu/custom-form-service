@@ -1,0 +1,11 @@
+@CustomFormService.Api_HostAddress = https://localhost:5001
+
+GET {{CustomFormService.Api_HostAddress}}/health
+Accept: application/json
+
+###
+
+GET {{CustomFormService.Api_HostAddress}}/openapi/v1.json
+Accept: application/json
+
+###
