@@ -124,6 +124,7 @@ V1 只使用本系統 JWT 的 HttpOnly Cookie，不另外提供 Authorization Be
 | SameSite | Lax |
 | Domain | 不設定；Host-only |
 | Secure | 正式 HTTPS 為 true；本機 HTTP 開發可為 false |
+| Expires | 與該 JWT 的 `exp` 相同；不設定 `Max-Age` |
 
 ### 5.2 Protected Endpoint Authentication
 

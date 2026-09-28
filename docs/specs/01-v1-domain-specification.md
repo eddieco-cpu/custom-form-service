@@ -116,7 +116,7 @@ Google-only User 的 `passwordHash` 可以為 `null`。資料模型允許 User �
 
 - 系統 JWT 透過 `access_token` HttpOnly Cookie 傳送。
 - JWT `sub` 對應 `users.id`，並驗證 signature、issuer、audience 與 expiration。
-- 本系統 JWT 自簽發時間起有效 24 小時；V1 無 Refresh Token。
+- 本系統 JWT 的預設有效時間為自簽發起 24 小時；Server Configuration 可以使用正整數分鐘明確覆寫。V1 無 Refresh Token。
 - 受保護請求必須重新確認 User 仍存在且狀態為 active。
 - Logout 清除目前 Client 的 Cookie；沒有 Cookie、Cookie 無效或已過期時仍視為成功。
 - V1 無 Session Store、Token 撤銷清單或跨裝置強制登出。

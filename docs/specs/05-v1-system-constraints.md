@@ -45,17 +45,15 @@ Google 真實專案、正式 Domain、雲端 Database 與 Deployment 可以分�
 
 ### 3.1 設定來源
 
-下列內容必須透過環境設定、Secret Store、Development User Secrets 或等價機制提供，不得寫死於 Source Code 或提交至版本控制：
+下列 Secret 必須透過環境設定、Secret Store、Development User Secrets 或等價機制提供，不得寫死於 Source Code 或提交至版本控制：
 
-- Database Connection String
+- Database Password 或含 Credential 的完整 Connection String
 - JWT Signing Key／Certificate
-- JWT Issuer、Audience、Lifetime
-- Google Client ID 及驗證所需設定
-- CORS Allowed Origins
-- Cookie Secure 等環境差異設定
-- Logging Level 與必要的外部服務設定
+- Google Provider Secret 及其他秘密 Credential
 
-Repository 可以提供不含秘密的設定範例與啟動說明。
+JWT Issuer、Audience、Lifetime、Database Host／Port／Name／Username、CORS Allowed Origins、Cookie Secure、Logging Level 等非秘密設定可以在 Repository 提供合理預設，並由 Environment-specific appsettings、Environment Variables 或 Command-line 覆寫。Development Secret 使用 .NET User Secrets；Staging／Production Secret 使用部署平台的 Secret／Environment Variables。所有環境使用相同 Configuration Key，Application Code 不依賴實際 Provider。
+
+Repository 可以提供不含秘密的設定範例與啟動說明。ASP.NET Core Application 不直接解析 Docker Compose `.env`；該檔案只服務本機 Infrastructure interpolation。
 
 ### 3.2 環境差異
 
@@ -64,6 +62,8 @@ Repository 可以提供不含秘密的設定範例與啟動說明。
 - 正式環境的 Cookie Secure 必須為 true。
 - 開發、測試與正式環境必須使用不同 Secret。
 - Server、Database 與測試不得依賴開發者電腦的 Local Timezone。
+- 標準本機 Browser Topology 是 Frontend `http://localhost:3000` 與 API `http://localhost:<api-port>`；不得以 HTTPS API 搭配 HTTP Frontend 作為標準開發驗證。
+- Staging／Production 預期使用 HTTPS Frontend 與 HTTPS API；若兩者位於同一 Registrable Domain 的不同 Subdomain，仍維持 API Host-only Cookie。
 
 ### 3.3 Database Migration
 
@@ -82,7 +82,7 @@ Repository 可以提供不含秘密的設定範例與啟動說明。
 - 每次受保護請求都必須驗證格式、Signature、Issuer、Audience 與 Expiration。
 - JWT 合法後仍須讀取 User，確認存在且 status=active。
 - JWT 內的 displayName、avatarUrl 或其他可變 Profile 資料不得作為目前資料真相。
-- Token Lifetime 是 Server Configuration，V1 固定為 24 小時（1,440 分鐘）；所有環境必須使用此值。V1 不提供 Refresh Token。
+- Token Lifetime 是正整數分鐘的 Server Configuration，V1 預設為 24 小時（1,440 分鐘），可以由部署設定明確覆寫。V1 不提供 Refresh Token。
 - JWT 過期後必須重新登入。
 
 V1 不提供 Session Store、Token Revocation List、Token Version 或全裝置強制登出。Logout 只清除目前 Client 的 Cookie。
@@ -97,18 +97,24 @@ V1 不提供 Session Store、Token Revocation List、Token Version 或全裝置�
 | SameSite | Lax | Lax |
 | Path | `/` | `/` |
 | Domain | 不設定；Host-only | 不設定；Host-only |
+| Expires | 與該 JWT 的 `exp` 相同 | 與該 JWT 的 `exp` 相同 |
 
-V1 不另外提供 Authorization Bearer Transport，也不在 Login Response Body 回傳 Token。
+Login Cookie 只設定絕對 `Expires`，不得另設 `Max-Age`。JWT `exp` 是唯一到期時間真相。Logout 使用與 Login 完全一致的 Path、Domain、SameSite、Secure 與 HttpOnly Scope，再令 Cookie 立即失效。
+
+V1 不另外提供 Authorization Bearer Transport，也不在 Login Response Body 回傳 Token。Cookie 由 API Response 設定；Frontend JavaScript 不讀取 HttpOnly Token Cookie。
+
+Cookie 依 Host／Domain 而非 Port 分區。本機 Frontend 與 API 都使用 `localhost`，因此不同 Port 共用同一 Cookie Host Namespace；這是接受的 Development Trade-off。正式環境的 `app.example.com` 與 `api.example.com` 是不同 Host，且 API Cookie 不設定 Domain，因此不會送往 Frontend Host。不得為了跨 Subdomain 而設定 `.localhost`、`Domain=localhost` 或 `.example.com`；只有未來同一 Cookie 必須由多個 Subdomain Endpoint 接收時才重新評估 Domain Cookie。
 
 ### 4.3 CORS 與 CSRF 邊界
 
 - 需要 Cookie 的 Browser Client 必須使用 Credentialed Request。
-- Server 只允許明列的 Client Origin。
+- Server 只允許明列且採 `scheme://host[:port]` Canonical Form 的 HTTP／HTTPS Client Origin；拒絕 Wildcard、Trailing Slash、Path、Query、Fragment 與 Userinfo。
 - 啟用 Credentials 時不得使用 `Access-Control-Allow-Origin: *`。
 - 寫入 Request 使用 JSON，並遵守 API 的 Content-Type Contract。
 - Host-only Cookie、SameSite=Lax、正式 Secure、HTTPS 與嚴格 CORS 共同構成 V1 的 Browser Request 安全基線。
+- 所有狀態變更 Endpoint 必須使用非 GET Method；不得新增 State-changing GET。
 
-V1 沒有獨立 CSRF Token Protocol。若正式部署改成 Cross-site 拓撲、Iframe 嵌入或需要 SameSite=None，必須在上線前重新評估 CSRF 與 Cookie Policy；不能只修改 Cookie Flag 而不檢查安全影響。
+CORS 不視為 CSRF Protection。V1 沒有獨立 CSRF Token Protocol，而是依賴 SameSite=Lax、Host-only Cookie、同 Scheme、受信任的 Same-site Subdomain 與無 State-changing GET 的 Topology。若正式部署改成 Cross-site 拓撲、Iframe 嵌入、需要 SameSite=None 或存在不受信任的 Same-site Subdomain，必須在上線前重新評估 CSRF 與 Cookie Policy；不能只修改 Cookie Flag 而不檢查安全影響。
 
 ## 5. Credential、Secret 與個資
 
