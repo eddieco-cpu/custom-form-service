@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace CustomFormService.IntegrationTests;
 
@@ -69,27 +70,81 @@ public sealed class EngineeringEndpointsTests
         Assert.AreEqual("Healthy", body);
     }
 
+    [TestMethod]
+    public async Task Development_Cors_allows_the_configured_credentialed_origin()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Options, "/api/v1/auth/login");
+        request.Headers.Add("Origin", "http://localhost:3000");
+        request.Headers.Add("Access-Control-Request-Method", "POST");
+
+        var response = await _client.SendAsync(request);
+
+        Assert.AreEqual(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.AreEqual(
+            "http://localhost:3000",
+            response.Headers.GetValues("Access-Control-Allow-Origin").Single());
+        Assert.AreEqual(
+            "true",
+            response.Headers.GetValues("Access-Control-Allow-Credentials").Single());
+    }
+
+    [TestMethod]
+    public async Task Development_Cors_omits_allow_headers_for_an_unconfigured_origin()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Options, "/api/v1/auth/login");
+        request.Headers.Add("Origin", "http://localhost:3001");
+        request.Headers.Add("Access-Control-Request-Method", "POST");
+
+        var response = await _client.SendAsync(request);
+
+        Assert.IsFalse(response.Headers.Contains("Access-Control-Allow-Origin"));
+        Assert.IsFalse(response.Headers.Contains("Access-Control-Allow-Credentials"));
+    }
+
     private sealed record HealthPayload(string Status);
 }
 
-public sealed class CustomFormServiceApiFactory(string environment = "Development") : WebApplicationFactory<Program>
+public sealed class CustomFormServiceApiFactory : WebApplicationFactory<Program>
 {
     public const string JwtIssuer = "custom-form-service-tests";
     public const string JwtAudience = "custom-form-service-test-client";
     public const string JwtSigningKey = "R4-integration-test-signing-key-32-bytes-minimum";
 
+    private readonly string _environment;
+    private readonly IReadOnlyDictionary<string, string?> _overrides;
+
+    public CustomFormServiceApiFactory(
+        string environment = "Development",
+        IReadOnlyDictionary<string, string?>? overrides = null)
+    {
+        _environment = environment;
+        _overrides = overrides ?? new Dictionary<string, string?>();
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment(environment);
+        builder.UseEnvironment(_environment);
+        builder.ConfigureLogging(logging => logging.ClearProviders());
         builder.ConfigureAppConfiguration((_, configuration) =>
         {
+            if (!string.Equals(_environment, Environments.Development, StringComparison.OrdinalIgnoreCase))
+            {
+                configuration.AddUserSecrets<Program>(optional: true);
+                configuration.AddEnvironmentVariables();
+            }
+
+            var configuredValues = configuration.Build();
             configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
+                ["PostgreSql:Host"] = configuredValues["PostgreSql:Host"] ?? "localhost",
+                ["PostgreSql:Port"] = configuredValues["PostgreSql:Port"] ?? "5432",
+                ["PostgreSql:Database"] = configuredValues["PostgreSql:Database"] ?? "custom_form_service",
+                ["PostgreSql:Username"] = configuredValues["PostgreSql:Username"] ?? "custom_form_service",
                 ["Jwt:Issuer"] = JwtIssuer,
                 ["Jwt:Audience"] = JwtAudience,
-                ["Jwt:SigningKey"] = JwtSigningKey,
-                ["Jwt:LifetimeMinutes"] = "1440"
+                ["Jwt:SigningKey"] = JwtSigningKey
             });
+            configuration.AddInMemoryCollection(_overrides);
         });
     }
 }

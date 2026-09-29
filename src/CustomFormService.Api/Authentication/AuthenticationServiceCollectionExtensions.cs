@@ -19,7 +19,8 @@ public static class AuthenticationServiceCollectionExtensions
 
     public static IServiceCollection AddV1Authentication(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         services
             .AddOptions<JwtOptions>()
@@ -30,7 +31,16 @@ public static class AuthenticationServiceCollectionExtensions
             .Validate(
                 options => !string.Equals(options.SigningKey, "replace-with-at-least-32-random-characters", StringComparison.Ordinal),
                 "The example JWT signing key must be replaced before the API starts.")
-            .Validate(options => options.LifetimeMinutes == 24 * 60, "V1 JWT lifetime must be 1440 minutes.")
+            .Validate(options => options.LifetimeMinutes > 0, "JWT lifetime must be positive.")
+            .ValidateOnStart();
+
+        services
+            .AddOptions<AccessTokenCookieOptions>()
+            .Bind(configuration.GetSection(AccessTokenCookieOptions.SectionName))
+            .Validate(options => options.Secure.HasValue, "Access-token cookie Secure must be configured.")
+            .Validate(
+                options => environment.IsDevelopment() || options.Secure is true,
+                "Access-token cookies must be Secure outside Development.")
             .ValidateOnStart();
 
         services

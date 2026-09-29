@@ -9,6 +9,7 @@ using CustomFormService.Api.Validation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace CustomFormService.Api.Controllers;
@@ -20,7 +21,7 @@ public sealed class AuthController(
     PasswordCredentialService passwords,
     JwtTokenService tokens,
     TimeProvider timeProvider,
-    IHostEnvironment environment) : ControllerBase
+    IOptions<AccessTokenCookieOptions> cookieOptions) : ControllerBase
 {
     private static readonly HashSet<string> RegisterProperties =
         new(["email", "password", "displayName"], StringComparer.Ordinal);
@@ -148,7 +149,7 @@ public sealed class AuthController(
             return ApiErrors.UserDisabled();
         }
 
-        AccessTokenCookie.Append(Response, tokens.Create(user), environment);
+        AccessTokenCookie.Append(Response, tokens.Create(user), cookieOptions.Value);
         return Ok(UserResponse.From(user));
     }
 
@@ -157,7 +158,7 @@ public sealed class AuthController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public IActionResult Logout()
     {
-        AccessTokenCookie.Delete(Response, environment);
+        AccessTokenCookie.Delete(Response, cookieOptions.Value);
         return NoContent();
     }
 

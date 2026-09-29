@@ -1,3 +1,6 @@
+using CustomFormService.Api.Infrastructure.Persistence;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace CustomFormService.IntegrationTests;
@@ -5,6 +8,20 @@ namespace CustomFormService.IntegrationTests;
 [TestClass]
 public sealed class DatabaseSchemaTests
 {
+    private CustomFormServiceApiFactory _factory = null!;
+
+    [TestInitialize]
+    public void Initialize()
+    {
+        _factory = new CustomFormServiceApiFactory();
+    }
+
+    [TestCleanup]
+    public async Task Cleanup()
+    {
+        await _factory.DisposeAsync();
+    }
+
     [TestMethod]
     public async Task Tables_and_columns_match_v1_contract()
     {
@@ -216,7 +233,7 @@ public sealed class DatabaseSchemaTests
             """;
     }
 
-    private static async Task<string[]> QueryAsync(string sql)
+    private async Task<string[]> QueryAsync(string sql)
     {
         await using var connection = new NpgsqlConnection(BuildConnectionString());
         await connection.OpenAsync();
@@ -231,24 +248,8 @@ public sealed class DatabaseSchemaTests
         return [.. results];
     }
 
-    private static string BuildConnectionString()
-    {
-        return new NpgsqlConnectionStringBuilder
-        {
-            Host = RequiredEnvironmentVariable("PostgreSql__Host"),
-            Port = int.Parse(RequiredEnvironmentVariable("PostgreSql__Port"), System.Globalization.CultureInfo.InvariantCulture),
-            Database = RequiredEnvironmentVariable("PostgreSql__Database"),
-            Username = RequiredEnvironmentVariable("PostgreSql__Username"),
-            Password = RequiredEnvironmentVariable("PostgreSql__Password"),
-            IncludeErrorDetail = false
-        }.ConnectionString;
-    }
-
-    private static string RequiredEnvironmentVariable(string name)
-    {
-        return Environment.GetEnvironmentVariable(name)
-            ?? throw new InvalidOperationException($"Environment variable {name} must be configured for schema integration tests.");
-    }
+    private string BuildConnectionString() =>
+        _factory.Services.GetRequiredService<IOptions<PostgreSqlOptions>>().Value.BuildConnectionString();
 
     private static readonly string[] ExpectedColumns =
     [

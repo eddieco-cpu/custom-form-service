@@ -10,5 +10,5 @@ public sealed class JwtOptions
 
     public string SigningKey { get; set; } = string.Empty;
 
-    public int LifetimeMinutes { get; set; } = 1440;
+    public int LifetimeMinutes { get; set; }
 }

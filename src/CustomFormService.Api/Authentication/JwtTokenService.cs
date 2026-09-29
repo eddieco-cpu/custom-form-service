@@ -11,9 +11,10 @@ public sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider t
 {
     private readonly JwtOptions _options = options.Value;
 
-    public string Create(User user)
+    public IssuedAccessToken Create(User user)
     {
-        var now = timeProvider.GetUtcNow();
+        var issuedAt = timeProvider.GetUtcNow();
+        var expiresAt = issuedAt.AddMinutes(_options.LifetimeMinutes);
         var descriptor = new SecurityTokenDescriptor
         {
             Issuer = _options.Issuer,
@@ -22,15 +23,18 @@ public sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider t
             [
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString())
             ]),
-            IssuedAt = now.UtcDateTime,
-            NotBefore = now.UtcDateTime,
-            Expires = now.AddMinutes(_options.LifetimeMinutes).UtcDateTime,
+            IssuedAt = issuedAt.UtcDateTime,
+            NotBefore = issuedAt.UtcDateTime,
+            Expires = expiresAt.UtcDateTime,
             SigningCredentials = new SigningCredentials(
                 new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SigningKey)),
                 SecurityAlgorithms.HmacSha256)
         };
 
         var handler = new JwtSecurityTokenHandler();
-        return handler.WriteToken(handler.CreateToken(descriptor));
+        var value = handler.WriteToken(handler.CreateToken(descriptor));
+        return new IssuedAccessToken(value, issuedAt, expiresAt);
     }
 }
+
+public sealed record IssuedAccessToken(string Value, DateTimeOffset IssuedAt, DateTimeOffset ExpiresAt);

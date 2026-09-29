@@ -30,7 +30,7 @@ builder.Services
     .BindConfiguration("PasswordHashing")
     .Validate(options => options.IterationCount >= 100_000, "Password hash iteration count must be at least 100000.")
     .ValidateOnStart();
-builder.Services.AddV1Authentication(builder.Configuration);
+builder.Services.AddV1Authentication(builder.Configuration, builder.Environment);
 builder.Services.AddV1Cors(builder.Configuration);
 builder.Services
     .AddOptions<PostgreSqlOptions>()
@@ -40,6 +40,9 @@ builder.Services
     .Validate(options => !string.IsNullOrWhiteSpace(options.Database), "PostgreSQL database must be configured.")
     .Validate(options => !string.IsNullOrWhiteSpace(options.Username), "PostgreSQL username must be configured.")
     .Validate(options => !string.IsNullOrWhiteSpace(options.Password), "PostgreSQL password must be configured.")
+    .Validate(
+        options => !string.Equals(options.Password, "replace-with-a-local-password", StringComparison.Ordinal),
+        "The example PostgreSQL password must be replaced before the API starts.")
     .ValidateOnStart();
 builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
 {

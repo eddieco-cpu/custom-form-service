@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+
 namespace CustomFormService.Api.Authentication;
 
 public static class V1Cors
@@ -6,24 +8,30 @@ public static class V1Cors
 
     public static IServiceCollection AddV1Cors(this IServiceCollection services, IConfiguration configuration)
     {
-        var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-        if (origins.Any(origin => origin == "*" || !Uri.TryCreate(origin, UriKind.Absolute, out _)))
-        {
-            throw new InvalidOperationException("CORS origins must be explicit absolute origins and cannot use a wildcard.");
-        }
+        services
+            .AddOptions<AppCorsOptions>()
+            .Bind(configuration.GetSection(AppCorsOptions.SectionName))
+            .Validate(
+                options => options.AllowedOrigins.All(AppCorsOptions.IsCanonicalOrigin),
+                "CORS origins must use canonical HTTP or HTTPS origin form without a trailing slash.")
+            .ValidateOnStart();
 
-        services.AddCors(options =>
-        {
-            options.AddPolicy(PolicyName, policy =>
+        services.AddCors();
+        services
+            .AddOptions<Microsoft.AspNetCore.Cors.Infrastructure.CorsOptions>()
+            .Configure<IOptions<AppCorsOptions>>((options, configuredOptions) =>
             {
-                if (origins.Length > 0)
+                options.AddPolicy(PolicyName, policy =>
                 {
-                    policy.WithOrigins(origins);
-                }
+                    var origins = configuredOptions.Value.AllowedOrigins;
+                    if (origins.Length > 0)
+                    {
+                        policy.WithOrigins(origins);
+                    }
 
-                policy.AllowCredentials().AllowAnyHeader().AllowAnyMethod();
+                    policy.AllowCredentials().AllowAnyHeader().AllowAnyMethod();
+                });
             });
-        });
 
         return services;
     }

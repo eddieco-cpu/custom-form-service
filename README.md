@@ -31,28 +31,25 @@ Trust the local development certificate once, if needed:
 dotnet dev-certs https --trust
 ```
 
-## Local PostgreSQL configuration
+## Local configuration
 
-Create the ignored local environment file and replace its password placeholder with a private local value:
+The root `.env` file belongs only to Docker Compose. Create it and replace its PostgreSQL password placeholder with a private local value:
 
 ```powershell
 Copy-Item .env.example .env
 notepad .env
 ```
 
-The `.env` file contains the Database, Username, Password, and host Port used by Docker Compose. It also uses ASP.NET Core's `Section__Key` environment-variable naming, so the same values configure the API after they are imported into the current PowerShell process:
+Its supported keys are `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, and the optional `POSTGRES_PORT` host mapping. ASP.NET Core does not parse this file and it must not be imported into PowerShell.
 
 ```powershell
-Get-Content .env | ForEach-Object {
-    if ($_ -match '^(?!#)([^=]+)=(.*)$') {
-        [Environment]::SetEnvironmentVariable($matches[1], $matches[2], 'Process')
-    }
-}
+dotnet user-secrets set --project src/CustomFormService.Api/CustomFormService.Api.csproj "PostgreSql:Password" "<same-password-as-.env>"
+dotnet user-secrets set --project src/CustomFormService.Api/CustomFormService.Api.csproj "Jwt:SigningKey" "<at-least-32-random-bytes>"
 ```
 
-Do not commit `.env`. The committed `.env.example` contains placeholders only.
+The PostgreSQL password is intentionally configured twice: `POSTGRES_PASSWORD` is the server credential used by Docker, while `PostgreSql:Password` is the client credential used by the API. They must have the same local value. User Secrets are stored outside the repository and are not encrypted; use development-only values.
 
-Replace `Jwt__SigningKey` with a private random value of at least 32 bytes. `Jwt__Issuer` and `Jwt__Audience` have non-secret defaults in `appsettings.json`. The formal V1 access-token lifetime is 24 hours, represented by `Jwt__LifetimeMinutes=1440`; startup rejects a different value. `Cors__AllowedOrigins__0` is the explicit local browser-client origin; add more numbered entries only for known clients. Credentialed CORS never accepts a wildcard origin.
+Do not commit `.env`. The committed `.env.example` contains placeholders only. If you change `POSTGRES_PORT`, `POSTGRES_DB`, or `POSTGRES_USER`, also override the matching `PostgreSql:Port`, `PostgreSql:Database`, or `PostgreSql:Username` API setting through User Secrets or an OS environment variable.
 
 ## Start and inspect PostgreSQL
 
@@ -79,7 +76,7 @@ dotnet test CustomFormService.sln --no-build --configuration Debug
 dotnet format CustomFormService.sln --verify-no-changes --no-restore
 ```
 
-The environment variables from `.env` must be imported before the EF Core and test commands. The integration suite verifies both database readiness and the complete V1 PostgreSQL schema against the running container.
+The API and integration tests use the standard ASP.NET Core configuration pipeline, including Development User Secrets. No `.env` import step is required. The integration suite verifies both database readiness and the complete V1 PostgreSQL schema against the running container.
 
 ## Database schema and migration
 
@@ -105,20 +102,17 @@ dotnet ef migrations list `
 ## Run locally
 
 ```powershell
-dotnet run --project src/CustomFormService.Api/CustomFormService.Api.csproj --launch-profile https --no-build
+dotnet run --project src/CustomFormService.Api/CustomFormService.Api.csproj --launch-profile http --no-build
 ```
 
-The `https` launch profile binds both local endpoints:
-
-- HTTP: `http://localhost:5000`
-- HTTPS: `https://localhost:5001`
+The standard Development browser topology uses the HTTP endpoint `http://localhost:5000` with a frontend at `http://localhost:3000`. The separate `https` launch profile remains available for non-browser development, but HTTPS API plus HTTP frontend is not the standard Cookie/CORS topology for this project.
 
 Development endpoints:
 
-- Health: `https://localhost:5001/health`
-- Database readiness: `https://localhost:5001/health/ready`
-- OpenAPI JSON: `https://localhost:5001/openapi/v1.json`
-- Swagger UI: `https://localhost:5001/swagger/index.html`
+- Health: `http://localhost:5000/health`
+- Database readiness: `http://localhost:5000/health/ready`
+- OpenAPI JSON: `http://localhost:5000/openapi/v1.json`
+- Swagger UI: `http://localhost:5000/swagger/index.html`
 
 OpenAPI JSON and Swagger UI are available only when `ASPNETCORE_ENVIRONMENT=Development`. `/health` and `/health/ready` are engineering endpoints and are not among the 18 V1 business API endpoints under `/api/v1`. `/health/ready` returns HTTP 200 with `Healthy` only when the API can connect to PostgreSQL.
 
@@ -153,9 +147,45 @@ Delete the synthetic user from the local database after manual verification if y
 
 ## Configuration
 
-`src/CustomFormService.Api/appsettings.Development.example.json` is a secret-free example for the standard API ports. `Properties/launchSettings.json` applies those ports for `dotnet run --launch-profile https`.
+ASP.NET Core uses its standard provider order: `appsettings.json`, `appsettings.{Environment}.json`, Development User Secrets, OS environment variables, and command-line overrides. Application code consumes bound options and does not know which provider supplied a value.
 
-Passwords, signing keys, connection strings, tokens, and provider credentials must be supplied through environment variables or a secret store and must not be committed.
+Reference documentation: [ASP.NET Core 10 configuration](https://learn.microsoft.com/aspnet/core/fundamentals/configuration/?view=aspnetcore-10.0), [Options pattern](https://learn.microsoft.com/aspnet/core/fundamentals/configuration/options?view=aspnetcore-10.0), [User Secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets?view=aspnetcore-10.0), and [CORS](https://learn.microsoft.com/aspnet/core/security/cors?view=aspnetcore-10.0).
+
+`appsettings.json` contains non-secret shared defaults. `appsettings.Development.json` contains localhost PostgreSQL metadata, `http://localhost:3000` as the allowed browser origin, and `AccessTokenCookie:Secure=false`. Staging and Production inherit `AccessTokenCookie:Secure=true`; setting it to false outside Development fails startup.
+
+The JWT lifetime defaults to 1,440 minutes and accepts an explicit positive override such as `Jwt__LifetimeMinutes=60`. Passwords, signing keys, tokens, and provider credentials must be supplied through User Secrets or deployment environment variables and must not be committed.
+
+For Railway Staging or Production, use the same ASP.NET Core keys with double underscores, for example:
+
+```text
+ASPNETCORE_ENVIRONMENT=Production
+ASPNETCORE_URLS=http://+:${PORT}
+PostgreSql__Host=...
+PostgreSql__Port=5432
+PostgreSql__Database=...
+PostgreSql__Username=...
+PostgreSql__Password=...
+Jwt__SigningKey=...
+Cors__AllowedOrigins__0=https://app.example.com
+```
+
+Environment-specific values override committed defaults; defaults do not need to be repeated in Railway.
+
+## Cookie, CORS, and CSRF boundary
+
+The `access_token` cookie is HttpOnly, SameSite=Lax, Path `/`, and has no Domain attribute. It is Secure outside Development. Its absolute `Expires` value equals the JWT `exp`; no Cookie `Max-Age` is set. Login and Logout use the same Path, Domain, SameSite, Secure, and HttpOnly scope.
+
+Browsers scope cookies by host rather than port. In Development, `localhost:3000` and `localhost:5000` share the `localhost` cookie host namespace even though they are different origins. HttpOnly prevents frontend JavaScript from reading the token, but it does not isolate the cookie by port. This is an accepted local trade-off. In Production, `app.example.com` and `api.example.com` are different hosts, so the API host-only cookie is not sent to the frontend host.
+
+Frontend requests to the API must opt into credentials:
+
+```javascript
+fetch("http://localhost:5000/api/v1/users/me", { credentials: "include" })
+```
+
+or set Axios `withCredentials: true`. CORS origins must use canonical `scheme://host[:port]` form with no trailing slash, path, query, fragment, userinfo, or wildcard.
+
+CORS is not CSRF protection. V1 relies on SameSite=Lax, a host-only cookie, same-scheme trusted same-site subdomains, and the rule that state-changing endpoints never use GET. This Round does not add an antiforgery protocol; cross-site deployment, SameSite=None, iframe embedding, or untrusted same-site subdomains require a fresh CSRF review.
 
 ## DBeaver connection
 
@@ -164,10 +194,10 @@ Use the following values after PostgreSQL reports healthy:
 | Setting | Value |
 | --- | --- |
 | Host | `localhost` |
-| Port | the `PostgreSql__Port` value in local `.env` (`5432` by default) |
-| Database | the `PostgreSql__Database` value in local `.env` |
-| Username | the `PostgreSql__Username` value in local `.env` |
-| Password | the `PostgreSql__Password` value in local `.env` |
+| Port | the `POSTGRES_PORT` value in local `.env` (`5432` by default) |
+| Database | the `POSTGRES_DB` value in local `.env` |
+| Username | the `POSTGRES_USER` value in local `.env` |
+| Password | the `POSTGRES_PASSWORD` value in local `.env` |
 
 In DBeaver, create a PostgreSQL connection, enter these values on the Main tab, choose **Test Connection**, and accept the driver download if DBeaver requests it. Keep SSL disabled for this loopback-only local container unless you separately configure PostgreSQL TLS.
 

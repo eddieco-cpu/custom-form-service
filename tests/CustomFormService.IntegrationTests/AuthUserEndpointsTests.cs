@@ -1,11 +1,15 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using CustomFormService.Api.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 
@@ -78,10 +82,14 @@ public sealed class AuthUserEndpointsTests
         StringAssert.Contains(setCookie, "path=/", StringComparison.OrdinalIgnoreCase);
         Assert.IsFalse(setCookie.Contains("secure", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(setCookie.Contains("domain=", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(setCookie.Contains("max-age=", StringComparison.OrdinalIgnoreCase));
         var cookie = setCookie.Split(';', 2)[0];
         var encodedToken = cookie.Split('=', 2)[1];
         var issuedToken = new JwtSecurityTokenHandler().ReadJwtToken(encodedToken);
         Assert.AreEqual(TimeSpan.FromHours(24), issuedToken.ValidTo - issuedToken.ValidFrom);
+        Assert.AreEqual(
+            new DateTimeOffset(issuedToken.ValidTo).ToUnixTimeSeconds(),
+            ReadCookieExpires(setCookie).ToUnixTimeSeconds());
 
         var me = await SendWithCookieAsync(HttpMethod.Get, "/api/v1/users/me", cookie);
         Assert.AreEqual(HttpStatusCode.OK, me.StatusCode);
@@ -107,6 +115,8 @@ public sealed class AuthUserEndpointsTests
         StringAssert.Contains(clearCookie, "httponly", StringComparison.OrdinalIgnoreCase);
         StringAssert.Contains(clearCookie, "samesite=lax", StringComparison.OrdinalIgnoreCase);
         StringAssert.Contains(clearCookie, "path=/", StringComparison.OrdinalIgnoreCase);
+        Assert.IsFalse(clearCookie.Contains("secure", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(clearCookie.Contains("domain=", StringComparison.OrdinalIgnoreCase));
 
         var afterLogout = await _client.GetAsync("/api/v1/users/me");
         await AssertErrorAsync(afterLogout, HttpStatusCode.Unauthorized, "AUTH_REQUIRED");
@@ -240,6 +250,14 @@ public sealed class AuthUserEndpointsTests
         StringAssert.Contains(setCookie, "secure", StringComparison.OrdinalIgnoreCase);
         StringAssert.Contains(setCookie, "httponly", StringComparison.OrdinalIgnoreCase);
         StringAssert.Contains(setCookie, "samesite=lax", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(setCookie, "path=/", StringComparison.OrdinalIgnoreCase);
+        Assert.IsFalse(setCookie.Contains("domain=", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(setCookie.Contains("max-age=", StringComparison.OrdinalIgnoreCase));
+        var encodedToken = setCookie.Split(';', 2)[0].Split('=', 2)[1];
+        var issuedToken = new JwtSecurityTokenHandler().ReadJwtToken(encodedToken);
+        Assert.AreEqual(
+            new DateTimeOffset(issuedToken.ValidTo).ToUnixTimeSeconds(),
+            ReadCookieExpires(setCookie).ToUnixTimeSeconds());
     }
 
     [TestMethod]
@@ -411,7 +429,7 @@ public sealed class AuthUserEndpointsTests
 
     private static string NewEmail() => $"r4-{Guid.NewGuid():N}@example.test";
 
-    private static async Task ExecuteAsync(string sql, params NpgsqlParameter[] parameters)
+    private async Task ExecuteAsync(string sql, params NpgsqlParameter[] parameters)
     {
         await using var connection = new NpgsqlConnection(BuildConnectionString());
         await connection.OpenAsync();
@@ -420,7 +438,7 @@ public sealed class AuthUserEndpointsTests
         await command.ExecuteNonQueryAsync();
     }
 
-    private static async Task<DateTime> ReadUpdatedAtAsync(string email)
+    private async Task<DateTime> ReadUpdatedAtAsync(string email)
     {
         await using var connection = new NpgsqlConnection(BuildConnectionString());
         await connection.OpenAsync();
@@ -429,17 +447,19 @@ public sealed class AuthUserEndpointsTests
         return (DateTime)(await command.ExecuteScalarAsync())!;
     }
 
-    private static string BuildConnectionString() => new NpgsqlConnectionStringBuilder
-    {
-        Host = RequiredEnvironmentVariable("PostgreSql__Host"),
-        Port = int.Parse(RequiredEnvironmentVariable("PostgreSql__Port"), System.Globalization.CultureInfo.InvariantCulture),
-        Database = RequiredEnvironmentVariable("PostgreSql__Database"),
-        Username = RequiredEnvironmentVariable("PostgreSql__Username"),
-        Password = RequiredEnvironmentVariable("PostgreSql__Password"),
-        IncludeErrorDetail = false
-    }.ConnectionString;
+    private string BuildConnectionString() =>
+        _factory.Services.GetRequiredService<IOptions<PostgreSqlOptions>>().Value.BuildConnectionString();
 
-    private static string RequiredEnvironmentVariable(string name) =>
-        Environment.GetEnvironmentVariable(name)
-        ?? throw new InvalidOperationException($"Environment variable {name} must be configured for integration tests.");
+    private static DateTimeOffset ReadCookieExpires(string setCookie)
+    {
+        const string prefix = "expires=";
+        var expires = setCookie
+            .Split(';')
+            .Select(value => value.Trim())
+            .Single(value => value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+        return DateTimeOffset.Parse(
+            expires[prefix.Length..],
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+    }
 }
