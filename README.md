@@ -33,23 +33,23 @@ dotnet dev-certs https --trust
 
 ## Local configuration
 
-The root `.env` file belongs only to Docker Compose. Create it and replace its PostgreSQL password placeholder with a private local value:
+The project deliberately separates Docker Compose infrastructure settings from ASP.NET Core application settings. The root `.env` belongs only to Docker Compose; API secrets belong in Development User Secrets. See the [environment configuration guide and audit](docs/configuration/environment-configuration.md) for the complete key inventory, precedence, validation, migration, and deployment notes.
+
+Create the local Compose file and replace its PostgreSQL password placeholder with a private development value:
 
 ```powershell
 Copy-Item .env.example .env
 notepad .env
 ```
 
-Its supported keys are `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, and the optional `POSTGRES_PORT` host mapping. ASP.NET Core does not parse this file and it must not be imported into PowerShell.
+Its supported keys are `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, and the optional `POSTGRES_PORT` host mapping. ASP.NET Core does not parse this file; do not import it into PowerShell.
 
 ```powershell
 dotnet user-secrets set --project src/CustomFormService.Api/CustomFormService.Api.csproj "PostgreSql:Password" "<same-password-as-.env>"
 dotnet user-secrets set --project src/CustomFormService.Api/CustomFormService.Api.csproj "Jwt:SigningKey" "<at-least-32-random-bytes>"
 ```
 
-The PostgreSQL password is intentionally configured twice: `POSTGRES_PASSWORD` is the server credential used by Docker, while `PostgreSql:Password` is the client credential used by the API. They must have the same local value. User Secrets are stored outside the repository and are not encrypted; use development-only values.
-
-Do not commit `.env`. The committed `.env.example` contains placeholders only. If you change `POSTGRES_PORT`, `POSTGRES_DB`, or `POSTGRES_USER`, also override the matching `PostgreSql:Port`, `PostgreSql:Database`, or `PostgreSql:Username` API setting through User Secrets or an OS environment variable.
+`POSTGRES_PASSWORD` and `PostgreSql:Password` must have the same local value. User Secrets are stored outside the repository and are not encrypted; use development-only values. Do not commit `.env`. If the file still contains pre-split `PostgreSql__*` or `Jwt__*` keys, follow the guide's migration procedure before running Compose.
 
 ## Start and inspect PostgreSQL
 
@@ -147,19 +147,13 @@ Delete the synthetic user from the local database after manual verification if y
 
 ## Configuration
 
-ASP.NET Core uses its standard provider order: `appsettings.json`, `appsettings.{Environment}.json`, Development User Secrets, OS environment variables, and command-line overrides. Application code consumes bound options and does not know which provider supplied a value.
+The canonical reference is [Environment Configuration Design, Operations, and Audit](docs/configuration/environment-configuration.md). In short, ASP.NET Core loads shared JSON defaults, environment-specific JSON, Development User Secrets, OS environment variables, and command-line overrides. Hierarchical environment-variable keys use double underscores.
 
-Reference documentation: [ASP.NET Core 10 configuration](https://learn.microsoft.com/aspnet/core/fundamentals/configuration/?view=aspnetcore-10.0), [Options pattern](https://learn.microsoft.com/aspnet/core/fundamentals/configuration/options?view=aspnetcore-10.0), [User Secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets?view=aspnetcore-10.0), and [CORS](https://learn.microsoft.com/aspnet/core/security/cors?view=aspnetcore-10.0).
-
-`appsettings.json` contains non-secret shared defaults. `appsettings.Development.json` contains localhost PostgreSQL metadata, `http://localhost:3000` as the allowed browser origin, and `AccessTokenCookie:Secure=false`. Staging and Production inherit `AccessTokenCookie:Secure=true`; setting it to false outside Development fails startup.
-
-The JWT lifetime defaults to 1,440 minutes and accepts an explicit positive override such as `Jwt__LifetimeMinutes=60`. Passwords, signing keys, tokens, and provider credentials must be supplied through User Secrets or deployment environment variables and must not be committed.
-
-For Railway Staging or Production, use the same ASP.NET Core keys with double underscores, for example:
+For Railway Staging or Production, a minimal template is:
 
 ```text
 ASPNETCORE_ENVIRONMENT=Production
-ASPNETCORE_URLS=http://+:${PORT}
+ASPNETCORE_URLS=http://+:${{ PORT }}
 PostgreSql__Host=...
 PostgreSql__Port=5432
 PostgreSql__Database=...
@@ -169,7 +163,7 @@ Jwt__SigningKey=...
 Cors__AllowedOrigins__0=https://app.example.com
 ```
 
-Environment-specific values override committed defaults; defaults do not need to be repeated in Railway.
+`${{ PORT }}` uses Railway's same-service reference syntax. Environment-specific values override committed defaults, so defaults do not need to be repeated. This is a configuration template only; Railway networking, public domain, reverse proxy, and live HTTPS verification belong to the separate deployment plan.
 
 ## Cookie, CORS, and CSRF boundary
 
