@@ -44,6 +44,8 @@ docker compose ps
 docker compose exec postgres psql -U $DbUser -d $DbName -c 'SELECT current_database(), current_user, now();'
 
 # 在另一個 PowerShell 視窗啟動或重啟 API；停止舊 API 程序後才啟動此命令。
+# 先 build，後續所有 --no-build（包含測試 8 暫時 API）均使用這次 build 的程式。
+dotnet build CustomFormService.sln --configuration Debug
 dotnet run --project src/CustomFormService.Api/CustomFormService.Api.csproj --launch-profile http --no-build
 
 # 在本視窗確認工程端點。
@@ -313,12 +315,9 @@ curl.exe -i -X POST "$ApiBase/api/v1/auth/logout" `
 
 **目的：**確認受保護端點將已過期的、原由系統簽發的 JWT 映射為 `AUTH_TOKEN_EXPIRED`。
 
-**前置條件與操作：**Member A 為 active。先 build，再暫時啟動第二個明確為 Development、監聽 `http://localhost:5001` 的 API，以 1 分鐘 lifetime 取得系統簽發的 token；原本 port 5000 API 不需停掉。登入後立刻從 cookie jar 讀入 token 到記憶體，刪除 jar；等待至少 65 秒後以明確 `Cookie` header 傳送該記憶體 token，避免 curl 因 cookie 已過期而不送出。完成後在第二個終端停止 API（Ctrl+C）；環境覆寫只屬該程序。
+**前置條件與操作：**Member A 為 active，且測試 1 的 build 已成功完成。暫時啟動第二個明確為 Development、監聽 `http://localhost:5001` 的 API，以 1 分鐘 lifetime 取得系統簽發的 token；原本 port 5000 API 不需停掉。登入後立刻從 cookie jar 讀入 token 到記憶體，刪除 jar；等待至少 65 秒後以明確 `Cookie` header 傳送該記憶體 token，避免 curl 因 cookie 已過期而不送出。完成後在第二個終端停止 API（Ctrl+C）；環境覆寫只屬該程序。
 
 ```powershell
-# 在 repository root 先 build，確保後續 --no-build 使用最新程式。
-dotnet build CustomFormService.sln --configuration Debug
-
 # 在另一個 PowerShell 視窗啟動暫時 API；保持此程序運行。
 $env:ASPNETCORE_ENVIRONMENT = 'Development'
 $env:ASPNETCORE_URLS = 'http://localhost:5001'
@@ -430,7 +429,18 @@ curl.exe -i -X OPTIONS "$ApiBase/api/v1/auth/login" `
 **前置條件與操作：**已完成測試 2、3、9；Member B 會在本測試後的恢復步驟重新啟用。此查詢不輸出 password hash 或 token。
 
 ```powershell
-docker compose exec -T postgres psql -X -q -U $DbUser -d $DbName -v test_password="$TestPassword" -c "SELECT email, display_name, status, password_hash IS NOT NULL AS password_hash_present, password_hash IS DISTINCT FROM :'test_password' AS password_hash_is_not_plaintext, created_at, updated_at FROM users WHERE email IN ('$MemberAEmail', '$MemberBEmail') ORDER BY email;"
+# 透過標準輸入傳送 SQL；不輸出 TestPassword 或 password_hash。
+$QuotedTestPassword = $TestPassword.Replace("'", "''")
+$HashCheckSql = @"
+SELECT email, display_name, status,
+       password_hash IS NOT NULL AS password_hash_present,
+       password_hash IS DISTINCT FROM '$QuotedTestPassword' AS password_hash_is_not_plaintext,
+       created_at, updated_at
+FROM users
+WHERE email IN ('$MemberAEmail', '$MemberBEmail')
+ORDER BY email;
+"@
+$HashCheckSql | docker compose exec -T postgres psql -X -q -v ON_ERROR_STOP=1 -U $DbUser -d $DbName
 
 docker compose exec postgres psql -U $DbUser -d $DbName -c "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'users' AND column_name IN ('password', 'password_hash') ORDER BY column_name;"
 ```
