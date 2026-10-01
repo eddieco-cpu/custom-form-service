@@ -44,20 +44,24 @@
 1. **一次只執行明確指定的一個 Round。** 每次讀該 Round 相關正式規格、確認現有 repo 與 Git 狀態，列出本次 tasks／驗收方法；沒有歧義就執行，不把正常技術選擇一律變成等待批准的問題。
 2. 確認本 Round 範圍與暫緩項。遇到新需求，列為下一 Round 候選，不順手實作；完成當前 Round 後停止，等待專案負責人審查並指示下一 Round。**已明確授權的同一 Round 修正應繼續完成。**
 3. 允許選擇 Controller／Service 劃分、DI、測試框架、EF Mapping、Lock／Transaction 方案及相容版本；記錄重要取捨。不得改變 7 張表、18 個端點的正式契約、權限、錯誤優先序、資料語意。
-4. 每個 Round 以可觀測行為及必要的自動化測試／可重現整合驗證為完成依據。測試要覆蓋真正可能回歸的業務邊界，不以與實作同構的空測試、單純 build 或「應該可用」充數。無法啟動 Docker、沒有外部憑證等情況，明列未驗證事項與下一步，不宣稱通過。
-5. 先檢查 `git status`；保護使用者的未提交修改、既有資料與 Secret。不做 force push、reset、刪除真實開發 volume。驗證從零建庫時用**專用、可丟棄的測試 volume／Compose project**；其 `down -v` 僅針對該測試資源。
-6. 認證／資料庫密碼、JWT signing secret、Google credential 不提交。提供 `.env.example` 等不含秘密的範例；README 寫如何自行設定。使用者提供的測試資料如含個資或憑證，先確認可否存檔／提交；預設僅存合成 fixtures。
-7. 一個 Round 可有數個單一目的 commit，且每個 commit 對應通過的驗證；不要夾帶下一 Round。原則上當 Round 驗收通過後提交並回報 SHA；若 repo 未建、使用者既有變更無法安全隔離、驗證未通過或規格衝突，停止且說明原因，**不可偽稱已 commit**。R0 若只輸出讀書報告，可以不 commit。
-8. 每次交付回報：本 Round 結果／驗收表、主要變更及檔案、實跑命令與結果、失敗或未驗證事項、偏離規格的問題、commit SHA／Git 狀態、下個 Round 前置條件。不得自動進入下一 Round。
+4. 開發期間照常執行 build 與必要自動化測試。功能完成後，先在 `docs/test-plan/` 產出該 Round 的驗收測試計畫；Markdown 須依執行順序整合目的、前置操作、curl 或 `.http`、預期結果與「實際結果：待執行」，讓人工與 Codex 都可操作。若另有人工 `.http`，須與 Markdown 保持一致。
+5. 測試計畫優先覆蓋本 Round 主要功能、權限、DB 寫入與代表性錯誤。可暫緩細部邊界時，簡短記錄暫緩項；不得將其擴充為大量矩陣，也不得放寬正式規格。
+6. Codex 產出測試計畫後停止，等待專案負責人 review 確認。確認後才依計畫執行，逐項記錄 PASS／FAIL／BLOCKED／未執行及必要證據；完成後再次停止，等待專案負責人確認驗收結果。只有此確認完成後，才可標記 Round `accepted`。
+7. 一般驗收沿用本機開發 DB，保留合成資料供後續 Round 使用，並恢復驗收期間暫時修改的狀態及設定。驗證從零建庫或其他破壞性重建時，才使用**專用、可丟棄的測試 volume／Compose project**；其 `down -v` 僅針對該測試資源。先檢查 `git status`；保護使用者的未提交修改、既有資料與 Secret，不做 force push、reset 或刪除真實開發 volume。
+8. 認證／資料庫密碼、JWT signing secret、Google credential 不提交。提供 `.env.example` 等不含秘密的範例；README 寫如何自行設定。使用者提供的測試資料如含個資或憑證，先確認可否存檔／提交；預設僅存合成 fixtures。
+9. 一個 Round 可有數個單一目的 commit，且每個 commit 對應已通過的開發驗證或已記錄的驗收結果；不要夾帶下一 Round。若 repo 未建、使用者既有變更無法安全隔離、驗證未通過或規格衝突，停止且說明原因，**不可偽稱已 commit**。R0 若只輸出讀書報告，可以不 commit。
+10. 每次交付回報：本 Round 結果／驗收表、主要變更及檔案、實跑命令與結果、失敗或未驗證事項、偏離規格的問題、commit SHA／Git 狀態、下個 Round 前置條件。不得自動進入下一 Round。
 
 ### 建議的 Round 交付模板
 
 ```text
 Round: Rn／名稱
-Status: accepted / blocked / partially verified
+Status: in progress / test plan pending review / acceptance pending owner confirmation / accepted / blocked
 Scope completed: ...
 Key files: ...
-Verification: command or HTTP request → observed result（PASS／FAIL／NOT RUN）
+Development verification: build or automated test → observed result
+Acceptance plan: `docs/test-plan/...`（owner review status）
+Acceptance results: request or command → observed result（PASS／FAIL／BLOCKED／未執行）
 Spec mapping: relevant document sections / endpoints
 Open issues or deviations: ...
 Commits: <SHA and subject> or why not committed
@@ -66,21 +70,21 @@ Next round: prerequisite only; not started
 
 ## 4. Round 地圖
 
-| Round | 主題 | 交付切面 |
-| --- | --- | --- |
-| R0 | 規格與環境對齊 | 規格／依賴／歧義清單，不寫業務程式 |
-| R1 | .NET Repo 與 API 骨架 | API 可啟動，開發環境文件可用 |
-| R2 | Compose PostgreSQL 與連線 | DB 存活、資料持久、API 可連線 |
-| R3 | EF Core 與 7 表 Migration | 可從空庫重建正式 Schema |
-| R4 | Email Auth 與 User | 註冊、登入、登出、本人資料／更新 |
-| R5 | Form 基礎讀寫 | Create／List／Detail／Delete；安全邊界 |
-| R6 | Draft Definition 與 Delta | 完整 Question／Option／Config 編輯與原子性 |
-| R7 | Lifecycle 與 Result Policy | Publish／Close／Visibility、Freeze 與並行 |
-| R8 | Submission | 全題型 Answer／Response、single／multiple、並行 |
-| R9 | Latest 與 Respondent Count | 最新整份回覆與有效人數 |
-| R10 | Statistics | Closed／Visibility／anonymous／identified／分布 |
-| R11 | A 階段整合與交付 | 契約回歸、從零建庫、本機驗收、缺口清單 |
-| G1（後續） | Google Auth 補齊 | 真實 Google 登入，含併發與全 V1 後端驗收 |
+| Round | 主題 | 交付切面 | 狀態／驗收紀錄 |
+| --- | --- | --- | --- |
+| R0 | 規格與環境對齊 | 規格／依賴／歧義清單，不寫業務程式 | 歷史報告；未另記錄 accepted：[`R0_Alignment_Report.md`](R0_Alignment_Report.md) |
+| R1 | .NET Repo 與 API 骨架 | API 可啟動，開發環境文件可用 | 驗收紀錄未存於 repo；不補造狀態 |
+| R2 | Compose PostgreSQL 與連線 | DB 存活、資料持久、API 可連線 | 驗收紀錄未存於 repo；不補造狀態 |
+| R3 | EF Core 與 7 表 Migration | 可從空庫重建正式 Schema | 驗收紀錄未存於 repo；不補造狀態 |
+| R4 | Email Auth 與 User | 註冊、登入、登出、本人資料／更新 | **accepted（2026-10-01，人工確認完成）**：[`R4_Acceptance_Test.md`](../test-plan/R4_Acceptance_Test.md)；[`R4_Manual_Tests.http`](../test-plan/R4_Manual_Tests.http) |
+| R5 | Form 基礎讀寫 | Create／List／Detail／Delete；安全邊界 | not started |
+| R6 | Draft Definition 與 Delta | 完整 Question／Option／Config 編輯與原子性 | not started |
+| R7 | Lifecycle 與 Result Policy | Publish／Close／Visibility、Freeze 與並行 | not started |
+| R8 | Submission | 全題型 Answer／Response、single／multiple、並行 | not started |
+| R9 | Latest 與 Respondent Count | 最新整份回覆與有效人數 | not started |
+| R10 | Statistics | Closed／Visibility／anonymous／identified／分布 | not started |
+| R11 | A 階段整合與交付 | 契約回歸、從零建庫、本機驗收、缺口清單 | not started |
+| G1（後續） | Google Auth 補齊 | 真實 Google 登入，含併發與全 V1 後端驗收 | not started |
 
 Round 索引是交付順序，非強制類別／檔案結構。為支撐某端點而提前引入共用 Error、Clock 或 Auth 基礎設施是合理依賴，但不能提前完成下一 Round 的業務 API。
 
@@ -164,7 +168,7 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 
 ## 6. Commit、審查與停止機制
 
-每個 Round 狀態：`not started → in progress → verified → committed → owner reviewed / fixes requested → accepted`。Codex 在當 Round 的 `committed` 後停止；專案負責人看差異、命令證據和 SHA。若要求修正，Codex 僅修當 Round，重新驗證並以額外 commit（或明確指定的方式）回報；審查通過後才下達下一 Round。不要以「上一 Round 已自測」代替負責人審查。
+每個 Round 狀態：`not started → in progress → development verified → committed → test plan pending owner review → acceptance executing → acceptance results pending owner confirmation → accepted`。開發期間的 build 與必要自動化測試不等待測試計畫 review；功能完成後，Codex 先提交／交付測試計畫並停止。專案負責人確認計畫後，Codex 才執行並逐項記錄結果；結果交付後再次停止，只有專案負責人確認結果才標記 `accepted`。若要求修正，Codex 僅修當 Round，重新執行受影響驗收並以額外 commit（或明確指定的方式）回報；不要以「上一 Round 已自測」代替任一 review。
 
 例子：`chore: initialize ASP.NET Core API`、`chore: add local PostgreSQL compose`、`feat(db): add initial V1 migration`、`feat(auth): implement password login`、`feat(forms): implement draft definition patch`。Commit message 表達功能，不能以 `feat: finish backend` 隱藏範圍；未通過的 Round 不能為了達成提交指標而製作虛假乾淨 commit。
 
@@ -178,14 +182,27 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 - Read `docs/implementation/V1_Backend_Implementation_Plan.md` and the current
   `docs/specs/00`–`05` specifications before editing related behavior.
 - Execute only the implementation Round explicitly named in the user's request.
-  Finish verification, report evidence and commit SHA, then stop.
+  During development, run the required build and automated tests, then commit and
+  report the verified current-Round changes.
+- After development, write the Round acceptance plan in `docs/test-plan/`. Its
+  Markdown is executable in order and records purpose, operations (curl or
+  `.http`), expected results, and actual results; any companion manual `.http`
+  stays consistent. Stop for owner review before executing that plan.
+- After the owner approves the plan, execute it and record each result and
+  evidence. Restore temporary state/configuration and retain synthetic local
+  data; stop again for owner confirmation. Mark the Round accepted only after
+  that confirmation.
+- Focus acceptance on the Round's main behavior, authorization, DB writes and
+  representative errors. Record deferred fine-grained boundaries briefly; do
+  not relax specs or replace them with large test matrices.
 - The approved specs own business rules, database schema, API contracts, error
   codes and cross-layer constraints. Report unresolved conflicts with sections;
   do not silently redefine behavior.
 - Current A stage is local Email/Password backend. Google Auth remains a required
   later V1 round; keep all seven tables. Nuxt and deployment are separate work.
 - Protect uncommitted changes, secrets and persistent data. Use isolated test
-  resources for destructive database rebuilds.
+  resources for destructive database rebuilds; ordinary acceptance uses the
+  local development DB and preserves its synthetic fixtures.
 - Commit only verified, single-purpose changes belonging to the current Round.
 ```
 
