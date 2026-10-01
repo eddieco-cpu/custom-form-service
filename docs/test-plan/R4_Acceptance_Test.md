@@ -20,6 +20,7 @@ $MemberAEmail = "r4-member-a-$RunId@example.test"
 $MemberBEmail = "r4-member-b-$RunId@example.test"
 $MemberACookieJar = Join-Path $env:TEMP "custom-form-r4-a-$RunId.cookies"
 $MemberBCookieJar = Join-Path $env:TEMP "custom-form-r4-b-$RunId.cookies"
+$ShortApiBase = 'http://localhost:5001'
 $ShortTokenCookieJar = Join-Path $env:TEMP "custom-form-r4-expired-$RunId.cookies"
 ```
 
@@ -128,7 +129,7 @@ curl.exe -i -b $MemberACookieJar "$ApiBase/api/v1/users/me"
 ```powershell
 curl.exe -i -X POST "$ApiBase/api/v1/auth/register" `
   -H 'Content-Type: application/json' `
-  --data ('{{"email":"  {0}  ","password":"{1}","displayName":"Duplicate Attempt"}}' -f $MemberAEmail.ToUpperInvariant(), $TestPassword)
+  --data ('{{"email":"  {0}  ","password":"{1}","displayName":"Duplicate Attempt"}}' -f ($MemberAEmail.ToUpperInvariant()), $TestPassword)
 ```
 
 **預期結果：**`409 Conflict`；error envelope 的 `error.code` 為 `USER_EMAIL_ALREADY_EXISTS`。資料庫仍只有一筆 Member A email。
@@ -150,6 +151,25 @@ curl.exe -i -X POST "$ApiBase/api/v1/auth/login" `
 ```
 
 **預期結果：**`401 Unauthorized`；error envelope 的 `error.code` 為 `AUTH_INVALID_CREDENTIALS`；不得設定有效登入 cookie。
+
+**實際結果：**待執行。
+
+---
+
+## 5a. 不存在 Email 登入
+
+**目的：**確認不存在的 email 與錯誤 password 對外使用相同 Credential 錯誤，不洩漏帳號存在性。
+
+**前置條件與操作：**API 正常運行。此 email 不用註冊，且不改動保留會員。
+
+```powershell
+$UnknownEmail = "r4-unknown-$RunId@example.test"
+curl.exe -i -X POST "$ApiBase/api/v1/auth/login" `
+  -H 'Content-Type: application/json' `
+  --data ('{{"email":"{0}","password":"wrong local password"}}' -f $UnknownEmail)
+```
+
+**預期結果：**`401 Unauthorized`；error envelope 的 `error.code` 為 `AUTH_INVALID_CREDENTIALS`；不得設定有效登入 cookie 或建立 User。
 
 **實際結果：**待執行。
 
@@ -192,21 +212,98 @@ curl.exe -i -b $MemberACookieJar -X PATCH "$ApiBase/api/v1/users/me" `
 
 ---
 
-## 7. 無效 Token 與 Logout 帶壞 Token
+## 6a. 空白 displayName PATCH
 
-**目的：**確認受保護端點區分無效 JWT，且 Logout 不要求有效登入。
+**目的：**確認已認證使用者不能將 `displayName` 改為 trim 後的空字串。
+
+**前置條件與操作：**Member A 為 active。登入取得新的 cookie jar，再送出只有空白的 `displayName`。
+
+```powershell
+curl.exe -sS -o NUL -c $MemberACookieJar -X POST "$ApiBase/api/v1/auth/login" `
+  -H 'Content-Type: application/json' `
+  --data ('{{"email":"{0}","password":"{1}"}}' -f $MemberAEmail, $TestPassword)
+
+curl.exe -i -b $MemberACookieJar -X PATCH "$ApiBase/api/v1/users/me" `
+  -H 'Content-Type: application/json' `
+  --data '{"displayName":"   "}'
+```
+
+**預期結果：**PATCH 回 `400 Bad Request`，error envelope 的 `error.code` 為 `VALIDATION_ERROR`，且 `error.details` 含 path `displayName`。Member A 的既有 `displayName` 不變。
+
+**實際結果：**待執行。
+
+---
+
+## 6b. 空 PATCH no-op
+
+**目的：**確認 `{}` 是合法 no-op，回傳目前 User 且不更新 `updated_at`。
+
+**前置條件與操作：**Member A 為 active。重新登入，先讀取 `updated_at`，再傳送空 JSON object；時間值只在記憶體比較，不寫入文件。
+
+```powershell
+curl.exe -sS -o NUL -c $MemberACookieJar -X POST "$ApiBase/api/v1/auth/login" `
+  -H 'Content-Type: application/json' `
+  --data ('{{"email":"{0}","password":"{1}"}}' -f $MemberAEmail, $TestPassword)
+
+$UpdatedAtBefore = (docker compose exec -T postgres psql -X -q -t -A -U $DbUser -d $DbName -c "SELECT updated_at FROM users WHERE email = '$MemberAEmail';").Trim()
+curl.exe -i -b $MemberACookieJar -X PATCH "$ApiBase/api/v1/users/me" `
+  -H 'Content-Type: application/json' `
+  --data '{}'
+$UpdatedAtAfter = (docker compose exec -T postgres psql -X -q -t -A -U $DbUser -d $DbName -c "SELECT updated_at FROM users WHERE email = '$MemberAEmail';").Trim()
+if ($UpdatedAtBefore -ne $UpdatedAtAfter) { throw 'Empty PATCH changed updated_at.' }
+```
+
+**預期結果：**PATCH 回 `200 OK` 與目前 Member A User；前後 `updated_at` 相同。不可新增或修改任何 profile 欄位。
+
+**實際結果：**待執行。
+
+---
+
+## 7. 無效 Token
+
+**目的：**確認受保護端點將格式無效的 JWT 區分為 `AUTH_TOKEN_INVALID`。
 
 **前置條件與操作：**API 正常運行。此測試不需要產生或保存真實 JWT。
 
 ```powershell
 curl.exe -i "$ApiBase/api/v1/users/me" `
   -H 'Cookie: access_token=not-a-jwt'
+```
 
+**預期結果：**GET 回 `401 Unauthorized`；error envelope 的 `error.code` 為 `AUTH_TOKEN_INVALID`。
+
+**實際結果：**待執行。
+
+---
+
+## 7a. 無 Cookie Logout
+
+**目的：**確認 Logout 沒有 `access_token` 仍成功並清除 client cookie scope。
+
+**前置條件與操作：**API 正常運行。此 request 不得使用 `-b`、`-c` 或手動 Cookie header。
+
+```powershell
+curl.exe -i -X POST "$ApiBase/api/v1/auth/logout"
+```
+
+**預期結果：**無 body 的 `204 No Content`，並有清除 `access_token` 的 `Set-Cookie`；不回 Authentication error。
+
+**實際結果：**待執行。
+
+---
+
+## 7b. Logout 帶壞 Token
+
+**目的：**確認 Logout 不會因無效 Token 被 Authentication middleware 攔截。
+
+**前置條件與操作：**API 正常運行。此測試不需要產生或保存真實 JWT。
+
+```powershell
 curl.exe -i -X POST "$ApiBase/api/v1/auth/logout" `
   -H 'Cookie: access_token=not-a-jwt'
 ```
 
-**預期結果：**無效 Token 的 GET 回 `401 AUTH_TOKEN_INVALID`。帶壞 Token 的 Logout 回無 body 的 `204 No Content`，並回 `Set-Cookie` 清除 `access_token`。
+**預期結果：**無 body 的 `204 No Content`，並有清除 `access_token` 的 `Set-Cookie`；不回 `AUTH_TOKEN_INVALID`。
 
 **實際結果：**待執行。
 
@@ -216,27 +313,37 @@ curl.exe -i -X POST "$ApiBase/api/v1/auth/logout" `
 
 **目的：**確認受保護端點將已過期的、原由系統簽發的 JWT 映射為 `AUTH_TOKEN_EXPIRED`。
 
-**前置條件與操作：**Member A 為 active。此測試暫時啟動第二個 Development API（port 5001），以 1 分鐘 lifetime 取得系統簽發的 token；原本 port 5000 API 不需停掉。等待至少 65 秒，避免 ClockSkew=0 下的邊界誤判。完成後在該第二個終端停止 API（Ctrl+C）；環境覆寫只屬該程序。
+**前置條件與操作：**Member A 為 active。先 build，再暫時啟動第二個明確為 Development、監聽 `http://localhost:5001` 的 API，以 1 分鐘 lifetime 取得系統簽發的 token；原本 port 5000 API 不需停掉。登入後立刻從 cookie jar 讀入 token 到記憶體，刪除 jar；等待至少 65 秒後以明確 `Cookie` header 傳送該記憶體 token，避免 curl 因 cookie 已過期而不送出。完成後在第二個終端停止 API（Ctrl+C）；環境覆寫只屬該程序。
 
 ```powershell
+# 在 repository root 先 build，確保後續 --no-build 使用最新程式。
+dotnet build CustomFormService.sln --configuration Debug
+
 # 在另一個 PowerShell 視窗啟動暫時 API；保持此程序運行。
+$env:ASPNETCORE_ENVIRONMENT = 'Development'
 $env:ASPNETCORE_URLS = 'http://localhost:5001'
 $env:Jwt__LifetimeMinutes = '1'
-dotnet run --project src/CustomFormService.Api/CustomFormService.Api.csproj --no-build
+dotnet run --project src/CustomFormService.Api/CustomFormService.Api.csproj --no-launch-profile --no-build
 
-# 在本視窗登入暫時 API，將動態 token 放入獨立 jar。
-$ShortApiBase = 'http://localhost:5001'
-curl.exe -i -c $ShortTokenCookieJar -X POST "$ShortApiBase/api/v1/auth/login" `
+# 在本視窗確認實際監聽位置，再登入暫時 API；login header/body 均不輸出。
+curl.exe -i "$ShortApiBase/health"
+$ShortLoginStatus = curl.exe -sS -o NUL -w '%{http_code}' -c $ShortTokenCookieJar -X POST "$ShortApiBase/api/v1/auth/login" `
   -H 'Content-Type: application/json' `
   --data ('{{"email":"{0}","password":"{1}"}}' -f $MemberAEmail, $TestPassword)
+if ($ShortLoginStatus -ne '200') { throw "Short-lifetime login returned HTTP $ShortLoginStatus." }
+$ShortAccessToken = ((Select-String -Path $ShortTokenCookieJar -SimpleMatch "`taccess_token`t" | Select-Object -Last 1).Line -split "`t")[-1]
+if ([string]::IsNullOrWhiteSpace($ShortAccessToken)) { throw 'Short-lifetime login did not write access_token to the cookie jar.' }
+Remove-Item -LiteralPath $ShortTokenCookieJar
 
 Start-Sleep -Seconds 65
-curl.exe -i -b $ShortTokenCookieJar "$ShortApiBase/api/v1/users/me"
+curl.exe -i "$ShortApiBase/api/v1/users/me" `
+  -H "Cookie: access_token=$ShortAccessToken"
+$ShortAccessToken = $null
 
 # 在第二個終端 Ctrl+C 停止暫時 API；原 port 5000 API 仍使用原設定。
 ```
 
-**預期結果：**短 lifetime Login 回 `200` 並設定 cookie；等待後 GET 回 `401 Unauthorized`，error envelope 的 `error.code` 為 `AUTH_TOKEN_EXPIRED`。不得把測試 JWT 複製到文件。
+**預期結果：**暫時 API console 顯示監聽 `http://localhost:5001`，`GET /health` 回 `200`；短 lifetime Login 回 `200` 並設定 cookie。等待後，明確帶 Cookie header 的 GET 回 `401 Unauthorized`，error envelope 的 `error.code` 為 `AUTH_TOKEN_EXPIRED`。不得輸出或把測試 JWT 複製到文件。
 
 **實際結果：**待執行。
 
@@ -292,9 +399,9 @@ curl.exe -i -b $MemberACookieJar -c $MemberACookieJar -X POST "$ApiBase/api/v1/a
 
 ---
 
-## 11. 基本 CORS
+## 11. 基本 CORS（標頭 smoke test）
 
-**目的：**確認 Development 的明列 credentialed origin 可預檢，且未設定 origin 不會收到允許標頭或 wildcard。
+**目的：**以預檢回應標頭快速確認 Development 的明列 credentialed origin 可預檢，且未設定 origin 不會收到允許標頭或 wildcard；這不是完整 CORS 矩陣。
 
 **前置條件與操作：**API 以 Development 設定運行，`Cors:AllowedOrigins` 保持目前 `http://localhost:3000`；不修改設定檔。
 
@@ -323,12 +430,12 @@ curl.exe -i -X OPTIONS "$ApiBase/api/v1/auth/login" `
 **前置條件與操作：**已完成測試 2、3、9；Member B 會在本測試後的恢復步驟重新啟用。此查詢不輸出 password hash 或 token。
 
 ```powershell
-docker compose exec postgres psql -U $DbUser -d $DbName -c "SELECT email, display_name, status, password_hash IS NOT NULL AS password_hash_present, created_at, updated_at FROM users WHERE email IN ('$MemberAEmail', '$MemberBEmail') ORDER BY email;"
+docker compose exec -T postgres psql -X -q -U $DbUser -d $DbName -v test_password="$TestPassword" -c "SELECT email, display_name, status, password_hash IS NOT NULL AS password_hash_present, password_hash IS DISTINCT FROM :'test_password' AS password_hash_is_not_plaintext, created_at, updated_at FROM users WHERE email IN ('$MemberAEmail', '$MemberBEmail') ORDER BY email;"
 
 docker compose exec postgres psql -U $DbUser -d $DbName -c "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'users' AND column_name IN ('password', 'password_hash') ORDER BY column_name;"
 ```
 
-**預期結果：**第一個查詢正好有 Member A、Member B 兩筆；Member A 的 `display_name` 是 `R4 Member A Updated`，兩筆 `password_hash_present=true`。Member B 在恢復前可顯示 `disabled`。第二個查詢只顯示 `password_hash`，不顯示明文 `password` 欄位。
+**預期結果：**第一個查詢正好有 Member A、Member B 兩筆；Member A 的 `display_name` 是 `R4 Member A Updated`，兩筆 `password_hash_present=true`，且 `password_hash_is_not_plaintext=true`。查詢只輸出布林判定，不輸出 password 或 hash 值。Member B 在恢復前可顯示 `disabled`。第二個查詢只顯示 `password_hash`，不顯示明文 `password` 欄位。
 
 **實際結果：**待執行。
 
@@ -346,11 +453,25 @@ docker compose exec postgres psql -U $DbUser -d $DbName -c "UPDATE users SET sta
 
 docker compose exec postgres psql -U $DbUser -d $DbName -c "SELECT email, display_name, status FROM users WHERE email IN ('$MemberAEmail', '$MemberBEmail') ORDER BY email;"
 
+# 最後重新登入兩位保留會員，再以 Cookie 確認各自仍可查本人；login response 不輸出。
+$MemberALoginStatus = curl.exe -sS -o NUL -w '%{http_code}' -c $MemberACookieJar -X POST "$ApiBase/api/v1/auth/login" `
+  -H 'Content-Type: application/json' `
+  --data ('{{"email":"{0}","password":"{1}"}}' -f $MemberAEmail, $TestPassword)
+$MemberBLoginStatus = curl.exe -sS -o NUL -w '%{http_code}' -c $MemberBCookieJar -X POST "$ApiBase/api/v1/auth/login" `
+  -H 'Content-Type: application/json' `
+  --data ('{{"email":"{0}","password":"{1}"}}' -f $MemberBEmail, $TestPassword)
+if ($MemberALoginStatus -ne '200' -or $MemberBLoginStatus -ne '200') { throw "Retained-member login failed: A=$MemberALoginStatus, B=$MemberBLoginStatus." }
+curl.exe -i -b $MemberACookieJar "$ApiBase/api/v1/users/me"
+curl.exe -i -b $MemberBCookieJar "$ApiBase/api/v1/users/me"
+
 # 標準 API 仍使用 port 5000 和原本設定。
 curl.exe -i "$ApiBase/health"
 curl.exe -i "$ApiBase/health/ready"
+
+# 不保留含 JWT 的暫存 cookie jar。
+Remove-Item -LiteralPath $MemberACookieJar, $MemberBCookieJar, $ShortTokenCookieJar -ErrorAction SilentlyContinue
 ```
 
-**預期結果：**Member A 與 Member B 都保留且 `status=active`，可供後續 R5、R6 使用；不留下 port 5001 的暫時 API 程序或 `Jwt__LifetimeMinutes=1` 設定。標準 `/health` 與 `/health/ready` 都回 `200`。任何尚未執行、失敗或中止的測試必須維持「待執行」或記錄實際失敗，不得標示 PASS。
+**預期結果：**Member A 與 Member B 都保留且 `status=active`，可供後續 R5、R6 使用；兩人最後 Login 都回 `200`，各自 `GET /users/me` 回 `200` 且對應正確 email。不留下 port 5001 的暫時 API 程序或 `Jwt__LifetimeMinutes=1` 設定；暫存 cookie jar 已移除。標準 `/health` 與 `/health/ready` 都回 `200`。任何尚未執行、失敗或中止的測試必須維持「待執行」或記錄實際失敗，不得標示 PASS。
 
 **實際結果：**待執行。
