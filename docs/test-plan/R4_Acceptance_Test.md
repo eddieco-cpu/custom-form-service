@@ -61,7 +61,7 @@ curl.exe -i "$ApiBase/health/ready"
 
 **預期結果：**Compose 的 `postgres` 為 healthy；`psql` 成功回傳資料庫與使用者。`GET /health` 回 `200` 和 `{"status":"healthy"}`；`GET /health/ready` 回 `200` 和 `Healthy`。人工 DBeaver Test Connection 成功。
 
-**實際結果：**BLOCKED（2026-10-01）：Compose PostgreSQL container 為 healthy（`127.0.0.1:5432`）。`dotnet build CustomFormService.sln --configuration Debug` 在 Restore 階段失敗；本機 SDK `10.0.400` 缺少 `Microsoft.NET.SDK.WorkloadAutoImportPropsLocator`，診斷為 `MSB4276`。因此未啟動 API、未呼叫 health/readiness，DBeaver 亦未執行。
+**實際結果：**PASS（2026-10-01）：Compose PostgreSQL container 為 healthy（`127.0.0.1:5432`）。初始預設建置 exit code 1；確認 SDK／`global.json` 一致後，執行 `dotnet build-server shutdown`，以 `dotnet restore --disable-build-servers -m:1` 和 `dotnet build --no-restore --disable-build-servers -m:1` 均 exit code 0。標準 API 在 `http://localhost:5000`；`/health`、`/health/ready` 均 200。人工 DBeaver Test Connection 已由使用者確認成功。
 
 ---
 
@@ -85,7 +85,7 @@ docker compose exec postgres psql -U $DbUser -d $DbName -c "SELECT email, displa
 
 **預期結果：**兩次 Register 均回 `201 Created`，各自 body 僅包含 `id`、`email`、`displayName`、`avatarUrl`，且沒有 `Set-Cookie: access_token`。SQL 顯示兩筆會員、`status=active`、`password_hash_present=true`；不得顯示或保存明文 password 欄位。
 
-**實際結果：**未執行（2026-10-01）：測試 1 的 SDK build blocker 尚未解除；未以舊 build 或未驗證 API 建立任何會員。
+**實際結果：**PASS（2026-10-01）：Member A、B Register 均 201、未設定登入 Cookie；DB 顯示兩筆 `active` 會員，`password_hash_present=true`。
 
 ---
 
@@ -120,7 +120,7 @@ curl.exe -i -b $MemberACookieJar "$ApiBase/api/v1/users/me"
 
 **預期結果：**第一次 `GET /users/me` 為 `401 AUTH_REQUIRED`。登入回 `200 OK`、User body，並設定 `access_token` cookie，不在 JSON body 回 token。登入後 GET 回 `200` 且 email 為 Member A；PATCH 回 `200` 且 `displayName` 為 `R4 Member A Updated`；第二次 GET 保持同一值。Logout 回無 body 的 `204 No Content` 和清除 cookie 的 `Set-Cookie`。最後 GET 為 `401 AUTH_REQUIRED`。
 
-**實際結果：**未執行（2026-10-01）：測試 1 的 SDK build blocker 尚未解除；未進行 HTTP 呼叫或 Cookie 操作。
+**實際結果：**PASS（2026-10-01）：未登入 GET 401 `AUTH_REQUIRED`；Login 200 並設定 Cookie；GET、PATCH、再次 GET 均 200，displayName 更新為 `R4 Member A Updated`；Logout 204 無 body 並清除 Cookie；最後 GET 401 `AUTH_REQUIRED`。
 
 ---
 
@@ -138,7 +138,7 @@ curl.exe -i -X POST "$ApiBase/api/v1/auth/register" `
 
 **預期結果：**`409 Conflict`；error envelope 的 `error.code` 為 `USER_EMAIL_ALREADY_EXISTS`。資料庫仍只有一筆 Member A email。
 
-**實際結果：**未執行（2026-10-01）：測試 1 的 SDK build blocker 尚未解除。
+**實際結果：**PASS（2026-10-01）：帶大寫及前後空白的 Member A email Register 回 409 `USER_EMAIL_ALREADY_EXISTS`。
 
 ---
 
@@ -156,7 +156,7 @@ curl.exe -i -X POST "$ApiBase/api/v1/auth/login" `
 
 **預期結果：**`401 Unauthorized`；error envelope 的 `error.code` 為 `AUTH_INVALID_CREDENTIALS`；不得設定有效登入 cookie。
 
-**實際結果：**未執行（2026-10-01）：測試 1 的 SDK build blocker 尚未解除。
+**實際結果：**PASS（2026-10-01）：錯誤 password Login 回 401 `AUTH_INVALID_CREDENTIALS`。
 
 ---
 
@@ -175,7 +175,7 @@ curl.exe -i -X POST "$ApiBase/api/v1/auth/login" `
 
 **預期結果：**`401 Unauthorized`；error envelope 的 `error.code` 為 `AUTH_INVALID_CREDENTIALS`；不得設定有效登入 cookie 或建立 User。
 
-**實際結果：**未執行（2026-10-01）：測試 1 的 SDK build blocker 尚未解除。
+**實際結果：**PASS（2026-10-01）：不存在 email Login 回 401 `AUTH_INVALID_CREDENTIALS`；DB 核對該 email User count 為 0。
 
 ---
 
@@ -212,7 +212,7 @@ curl.exe -i -b $MemberACookieJar -X PATCH "$ApiBase/api/v1/users/me" `
 
 **預期結果：**前三個公開／未登入請求依序為 `400 VALIDATION_ERROR`、`400 VALIDATION_ERROR`、`401 AUTH_REQUIRED`。帶有效 cookie 的 readonly PATCH 為 `400 VALIDATION_ERROR`，`error.details` 含 path `email`。不產生新 User，Member A email 不改變。
 
-**實際結果：**未執行（2026-10-01）：測試 1 的 SDK build blocker 尚未解除。
+**實際結果：**PASS（2026-10-01）：無效 Register、缺少 password Login 均回 400 `VALIDATION_ERROR`；未登入 readonly PATCH 回 401 `AUTH_REQUIRED`；帶有效 Cookie 的 readonly PATCH 回 400 `VALIDATION_ERROR` 且 details 含 `email`。
 
 ---
 
@@ -234,7 +234,7 @@ curl.exe -i -b $MemberACookieJar -X PATCH "$ApiBase/api/v1/users/me" `
 
 **預期結果：**PATCH 回 `400 Bad Request`，error envelope 的 `error.code` 為 `VALIDATION_ERROR`，且 `error.details` 含 path `displayName`。Member A 的既有 `displayName` 不變。
 
-**實際結果：**未執行（2026-10-01）：測試 1 的 SDK build blocker 尚未解除。
+**實際結果：**PASS（2026-10-01）：帶有效 Cookie 的空白 displayName PATCH 回 400 `VALIDATION_ERROR`，details 含 `displayName`。
 
 ---
 
@@ -259,7 +259,7 @@ if ($UpdatedAtBefore -ne $UpdatedAtAfter) { throw 'Empty PATCH changed updated_a
 
 **預期結果：**PATCH 回 `200 OK` 與目前 Member A User；前後 `updated_at` 相同。不可新增或修改任何 profile 欄位。
 
-**實際結果：**未執行（2026-10-01）：測試 1 的 SDK build blocker 尚未解除。
+**實際結果：**PASS（2026-10-01）：空 PATCH 回 200；DB 核對前後 `updated_at` 相同。
 
 ---
 
@@ -276,7 +276,7 @@ curl.exe -i "$ApiBase/api/v1/users/me" `
 
 **預期結果：**GET 回 `401 Unauthorized`；error envelope 的 `error.code` 為 `AUTH_TOKEN_INVALID`。
 
-**實際結果：**未執行（2026-10-01）：測試 1 的 SDK build blocker 尚未解除。
+**實際結果：**PASS（2026-10-01）：`access_token=not-a-jwt` 的 GET 回 401 `AUTH_TOKEN_INVALID`。
 
 ---
 
@@ -292,7 +292,7 @@ curl.exe -i -X POST "$ApiBase/api/v1/auth/logout"
 
 **預期結果：**無 body 的 `204 No Content`，並有清除 `access_token` 的 `Set-Cookie`；不回 Authentication error。
 
-**實際結果：**未執行（2026-10-01）：測試 1 的 SDK build blocker 尚未解除。
+**實際結果：**PASS（2026-10-01）：無 Cookie Logout 回 204、無 body，並設定清除 Cookie。
 
 ---
 
@@ -309,7 +309,7 @@ curl.exe -i -X POST "$ApiBase/api/v1/auth/logout" `
 
 **預期結果：**無 body 的 `204 No Content`，並有清除 `access_token` 的 `Set-Cookie`；不回 `AUTH_TOKEN_INVALID`。
 
-**實際結果：**未執行（2026-10-01）：測試 1 的 SDK build blocker 尚未解除。
+**實際結果：**PASS（2026-10-01）：帶壞 Cookie Logout 回 204、無 body，並設定清除 Cookie。
 
 ---
 
@@ -346,7 +346,7 @@ $ShortAccessToken = $null
 
 **預期結果：**暫時 API console 顯示監聽 `http://localhost:5001`，`GET /health` 回 `200`；短 lifetime Login 回 `200` 並設定 cookie。等待後，明確帶 Cookie header 的 GET 回 `401 Unauthorized`，error envelope 的 `error.code` 為 `AUTH_TOKEN_EXPIRED`。不得輸出或把測試 JWT 複製到文件。
 
-**實際結果：**未執行（2026-10-01）：測試 1 的 SDK build blocker 尚未解除；未啟動暫時 API 或變更 JWT lifetime。
+**實際結果：**PASS（2026-10-01）：暫時 Development API 在 `http://localhost:5001`，health 200、短效 Login 200。等待 65 秒後以明確 Cookie header GET 回 401 `AUTH_TOKEN_EXPIRED`；已停止 port 5001 暫時 API 並刪除暫存 token。
 
 ---
 
@@ -376,7 +376,7 @@ curl.exe -i -X POST "$ApiBase/api/v1/auth/login" `
 
 **預期結果：**SQL 更新一筆。既有 cookie 的 GET 與正確 password Login 都回 `403 AUTH_USER_DISABLED`；錯誤 password Login 回 `401 AUTH_INVALID_CREDENTIALS`。本測試結束時 Member B 暫時仍為 disabled，必須執行測試 13 恢復。
 
-**實際結果：**未執行（2026-10-01）：測試 1 的 SDK build blocker 尚未解除；未變更任何 User status。
+**實際結果：**PASS（2026-10-01）：Member B 暫設 disabled 後，既有 Cookie GET 與正確 password Login 均回 403 `AUTH_USER_DISABLED`；錯誤 password Login 回 401 `AUTH_INVALID_CREDENTIALS`。Member B 已於測試 13 恢復 active。
 
 ---
 
@@ -396,7 +396,7 @@ curl.exe -i -b $MemberACookieJar -c $MemberACookieJar -X POST "$ApiBase/api/v1/a
 
 **預期結果：**Login `Set-Cookie` 使用 `access_token`，含 `HttpOnly`、`SameSite=Lax`、`Path=/`、絕對 `Expires`；不含 `Domain`、`Max-Age`，且 Development HTTP 下不含 `Secure`。Logout 回 `204`，並以相同 Path／SameSite／HttpOnly／Secure scope 發出已過期的清除 cookie；不含 body。
 
-**實際結果：**未執行（2026-10-01）：測試 1 的 SDK build blocker 尚未解除。
+**實際結果：**PASS（2026-10-01）：Development Login Cookie 含 `HttpOnly`、`SameSite=Lax`、`Path=/`、`Expires`，且不含 `Domain`、`Max-Age`、`Secure`；Logout 回 204 無 body 並以相同 scope 清除 Cookie。未輸出 token。
 
 ---
 
@@ -420,7 +420,7 @@ curl.exe -i -X OPTIONS "$ApiBase/api/v1/auth/login" `
 
 **預期結果：**第一個 request 回 `204 No Content`，含 `Access-Control-Allow-Origin: http://localhost:3000` 與 `Access-Control-Allow-Credentials: true`。第二個 request 不得含這兩個 allow header，且任何回應均不得使用 `Access-Control-Allow-Origin: *`。
 
-**實際結果：**未執行（2026-10-01）：測試 1 的 SDK build blocker 尚未解除。
+**實際結果：**PASS（2026-10-01）：允許 origin preflight 回 204，含精確 `Access-Control-Allow-Origin: http://localhost:3000` 與 `Access-Control-Allow-Credentials: true`；未設定 origin 未含兩者，且未使用 wildcard。
 
 ---
 
@@ -449,7 +449,7 @@ docker compose exec postgres psql -U $DbUser -d $DbName -c "SELECT column_name F
 
 **預期結果：**第一個查詢正好有 Member A、Member B 兩筆；Member A 的 `display_name` 是 `R4 Member A Updated`，兩筆 `password_hash_present=true`，且 `password_hash_is_not_plaintext=true`。查詢只輸出布林判定，不輸出 password 或 hash 值。Member B 在恢復前可顯示 `disabled`。第二個查詢只顯示 `password_hash`，不顯示明文 `password` 欄位。
 
-**實際結果：**未執行（2026-10-01）：測試 1 的 SDK build blocker 尚未解除；未查詢會員資料。
+**實際結果：**PASS（2026-10-01）：兩會員 `password_hash_present=true` 且 `password_hash_is_not_plaintext=true`；只輸出布林結果，未輸出 hash 或 password。`users` 欄位核對只顯示 `password_hash`；Member A 為更新後名稱、Member B 在恢復前為 disabled。
 
 ---
 
@@ -486,4 +486,4 @@ Remove-Item -LiteralPath $MemberACookieJar, $MemberBCookieJar, $ShortTokenCookie
 
 **預期結果：**Member A 與 Member B 都保留且 `status=active`，可供後續 R5、R6 使用；兩人最後 Login 都回 `200`，各自 `GET /users/me` 回 `200` 且對應正確 email。不留下 port 5001 的暫時 API 程序或 `Jwt__LifetimeMinutes=1` 設定；暫存 cookie jar 已移除。標準 `/health` 與 `/health/ready` 都回 `200`。任何尚未執行、失敗或中止的測試必須維持「待執行」或記錄實際失敗，不得標示 PASS。
 
-**實際結果：**未執行（2026-10-01）：測試 1 的 SDK build blocker 尚未解除；本次尚未建立會員、變更 User status、啟動暫時 API 或產生 cookie jar，無需恢復。PostgreSQL Compose service 保持 healthy。
+**實際結果：**PASS（2026-10-01）：Member B 已恢復 `active`；兩位保留會員皆重新 Login 200、GET `/users/me` 200 且 email 正確。標準 `/health`、`/health/ready` 均 200；port 5001 暫時 API 與暫存 token／cookie jar 已清理。Compose PostgreSQL 保持 healthy。
