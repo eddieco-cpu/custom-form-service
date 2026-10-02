@@ -1,6 +1,6 @@
 # R5 驗收測試：Form 基礎讀寫
 
-本計畫只驗證 R5 的四支 API：`POST /api/v1/forms`、`GET /api/v1/forms`、`GET /api/v1/forms/{formId}`、`DELETE /api/v1/forms/{formId}`。驗收使用既有本機開發 PostgreSQL 與 R4 保留的兩位合成會員；不重建資料庫、不執行 `docker compose down -v`，也不開始 R6。
+本計畫只驗證 R5 的四支 API：`POST /api/v1/forms`、`GET /api/v1/forms`、`GET /api/v1/forms/{formId}`、`DELETE /api/v1/forms/{formId}`。驗收使用既有本機開發 PostgreSQL 與 R4 保留的兩位合成會員；不重建資料庫、不執行 `docker compose down -v`，也不開始 R6。HTTP 請求的逐步手動 companion 是 [`R5_Manual_Tests.http`](R5_Manual_Tests.http)；DB 與其他非 HTTP 操作仍以本文件為準。
 
 本輪驗收會保留建立的 R5 合成 Form（含一筆 Soft Delete Form）以供後續 Round 使用。只刪除暫存 cookie jar 與 HTTP response 檔案。
 
@@ -66,9 +66,9 @@ if ($MemberALoginStatus -ne '200' -or $MemberBLoginStatus -ne '200') {
 **操作：**
 
 ```powershell
-$NestedBody = @'
+$NestedBody = @"
 {
-  "title": "  R5 nested draft r5-acceptance-20261002-01  ",
+  "title": "  $NestedTitle  ",
   "description": " \u2003 ",
   "questions": [
     {
@@ -91,7 +91,7 @@ $NestedBody = @'
     }
   ]
 }
-'@
+"@
 
 $CreateStatus = curl.exe -sS -o $CreateResponsePath -w '%{http_code}' -b $MemberACookieJar -X POST "$ApiBase/api/v1/forms" `
   -H 'Content-Type: application/json' --data $NestedBody
@@ -121,9 +121,9 @@ WHERE question_id IN (SELECT id FROM questions WHERE form_id = '$NestedFormId'::
 **操作：**
 
 ```powershell
-$InvalidNestedBody = @'
+$InvalidNestedBody = @"
 {
-  "title": "R5 atomic failure r5-acceptance-20261002-01",
+  "title": "$AtomicFailureTitle",
   "questions": [
     {
       "type": "single_choice",
@@ -136,7 +136,7 @@ $InvalidNestedBody = @'
     }
   ]
 }
-'@
+"@
 
 curl.exe -i -b $MemberACookieJar -X POST "$ApiBase/api/v1/forms" `
   -H 'Content-Type: application/json' --data $InvalidNestedBody
@@ -157,9 +157,9 @@ FROM forms WHERE title = '$AtomicFailureTitle';"
 **操作：**先建立一張較新的 Draft 作為分頁排序樣本，再依序列出：
 
 ```powershell
-$DeleteBody = @'
+$DeleteBody = @"
 {
-  "title": "R5 soft delete r5-acceptance-20261002-01",
+  "title": "$DeleteTitle",
   "questions": [
     {
       "type": "single_choice",
@@ -171,7 +171,7 @@ $DeleteBody = @'
     }
   ]
 }
-'@
+"@
 
 Start-Sleep -Milliseconds 20
 $DeleteCreateStatus = curl.exe -sS -o $DeleteResponsePath -w '%{http_code}' -b $MemberACookieJar -X POST "$ApiBase/api/v1/forms" `

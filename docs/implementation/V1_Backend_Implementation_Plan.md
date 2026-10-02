@@ -44,13 +44,13 @@
 1. **一次只執行明確指定的一個 Round。** 每次讀該 Round 相關正式規格、確認現有 repo 與 Git 狀態，列出本次 tasks／驗收方法；沒有歧義就執行，不把正常技術選擇一律變成等待批准的問題。
 2. 確認本 Round 範圍與暫緩項。遇到新需求，列為下一 Round 候選，不順手實作；完成當前 Round 後停止，等待專案負責人審查並指示下一 Round。**已明確授權的同一 Round 修正應繼續完成。**
 3. 允許選擇 Controller／Service 劃分、DI、測試框架、EF Mapping、Lock／Transaction 方案及相容版本；記錄重要取捨。不得改變 7 張表、18 個端點的正式契約、權限、錯誤優先序、資料語意。
-4. 開發期間照常執行 build 與必要自動化測試。功能完成後，先在 `docs/test-plan/` 產出該 Round 的驗收測試計畫；Markdown 須依執行順序整合目的、前置操作、curl 或 `.http`、預期結果與「實際結果：待執行」，讓人工與 Codex 都可操作。若另有人工 `.http`，須與 Markdown 保持一致。
+4. 開發期間照常執行 build 與必要自動化測試。凡該 Round 涉及 API 驗收，功能完成後必須在 `docs/test-plan/` 同時產出 `Rn_Acceptance_Test.md` 與 `Rn_Manual_Tests.http`。Markdown 須依執行順序整合目的、前置操作、curl 或 `.http` 請求範例、預期結果與「實際結果：待執行」，讓人工與 Codex 都可操作。`.http` 必須提供依序執行且附註解的人工請求；每則註解要標明對應 Markdown 測試編號、必要操作及預期結果，不得只是空白模板。兩份文件的測試編號、順序、合成測資、請求與預期結果必須一致。DB 查詢與其他非 HTTP 操作保留在 Markdown，並在 `.http` 對應位置註明應依 Markdown 執行。
 5. 測試計畫優先覆蓋本 Round 主要功能、權限、DB 寫入與代表性錯誤。可暫緩細部邊界時，簡短記錄暫緩項；不得將其擴充為大量矩陣，也不得放寬正式規格。
-6. Codex 產出測試計畫後停止，等待專案負責人 review 確認。確認後才依計畫執行，逐項記錄 PASS／FAIL／BLOCKED／未執行及必要證據；完成後再次停止，等待專案負責人確認驗收結果。只有此確認完成後，才可標記 Round `accepted`。
+6. Codex 產出上述兩份測試文件後停止，交付 review 時必須同時提供兩份文件連結，等待專案負責人確認。確認後才依計畫執行，逐項記錄 PASS／FAIL／BLOCKED／未執行及必要證據；完成後再次停止，等待專案負責人確認驗收結果。只有此確認完成後，才可標記 Round `accepted`。
 7. 一般驗收沿用本機開發 DB，保留合成資料供後續 Round 使用，並恢復驗收期間暫時修改的狀態及設定。驗證從零建庫或其他破壞性重建時，才使用**專用、可丟棄的測試 volume／Compose project**；其 `down -v` 僅針對該測試資源。先檢查 `git status`；保護使用者的未提交修改、既有資料與 Secret，不做 force push、reset 或刪除真實開發 volume。
 8. 認證／資料庫密碼、JWT signing secret、Google credential 不提交。提供 `.env.example` 等不含秘密的範例；README 寫如何自行設定。使用者提供的測試資料如含個資或憑證，先確認可否存檔／提交；預設僅存合成 fixtures。
 9. 一個 Round 可有數個單一目的 commit，且每個 commit 對應已通過的開發驗證或已記錄的驗收結果；不要夾帶下一 Round。若 repo 未建、使用者既有變更無法安全隔離、驗證未通過或規格衝突，停止且說明原因，**不可偽稱已 commit**。R0 若只輸出讀書報告，可以不 commit。
-10. 每次交付回報：本 Round 結果／驗收表、主要變更及檔案、實跑命令與結果、失敗或未驗證事項、偏離規格的問題、commit SHA／Git 狀態、下個 Round 前置條件。不得自動進入下一 Round。
+10. 每次交付回報：本 Round 結果／驗收表、主要變更及檔案、實跑命令與結果、失敗或未驗證事項、偏離規格的問題、commit SHA／Git 狀態、下個 Round 前置條件。驗收計畫 review 交付必須同時列出 Markdown 與 `.http` 的連結。不得自動進入下一 Round。
 
 ### 建議的 Round 交付模板
 
@@ -60,7 +60,7 @@ Status: in progress / test plan pending review / acceptance pending owner confir
 Scope completed: ...
 Key files: ...
 Development verification: build or automated test → observed result
-Acceptance plan: `docs/test-plan/...`（owner review status）
+Acceptance plan: `docs/test-plan/Rn_Acceptance_Test.md` + `docs/test-plan/Rn_Manual_Tests.http`（both links; owner review status）
 Acceptance results: request or command → observed result（PASS／FAIL／BLOCKED／未執行）
 Spec mapping: relevant document sections / endpoints
 Open issues or deviations: ...
@@ -168,7 +168,7 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 
 ## 6. Commit、審查與停止機制
 
-每個 Round 狀態：`not started → in progress → development verified → committed → test plan pending owner review → acceptance executing → acceptance results pending owner confirmation → accepted`。開發期間的 build 與必要自動化測試不等待測試計畫 review；功能完成後，Codex 先提交／交付測試計畫並停止。專案負責人確認計畫後，Codex 才執行並逐項記錄結果；結果交付後再次停止，只有專案負責人確認結果才標記 `accepted`。若要求修正，Codex 僅修當 Round，重新執行受影響驗收並以額外 commit（或明確指定的方式）回報；不要以「上一 Round 已自測」代替任一 review。
+每個 Round 狀態：`not started → in progress → development verified → committed → test plan pending owner review → acceptance executing → acceptance results pending owner confirmation → accepted`。開發期間的 build 與必要自動化測試不等待測試計畫 review；凡涉及 API 驗收，功能完成後，Codex 必須先提交／交付成對的 `Rn_Acceptance_Test.md` 與 `Rn_Manual_Tests.http`，並提供兩者連結後停止。專案負責人確認兩份文件後，Codex 才執行並逐項記錄結果；結果交付後再次停止，只有專案負責人確認結果才標記 `accepted`。若要求修正，Codex 僅修當 Round，重新執行受影響驗收並以額外 commit（或明確指定的方式）回報；不要以「上一 Round 已自測」代替任一 review。
 
 例子：`chore: initialize ASP.NET Core API`、`chore: add local PostgreSQL compose`、`feat(db): add initial V1 migration`、`feat(auth): implement password login`、`feat(forms): implement draft definition patch`。Commit message 表達功能，不能以 `feat: finish backend` 隱藏範圍；未通過的 Round 不能為了達成提交指標而製作虛假乾淨 commit。
 
@@ -184,10 +184,14 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 - Execute only the implementation Round explicitly named in the user's request.
   During development, run the required build and automated tests, then commit and
   report the verified current-Round changes.
-- After development, write the Round acceptance plan in `docs/test-plan/`. Its
-  Markdown is executable in order and records purpose, operations (curl or
-  `.http`), expected results, and actual results; any companion manual `.http`
-  stays consistent. Stop for owner review before executing that plan.
+- For every API-acceptance Round, after development write both
+  `docs/test-plan/Rn_Acceptance_Test.md` and
+  `docs/test-plan/Rn_Manual_Tests.http`. The executable Markdown records
+  purpose, prerequisites, curl or `.http` examples, expected results, and
+  actual results. The commented `.http` companion follows the same test
+  numbers, order, synthetic data, requests, and expected results; keep DB and
+  other non-HTTP operations in Markdown and point to them from `.http`.
+  Provide links to both files and stop for owner review before executing them.
 - After the owner approves the plan, execute it and record each result and
   evidence. Restore temporary state/configuration and retain synthetic local
   data; stop again for owner confirmation. Mark the Round accepted only after

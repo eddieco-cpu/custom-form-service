@@ -33,11 +33,18 @@ For the current Round:
 4. Implement only the current Round; during development run its required build
    and necessary automated tests.
 5. Commit verified development changes using single-purpose commits.
-6. Create the Round acceptance test plan in `docs/test-plan/`, then stop for
-   the user's review. The Markdown must be runnable in sequence by a person or
-   Codex, and include purpose, operations with curl or `.http`, expected
-   results, and an actual-result field. Any companion manual `.http` must stay
-   consistent with the Markdown.
+6. For every Round that accepts APIs, create both
+   `docs/test-plan/Rn_Acceptance_Test.md` and
+   `docs/test-plan/Rn_Manual_Tests.http`, then stop for the user's review. The
+   Markdown must be runnable in sequence by a person or Codex, and include
+   purpose, prerequisites, curl or `.http` request examples, expected results,
+   and an actual-result field. The `.http` file must provide sequential,
+   commented manual requests; every comment identifies its matching Markdown
+   test number, prerequisite operations, and expected result. Keep test
+   numbers, order, synthetic data, requests, and expected results consistent
+   between both files. Keep DB and other non-HTTP operations in Markdown, and
+   place a matching `.http` comment that directs the operator there. Provide
+   links to both files in the review delivery.
 7. Only after the user approves the plan, execute it and record every result as
    PASS, FAIL, BLOCKED, or 未執行 with necessary evidence. Focus on main
    behavior, authorization, DB writes, and representative errors; record
