@@ -21,6 +21,8 @@ $MemberACookieJar = Join-Path $env:TEMP "custom-form-r5-a-$RunId.cookies"
 $MemberBCookieJar = Join-Path $env:TEMP "custom-form-r5-b-$RunId.cookies"
 $CreateResponsePath = Join-Path $env:TEMP "custom-form-r5-create-$RunId.json"
 $DeleteResponsePath = Join-Path $env:TEMP "custom-form-r5-delete-$RunId.json"
+$ListResponsePath = Join-Path $env:TEMP "custom-form-r5-list-$RunId.json"
+$ManualHttpPath = 'docs/test-plan/R5_Manual_Tests.http'
 $NestedTitle = "R5 nested draft $RunId"
 $AtomicFailureTitle = "R5 atomic failure $RunId"
 $DeleteTitle = "R5 soft delete $RunId"
@@ -53,9 +55,65 @@ $MemberBLoginStatus = curl.exe -sS -o NUL -w '%{http_code}' -c $MemberBCookieJar
 if ($MemberALoginStatus -ne '200' -or $MemberBLoginStatus -ne '200') {
   throw "Retained-member login failed: A=$MemberALoginStatus; B=$MemberBLoginStatus."
 }
+
+function Get-FormPage {
+  param(
+    [string]$CookieJar,
+    [int]$Page = 1,
+    [int]$PageSize = 100,
+    [string]$Status
+  )
+
+  $Uri = "$ApiBase/api/v1/forms?page=$Page&pageSize=$PageSize"
+  if (-not [string]::IsNullOrWhiteSpace($Status)) { $Uri += "&status=$Status" }
+  $HttpStatus = curl.exe -sS -o $ListResponsePath -w '%{http_code}' -b $CookieJar $Uri
+  if ($HttpStatus -ne '200') { throw "Form list returned HTTP $HttpStatus for $Uri." }
+  return (Get-Content -Raw $ListResponsePath | ConvertFrom-Json)
+}
+
+function Get-AllForms {
+  param([string]$CookieJar, [string]$Status)
+
+  $FirstPage = Get-FormPage -CookieJar $CookieJar -Status $Status
+  $Items = @($FirstPage.items)
+  for ($Page = 2; $Page -le $FirstPage.pagination.totalPages; $Page++) {
+    $NextPage = Get-FormPage -CookieJar $CookieJar -Page $Page -Status $Status
+    $Items += @($NextPage.items)
+  }
+  return [PSCustomObject]@{
+    TotalItems = $FirstPage.pagination.totalItems
+    TotalPages = $FirstPage.pagination.totalPages
+    Items = @($Items)
+  }
+}
+
+function Assert-FormOrder {
+  param([object[]]$Items)
+
+  $ActualIds = @($Items | ForEach-Object id)
+  $ExpectedIds = @($Items |
+    Sort-Object @{ Expression = { [DateTimeOffset]$_.updatedAt }; Descending = $true },
+                @{ Expression = { $_.id }; Descending = $true } |
+    ForEach-Object id)
+  if (Compare-Object $ActualIds $ExpectedIds -SyncWindow 0) {
+    throw 'Form List is not ordered by updatedAt DESC, id DESC.'
+  }
+}
+
+# Baseline is read-only and lets this plan be rerun without assuming Member A has no prior Forms.
+$MemberABaseline = Get-AllForms -CookieJar $MemberACookieJar
+$MemberADraftBaseline = Get-AllForms -CookieJar $MemberACookieJar -Status 'draft'
+$MemberABaselineTotalItems = $MemberABaseline.TotalItems
+$MemberADraftBaselineTotalItems = $MemberADraftBaseline.TotalItems
+$MemberABaselineIds = @($MemberABaseline.Items | ForEach-Object id)
+[PSCustomObject]@{
+  totalItems = $MemberABaselineTotalItems
+  draftTotalItems = $MemberADraftBaselineTotalItems
+  ids = $MemberABaselineIds
+}
 ```
 
-**預期結果：**Compose PostgreSQL healthy；`/health`、`/health/ready` 都為 `200`。兩位會員 Login 都為 `200`，並各自只在暫存 cookie jar 保存 `access_token`。
+**預期結果：**Compose PostgreSQL healthy；`/health`、`/health/ready` 都為 `200`。兩位會員 Login 都為 `200`，並各自只在暫存 cookie jar 保存 `access_token`。Member A 的全部 Form 與 Draft Form baseline total／ID 均被記錄，但不改動既有資料。
 
 **實際結果：**未執行（等待 Owner review）。
 
@@ -154,7 +212,7 @@ FROM forms WHERE title = '$AtomicFailureTitle';"
 
 **目的：**確認 List 只回 Member A 的未刪除 Form、使用正式分頁與排序，並拒絕非法 query。
 
-**操作：**先建立一張較新的 Draft 作為分頁排序樣本，再依序列出：
+**操作：**先建立一張較新的 Draft 作為分頁排序樣本，再依 baseline 驗證清單、分頁與排序：
 
 ```powershell
 $DeleteBody = @"
@@ -180,14 +238,50 @@ if ($DeleteCreateStatus -ne '201') { throw "Delete-sample create returned HTTP $
 $DeleteForm = Get-Content -Raw $DeleteResponsePath | ConvertFrom-Json
 $DeleteFormId = $DeleteForm.id
 
-curl.exe -i -b $MemberACookieJar "$ApiBase/api/v1/forms?page=1&pageSize=1"
-curl.exe -i -b $MemberACookieJar "$ApiBase/api/v1/forms?page=3&pageSize=1"
-curl.exe -i -b $MemberACookieJar "$ApiBase/api/v1/forms?status=draft"
-curl.exe -i -b $MemberBCookieJar "$ApiBase/api/v1/forms"
+$MemberAAfterCreate = Get-AllForms -CookieJar $MemberACookieJar
+$ExpectedTotalAfterCreate = $MemberABaselineTotalItems + 2
+if ($MemberAAfterCreate.TotalItems -ne $ExpectedTotalAfterCreate) {
+  throw "Expected $ExpectedTotalAfterCreate Member A Forms after creates; got $($MemberAAfterCreate.TotalItems)."
+}
+$MemberAAfterCreateIds = @($MemberAAfterCreate.Items | ForEach-Object id)
+foreach ($FormId in @($NestedFormId, $DeleteFormId)) {
+  if ($MemberAAfterCreateIds -notcontains $FormId) { throw "Current-run Form $FormId is absent from Member A List." }
+}
+Assert-FormOrder -Items $MemberAAfterCreate.Items
+
+$MemberAFirstPage = Get-FormPage -CookieJar $MemberACookieJar -Page 1 -PageSize 1
+if ($MemberAFirstPage.pagination.totalItems -ne $ExpectedTotalAfterCreate -or
+    $MemberAFirstPage.pagination.totalPages -ne $ExpectedTotalAfterCreate -or
+    $MemberAFirstPage.items[0].id -ne $MemberAAfterCreate.Items[0].id) {
+  throw 'First-page pagination or sorted first item does not match the complete List.'
+}
+$PageAfterCreates = $ExpectedTotalAfterCreate + 1
+$MemberABeyondPage = Get-FormPage -CookieJar $MemberACookieJar -Page $PageAfterCreates -PageSize 1
+if ($MemberABeyondPage.items.Count -ne 0 -or $MemberABeyondPage.pagination.page -ne $PageAfterCreates) {
+  throw 'A page beyond the last Form List page was not empty or did not retain its page number.'
+}
+
+$MemberADraftAfterCreate = Get-AllForms -CookieJar $MemberACookieJar -Status 'draft'
+if ($MemberADraftAfterCreate.TotalItems -ne ($MemberADraftBaselineTotalItems + 2)) {
+  throw 'Draft List total did not increase by two current-run Draft Forms.'
+}
+foreach ($FormId in @($NestedFormId, $DeleteFormId)) {
+  if (@($MemberADraftAfterCreate.Items | ForEach-Object id) -notcontains $FormId) {
+    throw "Current-run Draft $FormId is absent from the Draft List."
+  }
+}
+Assert-FormOrder -Items $MemberADraftAfterCreate.Items
+
+$MemberBAllForms = Get-AllForms -CookieJar $MemberBCookieJar
+$MemberBIds = @($MemberBAllForms.Items | ForEach-Object id)
+foreach ($FormId in @($NestedFormId, $DeleteFormId)) {
+  if ($MemberBIds -contains $FormId) { throw "Member B List exposed Member A Form $FormId." }
+}
+
 curl.exe -i -b $MemberACookieJar "$ApiBase/api/v1/forms?page=0"
 ```
 
-**預期結果：**Member A 的第一頁回 `200`，`items` 只有 `$DeleteTitle`、其 `count=0`；pagination 是 `page=1`、`pageSize=1`、`totalItems=2`、`totalPages=2`。第 3 頁回 `200`、`items=[]` 並保留 `page=3`。`status=draft` 回兩張 R5 Draft。Member B 的 List 不得包含 `$NestedFormId` 或 `$DeleteFormId`。`page=0` 回 `400 VALIDATION_ERROR`。
+**預期結果：**兩次 Create 都回 `201`。Member A 的完整 List total 為 baseline `+2`，且包含 `$NestedFormId`、`$DeleteFormId`；所有 items 依 `updatedAt DESC, id DESC` 排列。第一頁 `page=1&pageSize=1` 的 item 是完整排序清單第一筆，`totalItems` 與 `totalPages` 都等於 baseline `+2`；`page=$PageAfterCreates` 回 `items=[]` 並保留指定 page。Draft List total 為 Draft baseline `+2`，也包含這兩個 ID。Member B 的完整 List 不得包含兩個本次 ID。`page=0` 回 `400 VALIDATION_ERROR`。既有 Form 不刪除、不要求固定 title、status 或數量。
 
 **實際結果：**未執行（等待 Owner review）。
 
@@ -229,7 +323,26 @@ curl.exe -i -b $MemberACookieJar -X DELETE "$ApiBase/api/v1/forms/$DeleteFormId"
 curl.exe -i -b $MemberACookieJar -X DELETE "$ApiBase/api/v1/forms/$DeleteFormId"
 curl.exe -i -b $MemberACookieJar "$ApiBase/api/v1/forms/$DeleteFormId"
 curl.exe -i -b $MemberBCookieJar "$ApiBase/api/v1/forms/$DeleteFormId"
-curl.exe -i -b $MemberACookieJar "$ApiBase/api/v1/forms?status=draft"
+
+$MemberAAfterDelete = Get-AllForms -CookieJar $MemberACookieJar
+if ($MemberAAfterDelete.TotalItems -ne ($MemberABaselineTotalItems + 1)) {
+  throw 'Member A List total did not decrease by one after current-run Soft Delete.'
+}
+$MemberAAfterDeleteIds = @($MemberAAfterDelete.Items | ForEach-Object id)
+if ($MemberAAfterDeleteIds -notcontains $NestedFormId -or $MemberAAfterDeleteIds -contains $DeleteFormId) {
+  throw 'Soft Delete List boundary did not retain the nested Form and hide the deleted Form.'
+}
+Assert-FormOrder -Items $MemberAAfterDelete.Items
+
+$MemberADraftAfterDelete = Get-AllForms -CookieJar $MemberACookieJar -Status 'draft'
+if ($MemberADraftAfterDelete.TotalItems -ne ($MemberADraftBaselineTotalItems + 1)) {
+  throw 'Draft List total did not decrease by one after current-run Soft Delete.'
+}
+$MemberADraftAfterDeleteIds = @($MemberADraftAfterDelete.Items | ForEach-Object id)
+if ($MemberADraftAfterDeleteIds -notcontains $NestedFormId -or $MemberADraftAfterDeleteIds -contains $DeleteFormId) {
+  throw 'Soft Delete Draft List boundary is incorrect.'
+}
+Assert-FormOrder -Items $MemberADraftAfterDelete.Items
 
 # 僅核對 Soft Delete 與定義 rows；不做任何 DELETE 或 rebuild。
 docker compose exec postgres psql -X -q -U $DbUser -d $DbName -c "
@@ -240,7 +353,7 @@ SELECT COUNT(*) AS retained_options FROM options
 WHERE question_id IN (SELECT id FROM questions WHERE form_id = '$DeleteFormId'::uuid);"
 ```
 
-**預期結果：**第一次 Delete 回無 body 的 `204 No Content`。重複 Delete、Member A Detail、Member B Detail 都回 `404 FORM_NOT_FOUND`。Member A draft List 僅保留 `$NestedTitle`。DB 顯示 `soft_deleted=true`、status 仍為 `draft`、`retained_questions=1`、`retained_options=1`。
+**預期結果：**第一次 Delete 回無 body 的 `204 No Content`。重複 Delete、Member A Detail、Member B Detail 都回 `404 FORM_NOT_FOUND`。Member A 的全部與 Draft List total 都從各自 baseline 變為 `+1`，保留 `$NestedFormId`、排除 `$DeleteFormId`，且維持正式排序；不要求其他既有 Form 的 title、status 或數量。DB 顯示 `$DeleteFormId` 的 `soft_deleted=true`、status 仍為 `draft`、`retained_questions=1`、`retained_options=1`。
 
 **實際結果：**未執行（等待 Owner review）。
 
@@ -251,16 +364,26 @@ WHERE question_id IN (SELECT id FROM questions WHERE form_id = '$DeleteFormId'::
 **操作：**
 
 ```powershell
-Remove-Item -LiteralPath $MemberACookieJar, $MemberBCookieJar, $CreateResponsePath, $DeleteResponsePath -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $MemberACookieJar, $MemberBCookieJar, $CreateResponsePath, $DeleteResponsePath, $ListResponsePath -ErrorAction SilentlyContinue
+
+# REST Client 中曾暫填的 JWT 不得留在工作區或 commit。執行此段會把兩個 token
+# 變數恢復為 placeholder，且不輸出 token 值。
+$ManualHttp = Get-Content -Raw $ManualHttpPath
+$ManualHttp = [regex]::Replace($ManualHttp, '(?m)^@memberAToken = .+$', '@memberAToken = PASTE_ACCESS_TOKEN_VALUE_ONLY')
+$ManualHttp = [regex]::Replace($ManualHttp, '(?m)^@memberBToken = .+$', '@memberBToken = PASTE_ACCESS_TOKEN_VALUE_ONLY')
+[System.IO.File]::WriteAllText($ManualHttpPath, $ManualHttp, [System.Text.UTF8Encoding]::new($false))
+if ((Select-String -Path $ManualHttpPath -Pattern '^@member[AB]Token = PASTE_ACCESS_TOKEN_VALUE_ONLY$').Count -ne 2) {
+  throw 'R5 Manual Tests token placeholders were not restored.'
+}
 
 docker compose exec postgres psql -X -q -U $DbUser -d $DbName -c "
 SELECT email, status FROM users
 WHERE email IN ('$MemberAEmail', '$MemberBEmail') ORDER BY email;
-SELECT title, status, deleted_at IS NOT NULL AS soft_deleted
-FROM forms WHERE title IN ('$NestedTitle', '$DeleteTitle') ORDER BY title;"
+SELECT id, title, status, deleted_at IS NOT NULL AS soft_deleted
+FROM forms WHERE id IN ('$NestedFormId'::uuid, '$DeleteFormId'::uuid) ORDER BY id;"
 ```
 
-**預期結果：**兩位 R4 會員仍為 `active`。`$NestedTitle` 保持未刪除 Draft；`$DeleteTitle` 保留為 Soft Deleted Draft。暫存 cookie 與 response 檔案已移除，沒有停止 PostgreSQL、刪除 volume 或改動設定。
+**預期結果：**兩位 R4 會員仍為 `active`。`$NestedFormId` 保持未刪除 Draft；`$DeleteFormId` 保留為 Soft Deleted Draft。暫存 cookie／response 檔案已移除；`R5_Manual_Tests.http` 的 `memberAToken`、`memberBToken` 都是 `PASTE_ACCESS_TOKEN_VALUE_ONLY` placeholder，未保存或提交有效 JWT。沒有停止 PostgreSQL、刪除 volume 或改動既有 Form 資料。
 
 **實際結果：**未執行（等待 Owner review）。
 

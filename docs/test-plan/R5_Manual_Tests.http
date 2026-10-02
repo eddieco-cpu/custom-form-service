@@ -4,7 +4,8 @@
 # and cleanup. Do not run any request until the owner has approved both R5 test files.
 #
 # Before a run, complete Markdown test 1: Compose PostgreSQL, build/start the standard API,
-# and log in the retained R4 synthetic members. Use one fixed runId for every request below.
+# log in the retained R4 synthetic members, and record Member A's all-Form and Draft-Form
+# baseline totals/IDs. Use one fixed runId for every request below.
 # If this acceptance is repeated, change runId and the matching title values together in both
 # R5 files. Keep the R4 members and the created R5 Forms after the run.
 #
@@ -25,6 +26,9 @@
 @memberBToken = PASTE_ACCESS_TOKEN_VALUE_ONLY
 @nestedFormId = PASTE_NESTED_FORM_ID_FROM_TEST_2
 @deleteFormId = PASTE_DELETE_FORM_ID_FROM_TEST_4
+@baselineListPage = 1
+@baselinePageSize = 100
+@pageAfterCreates = PASTE_BASELINE_TOTAL_PLUS_3_FROM_MARKDOWN_TEST_4
 
 ###
 # Test 1 — API health. Prerequisite: complete Markdown test 1 startup/readiness operations.
@@ -61,6 +65,25 @@ Content-Type: application/json
   "email": "{{memberBEmail}}",
   "password": "{{testPassword}}"
 }
+
+###
+# Test 1 — Record Member A's all-Form baseline. Prerequisite: Member A login token is set.
+# Necessary operation: record totalItems and every returned id; if totalPages is greater than 1,
+# increment @baselineListPage and rerun this request until all pages/IDs are recorded. This is
+# read-only. Expected: 200, only Member A's current non-deleted Forms, no data changes.
+# The full baseline comparison and actual-result record remain in Markdown test 1.
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms?page={{baselineListPage}}&pageSize={{baselinePageSize}} HTTP/1.1
+Cookie: access_token={{memberAToken}}
+
+###
+# Test 1 — Record Member A's Draft-Form baseline. Prerequisite: all-Form baseline recorded.
+# Necessary operation: repeat pages as above and record totalItems/every id for status=draft.
+# Expected: 200, only Member A's current non-deleted Draft Forms, no data changes. The full
+# baseline comparison and actual-result record remain in Markdown test 1.
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms?page={{baselineListPage}}&pageSize={{baselinePageSize}}&status=draft HTTP/1.1
+Cookie: access_token={{memberAToken}}
 
 ###
 # Test 2 — Create Member A's nested Draft Form. After 201, copy its response id field into
@@ -145,23 +168,27 @@ Cookie: access_token={{memberAToken}}
 }
 
 ###
-# Test 4 — Member A list, first page. Prerequisite: copy @deleteFormId from preceding 201.
-# Expected: 200; one item titled {{deleteTitle}}, count=0; page=1, pageSize=1, totalItems=2,
-# totalPages=2. The complete pagination inspection is in Markdown test 4.
+# Test 4 — Member A list, first page. Prerequisite: copy @deleteFormId from preceding 201
+# and complete the baseline-aware complete-list check in Markdown test 4.
+# Expected: 200; page=1/pageSize=1 item matches the first item in the complete sorted List.
+# totalItems and totalPages equal Member A's all-Form baseline + 2; do not expect a fixed title
+# or count because retained Forms may exist. The complete ID/order checks remain in Markdown.
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms?page=1&pageSize=1 HTTP/1.1
 Cookie: access_token={{memberAToken}}
 
 ###
-# Test 4 — Member A list beyond the last page.
-# Expected: 200; items=[] and pagination.page=3. See Markdown test 4 for the exact check.
+# Test 4 — Member A list beyond the last page. Prerequisite: set @pageAfterCreates to the
+# value calculated in Markdown test 4 (Member A all-Form baseline total + 3).
+# Expected: 200; items=[] and pagination.page retains @pageAfterCreates. See Markdown test 4.
 # @no-cookie-jar
-GET {{apiBase}}/api/v1/forms?page=3&pageSize=1 HTTP/1.1
+GET {{apiBase}}/api/v1/forms?page={{pageAfterCreates}}&pageSize=1 HTTP/1.1
 Cookie: access_token={{memberAToken}}
 
 ###
-# Test 4 — Member A Draft-status filter.
-# Expected: 200; the two R5 Draft Forms are returned. Compare IDs with @nestedFormId/@deleteFormId.
+# Test 4 — Member A Draft-status filter. Prerequisite: complete the Markdown total/ID check.
+# Expected: 200; Draft total is the Draft baseline + 2 and includes @nestedFormId/@deleteFormId.
+# Retained Draft Forms may also appear; compare all IDs and sort order in Markdown test 4.
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms?status=draft HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -244,11 +271,17 @@ GET {{apiBase}}/api/v1/forms/{{deleteFormId}} HTTP/1.1
 Cookie: access_token={{memberBToken}}
 
 ###
-# Test 6 — Owner's Draft list excludes the deleted Form.
-# Expected: 200; only {{nestedTitle}} remains among this run's Forms. See Markdown test 6.
+# Test 6 — Owner's Draft list excludes the deleted Form. Prerequisite: complete the baseline-
+# aware all-Form and Draft-Form checks in Markdown test 6 after the preceding DELETE.
+# Expected: 200; both totals are their respective baselines + 1, includes @nestedFormId, and
+# excludes @deleteFormId. Retained Forms may remain; verify complete IDs/order in Markdown.
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms?status=draft HTTP/1.1
 Cookie: access_token={{memberAToken}}
 
 # Test 7 is non-HTTP. Remove temporary files and run the retained synthetic-data DB checks in
-# Markdown test 7. Do not delete R4 members, R5 Forms, PostgreSQL containers, or volumes.
+# Markdown test 7. Before saving or committing this file, restore these exact lines:
+# @memberAToken = PASTE_ACCESS_TOKEN_VALUE_ONLY
+# @memberBToken = PASTE_ACCESS_TOKEN_VALUE_ONLY
+# Do not retain or commit a valid JWT. Do not delete R4 members, R5 Forms, PostgreSQL
+# containers, volumes, or other existing Forms.
