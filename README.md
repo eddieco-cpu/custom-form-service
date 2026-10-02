@@ -1,6 +1,6 @@
 # Custom Form Service
 
-This repository contains the ASP.NET Core backend for the V1 custom form service. The current implementation includes the R3 PostgreSQL schema and the R4 Email/Password authentication and current-user APIs.
+This repository contains the ASP.NET Core backend for the V1 custom form service. The current implementation includes the R3 PostgreSQL schema, the R4 Email/Password authentication and current-user APIs, and the R5 foundational Form read/write APIs.
 
 ## Prerequisites
 
@@ -145,6 +145,21 @@ Invoke-WebRequest -Method Post -Uri http://localhost:5000/api/v1/auth/logout -We
 
 Delete the synthetic user from the local database after manual verification if you do not want to retain it. Google Authentication remains part of the formal V1 contract and is deferred to the separate G1 round; R4 does not expose a placeholder Google endpoint.
 
+## R5 Foundational Form APIs
+
+R5 provides these formal V1 endpoints:
+
+- `POST /api/v1/forms`
+- `GET /api/v1/forms`
+- `GET /api/v1/forms/{formId}`
+- `DELETE /api/v1/forms/{formId}`
+
+Create accepts a Draft Form and an optional nested Question/Option tree. The complete tree is validated as a Draft definition and persisted in one transaction: an invalid nested definition leaves no Form, Question, or Option row behind. Form IDs are server-generated; Create rejects client-provided IDs and other read-only fields.
+
+`GET /api/v1/forms` is a paginated Owner-only list, with `page`, `pageSize`, and optional `status` query parameters. It excludes soft-deleted Forms and sorts by `updatedAt DESC, id DESC`. Form Detail requires an active signed-in user: the Owner can read a Draft, while another member receives `404 FORM_NOT_FOUND` for that Draft. Published and Closed read behavior is implemented by later lifecycle rounds.
+
+Delete is Owner-only and performs a soft delete by setting `deleted_at`; it does not delete Question or Option rows. A deleted Form is excluded from the list and returns `404 FORM_NOT_FOUND` from Detail or a repeated Delete. Draft editing, lifecycle changes, result-visibility updates, submissions, counts, and statistics remain outside R5.
+
 ## Configuration
 
 The canonical reference is [Environment Configuration Design, Operations, and Audit](docs/configuration/environment-configuration.md). In short, ASP.NET Core loads shared JSON defaults, environment-specific JSON, Development User Secrets, OS environment variables, and command-line overrides. Hierarchical environment-variable keys use double underscores.
@@ -219,4 +234,4 @@ docker compose up -d --force-recreate postgres
 
 ## Current boundaries
 
-The database still contains the seven formal Domain Entities and the unchanged `InitialV1Schema` migration. R4 adds no migration or seed data. Google Authentication, Form behavior, Submission behavior, Statistics behavior, refresh tokens, email verification, password reset, sessions, and RBAC are not implemented in this round.
+The database still contains the seven formal Domain Entities and the unchanged `InitialV1Schema` migration. R5 adds no migration or seed data. Google Authentication, Draft definition PATCH, lifecycle changes, result-visibility updates, Submission behavior, Statistics behavior, refresh tokens, email verification, password reset, sessions, and RBAC are not implemented in this round.
