@@ -42,26 +42,26 @@
 ## 3. 全程執行協議
 
 1. **一次只執行明確指定的一個 Round。** 每次讀該 Round 相關正式規格、確認現有 repo 與 Git 狀態，列出本次 tasks／驗收方法；沒有歧義就執行，不把正常技術選擇一律變成等待批准的問題。
-2. 確認本 Round 範圍與暫緩項。遇到新需求，列為下一 Round 候選，不順手實作；完成當前 Round 後停止，等待專案負責人審查並指示下一 Round。**已明確授權的同一 Round 修正應繼續完成。**
+2. 確認本 Round 的範圍、工作階段與暫緩項。遇到新需求，列為後續候選，不順手實作；完成已授權階段後交付並停止，等待 Owner 明確指定下一階段或 Round。**已明確授權的同一 Round 修正應繼續完成；不自動推進驗收或下一 Round。**
 3. 允許選擇 Controller／Service 劃分、DI、測試框架、EF Mapping、Lock／Transaction 方案及相容版本；記錄重要取捨。不得改變 7 張表、18 個端點的正式契約、權限、錯誤優先序、資料語意。
-4. 開發期間照常執行 build 與必要自動化測試。凡該 Round 涉及 API 驗收，功能完成後必須在 `docs/test-plan/` 同時產出 `Rn_Acceptance_Test.md` 與 `Rn_Manual_Tests.http`。Markdown 須依執行順序整合目的、前置操作、curl 或 `.http` 請求範例、預期結果與「實際結果：待執行」，讓人工與 Codex 都可操作。`.http` 必須提供依序執行且附註解的人工請求；每則註解要標明對應 Markdown 測試編號、必要操作及預期結果，不得只是空白模板。兩份文件的測試編號、順序、合成測資、請求與預期結果必須一致。DB 查詢與其他非 HTTP 操作保留在 Markdown，並在 `.http` 對應位置註明應依 Markdown 執行。
+4. **開發交付**：依開發 skill 實作已授權 Round，照常執行必要 build／自動測試、檢查 diff、更新開發紀錄並提交已驗證變更；交付報告後停止於「開發完成、待驗收」。開發自測不需要驗收計畫核准，也不代替獨立 code review、AI 驗收或人工驗收。**驗收文件準備**只有在 Owner 另行要求時才使用 acceptance skill；不得因開發完成而自動開始。在此階段於 `docs/test-plan/` 同時準備 `Rn_Acceptance_Test.md` 與 `Rn_Manual_Tests.http`：Markdown 依執行順序包含目的、前置操作、請求、預期結果及「實際結果：待執行」；`.http` 的註解須標示對應測試編號、必要操作與預期結果。兩份文件的編號、順序、合成測資、請求與預期結果一致；DB 與非 HTTP 操作在 Markdown，並於 `.http` 指向該操作。交付兩份文件連結後停止待 Owner 審核，此階段不得執行驗收操作。
 5. 測試計畫優先覆蓋本 Round 主要功能、權限、DB 寫入與代表性錯誤。可暫緩細部邊界時，簡短記錄暫緩項；不得將其擴充為大量矩陣，也不得放寬正式規格。
-6. Codex 產出上述兩份測試文件後停止，交付 review 時必須同時提供兩份文件連結，等待專案負責人確認。確認後才依計畫執行，逐項記錄 PASS／FAIL／BLOCKED／未執行及必要證據；完成後再次停止，等待專案負責人確認驗收結果。只有此確認完成後，才可標記 Round `accepted`。
+6. **AI 驗收執行**僅依目前 Owner 已核准的成對計畫及明確執行授權進行；核准計畫在 Owner 指示清楚包含執行意圖時才同時授權執行。Owner 可以明確授權多個階段，但執行前的計畫核准 gate 仍保留。不得把文件準備、開發完成、一般回覆或結果已讀當成核准。逐項記錄實際 PASS／FAIL／BLOCKED／未執行及證據，交付後停止待人工驗收與 Owner 確認。**人工驗收與完成**：AI 與人工結果分開；只有 Owner 根據已記錄結果及同意的待處理事項明確確認通過後，才標記 Round `accepted`。
 7. 一般驗收沿用本機開發 DB，保留合成資料供後續 Round 使用，並恢復驗收期間暫時修改的狀態及設定。驗證從零建庫或其他破壞性重建時，才使用**專用、可丟棄的測試 volume／Compose project**；其 `down -v` 僅針對該測試資源。先檢查 `git status`；保護使用者的未提交修改、既有資料與 Secret，不做 force push、reset 或刪除真實開發 volume。
 8. 認證／資料庫密碼、JWT signing secret、Google credential 不提交。提供 `.env.example` 等不含秘密的範例；README 寫如何自行設定。使用者提供的測試資料如含個資或憑證，先確認可否存檔／提交；預設僅存合成 fixtures。
-9. 一個 Round 可有數個單一目的 commit，且每個 commit 對應已通過的開發驗證或已記錄的驗收結果；不要夾帶下一 Round。若 repo 未建、使用者既有變更無法安全隔離、驗證未通過或規格衝突，停止且說明原因，**不可偽稱已 commit**。R0 若只輸出讀書報告，可以不 commit。
-10. 每次交付回報：本 Round 結果／驗收表、主要變更及檔案、實跑命令與結果、失敗或未驗證事項、偏離規格的問題、commit SHA／Git 狀態、下個 Round 前置條件。驗收計畫 review 交付必須同時列出 Markdown 與 `.http` 的連結。不得自動進入下一 Round。
+9. 一個 Round 可有數個單一目的 commit，分別記錄開發、文件準備、實際執行或 Owner 確認；不要夾帶下一 Round、Secret 或使用者無關變更。驗證失敗時在已授權範圍修正／重跑，仍無法完成則回報實際未完成狀態；repo 未建、既有變更無法安全隔離或規格衝突時說明受影響工作與原因，**不可偽稱檢查通過或已 commit**。Review 修正須重跑受影響開發驗證並回報新提交；若使舊驗收計畫或結果失效，標示其已非現況證據，後續準備／執行仍須遵守階段與核准 gate，不自動重跑驗收。R0 若只輸出讀書報告，可以不 commit。
+10. 每次依已授權階段交付：本 Round 的開發報告／或驗收結果表、主要變更及檔案、實跑命令與結果、失敗或未驗證事項、偏離規格的問題、commit SHA／Git 狀態、後續前置條件。只有驗收文件準備交付須同時列出 Markdown 與 `.http` 連結；開發交付不要求建立驗收文件。不得自動進入下一階段或 Round。
 
 ### 建議的 Round 交付模板
 
 ```text
 Round: Rn／名稱
-Status: in progress / test plan pending review / acceptance pending owner confirmation / accepted / blocked
+Status: in progress / development verified（開發完成、待驗收） / test plan pending owner review / acceptance executing / acceptance results pending owner confirmation / accepted / blocked
 Scope completed: ...
 Key files: ...
 Development verification: build or automated test → observed result
-Acceptance plan: `docs/test-plan/Rn_Acceptance_Test.md` + `docs/test-plan/Rn_Manual_Tests.http`（both links; owner review status）
-Acceptance results: request or command → observed result（PASS／FAIL／BLOCKED／未執行）
+Acceptance plan: 未獲授權準備／或成對文件路徑與連結、Owner 核准狀態
+Acceptance results: 未執行／或已授權計畫的實際結果與證據（AI 與人工分開）
 Spec mapping: relevant document sections / endpoints
 Open issues or deviations: ...
 Commits: <SHA and subject> or why not committed
@@ -78,7 +78,7 @@ Next round: prerequisite only; not started
 | R3 | EF Core 與 7 表 Migration | 可從空庫重建正式 Schema | 驗收紀錄未存於 repo；不補造狀態 |
 | R4 | Email Auth 與 User | 註冊、登入、登出、本人資料／更新 | **accepted（2026-10-01，人工確認完成）**：[`R4_Acceptance_Test.md`](../test-plan/R4_Acceptance_Test.md)；[`R4_Manual_Tests.http`](../test-plan/R4_Manual_Tests.http) |
 | R5 | Form 基礎讀寫 | Create／List／Detail／Delete；安全邊界 | **accepted（2026-10-03，Owner 人工驗收確認通過；AI case 執行紀錄仍有缺口）**：[`R5_Acceptance_Test.md`](../test-plan/R5_Acceptance_Test.md)；[`R5_Manual_Tests.http`](../test-plan/R5_Manual_Tests.http) |
-| R6 | Draft Definition 與 Delta | 完整 Question／Option／Config 編輯與原子性 | **development verified，開發完成、待驗收（2026-10-03）**。有限型別化 Candidate／ChangeSet 重構完成；保留 Form lock、交易、驗證次序與 Option 同 ID／createdAt 原子 replacement。修正 Number 精確比較／實際 JSONB 邊界、Config 等值 no-op、欄位來源 path。依 Owner 授權在官方 SDK Docker Linux 實測：Form 61/61、全套 106/106 PASS，0 skipped，build 0 警告／0 錯誤；Windows 原生新測試仍未有成功執行證據。最新開發報告：[`R6_Candidate_Refactor_Development_Report.md`](R6_Candidate_Refactor_Development_Report.md)。未準備／執行驗收、未 accepted；下一階段等待 Owner 另行要求。 |
+| R6 | Draft Definition 與 Delta | 完整 Question／Option／Config 編輯與原子性 | **development verified，開發完成、待驗收（2026-10-03）**。保留有限型別化 Candidate／ChangeSet、Form lock／交易與 Option 原子 replacement。最新有限收尾先實測確認截止時間保存精度造成假變更，再局部修正；Linux build 0 警告／0 錯誤，精度 12/12、Form 73/73 PASS，0 skipped。本次僅重跑受影響測試；前次全套 106/106 是歷史開發證據，不冒稱本次全套已重跑。§3／6／7 已對齊 AGENTS.md。最新報告：[`R6_Closeout_Development_Report.md`](R6_Closeout_Development_Report.md)；前次重構：[`R6_Candidate_Refactor_Development_Report.md`](R6_Candidate_Refactor_Development_Report.md)。Windows 原生新版測試仍未確認；未準備／執行正式驗收、未 accepted，下一階段等待 Owner 另行要求。 |
 | R7 | Lifecycle 與 Result Policy | Publish／Close／Visibility、Freeze 與並行 | not started |
 | R8 | Submission | 全題型 Answer／Response、single／multiple、並行 | not started |
 | R9 | Latest 與 Respondent Count | 最新整份回覆與有效人數 | not started |
@@ -134,7 +134,9 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 
 **前次開發驗證（2026-10-03）**：已修正 PATCH 新增 Option 的一般文字 trim；新 Option 與既有 value 修改的同 ID replacement 均在完整 Candidate 驗證後、舊 key 刪除保存後才追蹤／插入。新增 6 個測試案例（2 個正規化、3 個 Owner 指定的混合操作、1 個第二次保存故障回滾），另保留原有競爭、value 交換／重用、錯誤 path 與 SQL 回歸測試。正式驗收尚未準備或執行；開發測試 PASS 不代表驗收 PASS。格式檢查另發現 Controller 既有 switch expression 縮排問題，未擴大修正，見前次開發報告。
 
-**最新開發進度（2026-10-03，有限 Candidate 重構完成）**：先重新實跑舊 Windows Form 16/16 與全套 61/61 PASS；新增 DLL 隨後被 Smart App Control 封鎖，Owner 手動執行亦總計 0。依 Owner 授權改以官方 SDK 10.0.400 Linux 容器跑同套測試，沒有降低安全原則或測試要求。先重現 8 個契約案例失敗，再修正 Number decimal 範圍／捨入誤判、Config 等值 no-op 與 sortOrder 欄位來源；另補零值極大指數的 DB 邊界重現／受控拒絕。契約測試共新增 39 案，必要修正階段全套 100/100 PASS，與重構分開提交。有限重構已完成「獨立型別化 Candidate → 正規化／完整驗證 → 差異 ChangeSet → EF 保存」，移除 Aggregate JSON 往返、字串 path 解析、Snapshot 與手動狀態管理；保留權限／Draft／Form lock／交易／驗證次序、延後 Option 追蹤與同 ID／createdAt replacement。新增重構安全 6 案、加強實際 SQL 欄位與三組混合操作精確回應比較；Save #2 與 commit 故障均實測完整回滾。最終 Form 61/61、全套 106/106 PASS，0 skipped；build 0 警告／0 錯誤，diff 檢查通過。PATCH 於交易內以 AsNoTracking 取得實際 DB 回應，commit 成功後才回傳；已明列此時間／JSONB 表示改善及必要修正的可觀察差異。Linux 結果不冒稱 Windows 原生執行結果，開發 PASS 不代表驗收 PASS。R6 可進入驗收文件準備，但本次依 AGENTS.md 停在開發交付，未準備／執行正式驗收，R7／G1 未開始。細節、命令、TRX 位置與未驗證事項見最新開發報告。
+**前次開發進度（2026-10-03，有限 Candidate 重構完成）**：先重新實跑舊 Windows Form 16/16 與全套 61/61 PASS；新增 DLL 隨後被 Smart App Control 封鎖，Owner 手動執行亦總計 0。依 Owner 授權改以官方 SDK 10.0.400 Linux 容器跑同套測試，沒有降低安全原則或測試要求。先重現 8 個契約案例失敗，再修正 Number decimal 範圍／捨入誤判、Config 等值 no-op 與 sortOrder 欄位來源；另補零值極大指數的 DB 邊界重現／受控拒絕。契約測試共新增 39 案，必要修正階段全套 100/100 PASS，與重構分開提交。有限重構已完成「獨立型別化 Candidate → 正規化／完整驗證 → 差異 ChangeSet → EF 保存」，移除 Aggregate JSON 往返、字串 path 解析、Snapshot 與手動狀態管理；保留權限／Draft／Form lock／交易／驗證次序、延後 Option 追蹤與同 ID／createdAt replacement。新增重構安全 6 案、加強實際 SQL 欄位與三組混合操作精確回應比較；Save #2 與 commit 故障均實測完整回滾。最終 Form 61/61、全套 106/106 PASS，0 skipped；build 0 警告／0 錯誤，diff 檢查通過。PATCH 於交易內以 AsNoTracking 取得實際 DB 回應，commit 成功後才回傳；已明列此時間／JSONB 表示改善及必要修正的可觀察差異。Linux 結果不冒稱 Windows 原生執行結果，開發 PASS 不代表驗收 PASS。該次停在開發交付，未準備／執行正式驗收，R7／G1 未開始。細節、命令、TRX 位置與未驗證事項見前次重構開發報告。
+
+**最新開發進度（2026-10-03，正式測試前有限收尾）**：保留 Candidate／ChangeSet 架構。新精度測試先以真實 Npgsql／PostgreSQL round-trip 確認假變更：12 案中 10 FAIL／2 PASS，含相同截止時間重送及僅差次微秒但保存值相同。ChangeSet 現以既有 Npgsql 10.0.3 的微秒編碼比較，保留 2000 年前後與 MinValue／MaxValue 的原保存行為，不改輸入格式／小數位限制／DB schema。修正後精度 12/12、受影響 Form 73/73 PASS，0 skipped；必要 build 0 警告／0 錯誤。DefinitionNumber 只將既有 PostgreSQL 17 限制值改為具名常數並補來源，不改數值範圍；後續 R8 Answer／R10 Statistics 須依 01 §3.3、05 §11.4 維持與 Validation／JSONB 一致的精確數值等值與排序，不能經 decimal／double 暗中捨入，本次僅登記、不實作。§3／6／7 已移除開發完成後自動準備／執行驗收的要求，明列四階段及 Owner gate。命令與證據見最新收尾開發報告；未重跑本次範圍外全套、未確認 Windows 原生新版測試。未準備／執行正式驗收、未 accepted、未啟動 R7；UUID／lock 時機等延後項目維持原決定。
 
 ### R7 — Publish／Close／Result Visibility
 
@@ -172,7 +174,16 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 
 ## 6. Commit、審查與停止機制
 
-每個 Round 狀態：`not started → in progress → development verified → committed → test plan pending owner review → acceptance executing → acceptance results pending owner confirmation → accepted`。開發期間的 build 與必要自動化測試不等待測試計畫 review；凡涉及 API 驗收，功能完成後，Codex 必須先提交／交付成對的 `Rn_Acceptance_Test.md` 與 `Rn_Manual_Tests.http`，並提供兩者連結後停止。專案負責人確認兩份文件後，Codex 才執行並逐項記錄結果；結果交付後再次停止，只有專案負責人確認結果才標記 `accepted`。若要求修正，Codex 僅修當 Round，重新執行受影響驗收並以額外 commit（或明確指定的方式）回報；不要以「上一 Round 已自測」代替任一 review。
+此流程依現行 AGENTS.md 的階段邊界執行；狀態順序描述依賴，不授權自動推進。每個 Round 的預設停止點為：
+
+| 階段 | 授權與狀態 | 交付及停止點 |
+| --- | --- | --- |
+| 開發交付 | Owner 指定 Round 開發／修正；`in progress → development verified` | 必要 build／自測／diff／文件與單一目的提交，回報 SHA／Git 狀態後停於「開發完成、待驗收」；不自動準備文件 |
+| 驗收文件準備 | Owner 另行要求；`test plan pending owner review` | 使用 acceptance skill 交付成對 Markdown／.http 後停止待審核；不執行驗收 |
+| AI 驗收執行 | 目前成對計畫已獲 Owner 核准，且有明確執行授權；`acceptance executing → acceptance results pending owner confirmation` | 只執行核准計畫、記錄實際結果及證據，交付後停止待人工驗收／Owner 確認 |
+| 人工驗收與完成 | Owner 根據已記錄 AI／人工結果及同意的待處理事項明確確認 | 分開保留 AI／人工紀錄，才標記 `accepted`；不自動開始下一 Round |
+
+Owner 可明確授權多階段，但不得省略執行前的計畫核准 gate。開發 build／自測不需要驗收計畫核准，其 PASS 不代表驗收 PASS，也不代替獨立 review。Commit 是各階段的版本化紀錄，不是進入下一階段的授權。Review 修正只處理已授權 Round，重跑受影響開發驗證；使舊驗收證據失效時先標示，再依 Owner 指示進入對應準備／執行階段，不自動重跑驗收。
 
 例子：`chore: initialize ASP.NET Core API`、`chore: add local PostgreSQL compose`、`feat(db): add initial V1 migration`、`feat(auth): implement password login`、`feat(forms): implement draft definition patch`。Commit message 表達功能，不能以 `feat: finish backend` 隱藏範圍；未通過的 Round 不能為了達成提交指標而製作虛假乾淨 commit。
 
@@ -187,19 +198,34 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
   `docs/specs/00`–`05` specifications before editing related behavior.
 - Execute only the implementation Round explicitly named in the user's request.
   During development, run the required build and automated tests, then commit and
-  report the verified current-Round changes.
-- For every API-acceptance Round, after development write both
+  report the verified current-Round changes. Stop at development delivery; do
+  not automatically prepare acceptance files, execute acceptance or start the
+  next Round. Development tests do not require acceptance-plan approval and do
+  not replace independent review, AI acceptance or manual acceptance.
+- Only when the Owner requests acceptance preparation, use the acceptance skill
+  to prepare both
   `docs/test-plan/Rn_Acceptance_Test.md` and
   `docs/test-plan/Rn_Manual_Tests.http`. The executable Markdown records
   purpose, prerequisites, curl or `.http` examples, expected results, and
   actual results. The commented `.http` companion follows the same test
   numbers, order, synthetic data, requests, and expected results; keep DB and
   other non-HTTP operations in Markdown and point to them from `.http`.
-  Provide links to both files and stop for owner review before executing them.
-- After the owner approves the plan, execute it and record each result and
-  evidence. Restore temporary state/configuration and retain synthetic local
-  data; stop again for owner confirmation. Mark the Round accepted only after
-  that confirmation.
+  Provide links to both files and stop for Owner review. Do not execute
+  acceptance operations during preparation.
+- Execute only the current Owner-approved paired plan with explicit execution
+  authorization. Plan approval authorizes execution only when the Owner's
+  instruction clearly includes that intent. Multi-phase authorization is
+  allowed, but the pre-execution approval gate remains. Do not infer approval
+  from preparation, development completion or acknowledgment of results.
+  Record actual results and evidence; restore temporary configuration and
+  retain synthetic acceptance fixtures. Deliver the AI execution report and
+  stop for manual acceptance and explicit Owner confirmation. Keep AI and
+  manual results separate; mark accepted only on that confirmation based on
+  recorded results and agreed outstanding work. Never equate development PASS
+  with acceptance PASS.
+- For authorized review fixes, repeat affected development verification and
+  report the new commit. Flag stale acceptance plans or results; any follow-up
+  acceptance work must retain the phase and approval gates.
 - Focus acceptance on the Round's main behavior, authorization, DB writes and
   representative errors. Record deferred fine-grained boundaries briefly; do
   not relax specs or replace them with large test matrices.
