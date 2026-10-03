@@ -2,7 +2,9 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -112,13 +114,16 @@ public sealed class CustomFormServiceApiFactory : WebApplicationFactory<Program>
 
     private readonly string _environment;
     private readonly IReadOnlyDictionary<string, string?> _overrides;
+    private readonly IReadOnlyList<IInterceptor> _interceptors;
 
     public CustomFormServiceApiFactory(
         string environment = "Development",
-        IReadOnlyDictionary<string, string?>? overrides = null)
+        IReadOnlyDictionary<string, string?>? overrides = null,
+        IReadOnlyList<IInterceptor>? interceptors = null)
     {
         _environment = environment;
         _overrides = overrides ?? new Dictionary<string, string?>();
+        _interceptors = interceptors ?? [];
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -145,6 +150,13 @@ public sealed class CustomFormServiceApiFactory : WebApplicationFactory<Program>
                 ["Jwt:SigningKey"] = JwtSigningKey
             });
             configuration.AddInMemoryCollection(_overrides);
+        });
+        builder.ConfigureServices(services =>
+        {
+            foreach (var interceptor in _interceptors)
+            {
+                services.AddSingleton(typeof(IInterceptor), interceptor);
+            }
         });
     }
 }

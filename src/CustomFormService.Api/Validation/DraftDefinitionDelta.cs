@@ -21,67 +21,65 @@ public static class DraftDefinitionDelta
         Form form,
         JsonElement questionsElement,
         DateTimeOffset now,
+        out IReadOnlyList<Option> deferredOptionReplacements,
         out IReadOnlyList<ApiErrorDetail> errors)
     {
-        var validationErrors = new List<ApiErrorDetail>();
         if (questionsElement.ValueKind != JsonValueKind.Array)
         {
+            deferredOptionReplacements = [];
             errors = [Invalid("questions", "Questions must be an array.")];
             return false;
         }
 
-        var seenQuestionIds = new HashSet<Guid>();
-        var index = 0;
-        foreach (var delta in questionsElement.EnumerateArray())
+        var validationErrors = new List<ApiErrorDetail>();
+        if (!TryReadDeltaItems(questionsElement, validationErrors, out var deltas) ||
+            !TryValidateOwnership(form, deltas, validationErrors) ||
+            !TryValidateDuplicates(deltas, validationErrors))
         {
-            var path = $"questions[{index}]";
-            if (!TryReadObject(delta, QuestionProperties, path, validationErrors, out var properties))
-            {
-                errors = validationErrors;
-                return false;
-            }
+            deferredOptionReplacements = [];
+            errors = validationErrors;
+            return false;
+        }
 
+        var questionRequestPaths = new Dictionary<Guid, string>();
+        var optionRequestPaths = new Dictionary<Guid, string>();
+        var replacements = new List<Option>();
+        foreach (var delta in deltas)
+        {
+            var properties = delta.Properties;
+            var path = delta.Path;
             if (!properties.TryGetValue("id", out var idElement))
             {
-                if (!TryCreateQuestion(database, form, properties, path, now, validationErrors))
+                if (!TryCreateQuestion(database, form, properties, path, now, optionRequestPaths, replacements, validationErrors, out var question))
                 {
+                    deferredOptionReplacements = [];
                     errors = validationErrors;
                     return false;
                 }
-            }
-            else if (!TryReadId(idElement, $"{path}.id", validationErrors, out var questionId))
-            {
-                errors = validationErrors;
-                return false;
-            }
-            else if (!seenQuestionIds.Add(questionId))
-            {
-                validationErrors.Add(Invalid($"{path}.id", "Question IDs must not be repeated within a patch."));
-                errors = validationErrors;
-                return false;
-            }
-            else if (form.Questions.SingleOrDefault(question => question.Id == questionId) is not { } question)
-            {
-                validationErrors.Add(new ApiErrorDetail($"{path}.id", "QUESTION_NOT_FOUND", "The question was not found in this form."));
-                errors = validationErrors;
-                return false;
-            }
-            else if (properties.Count == 1)
-            {
-                database.Remove(question);
-                form.Questions.Remove(question);
-            }
-            else if (!TryUpdateQuestion(database, question, properties, path, now, validationErrors))
-            {
-                errors = validationErrors;
-                return false;
-            }
 
-            index++;
+                questionRequestPaths.Add(question.Id, path);
+            }
+            else
+            {
+                _ = TryReadId(idElement, $"{path}.id", validationErrors, out var questionId);
+                var question = form.Questions.Single(question => question.Id == questionId);
+                if (properties.Count == 1)
+                {
+                    database.Remove(question);
+                    form.Questions.Remove(question);
+                }
+                else if (!TryUpdateQuestion(database, question, properties, path, now, optionRequestPaths, replacements, validationErrors))
+                {
+                    deferredOptionReplacements = [];
+                    errors = validationErrors;
+                    return false;
+                }
+
+                questionRequestPaths[question.Id] = path;
+            }
         }
 
         var currentQuestions = form.Questions
-            .Where(question => database.Entry(question).State != EntityState.Deleted)
             .ToArray();
         using var candidateDocument = JsonDocument.Parse(JsonSerializer.Serialize(currentQuestions.Select(question => new
         {
@@ -92,13 +90,13 @@ public static class DraftDefinitionDelta
             sortOrder = question.SortOrder,
             config = question.Config,
             options = question.Options
-                .Where(option => database.Entry(option).State != EntityState.Deleted)
                 .Select(option => new { label = option.Label, value = option.Value, sortOrder = option.SortOrder })
                 .ToArray()
         })));
         if (!FormDefinitionValidator.TryCreateQuestions(candidateDocument.RootElement, out var definitions, out var definitionErrors))
         {
-            errors = definitionErrors;
+            deferredOptionReplacements = [];
+            errors = MapCandidateErrors(definitionErrors, currentQuestions, questionRequestPaths, optionRequestPaths);
             return false;
         }
 
@@ -114,19 +112,311 @@ public static class DraftDefinitionDelta
             question.Config = definition.Config;
 
             var currentOptions = question.Options
-                .Where(option => database.Entry(option).State != EntityState.Deleted)
                 .ToArray();
             for (var optionIndex = 0; optionIndex < currentOptions.Length; optionIndex++)
             {
                 var option = currentOptions[optionIndex];
                 var optionDefinition = definition.Options[optionIndex];
                 option.Label = optionDefinition.Label;
-                option.Value = optionDefinition.Value;
+                if (replacements.Contains(option))
+                {
+                    option.Value = optionDefinition.Value;
+                }
                 option.SortOrder = optionDefinition.SortOrder;
             }
         }
 
+        deferredOptionReplacements = replacements;
         errors = [];
+        return true;
+    }
+
+    private static bool TryReadDeltaItems(
+        JsonElement questionsElement,
+        List<ApiErrorDetail> errors,
+        out IReadOnlyList<QuestionDelta> deltas)
+    {
+        var result = new List<QuestionDelta>();
+        var index = 0;
+        foreach (var item in questionsElement.EnumerateArray())
+        {
+            var path = $"questions[{index}]";
+            if (!TryReadObject(item, QuestionProperties, path, errors, out var properties) ||
+                !TryValidateQuestionShape(properties, path, errors))
+            {
+                deltas = [];
+                return false;
+            }
+
+            result.Add(new QuestionDelta(path, properties));
+            index++;
+        }
+
+        deltas = result;
+        return true;
+    }
+
+    private static bool TryValidateQuestionShape(
+        IReadOnlyDictionary<string, JsonElement> properties,
+        string path,
+        List<ApiErrorDetail> errors)
+    {
+        if (properties.TryGetValue("id", out var idElement) &&
+            !TryReadId(idElement, $"{path}.id", errors, out _))
+        {
+            return false;
+        }
+
+        if (!properties.ContainsKey("id") &&
+            (!Require(properties, "type", path, errors) ||
+             !Require(properties, "title", path, errors) ||
+             !Require(properties, "sortOrder", path, errors)))
+        {
+            return false;
+        }
+
+        if ((properties.Count > 1 || !properties.ContainsKey("id")) &&
+            !TryReadQuestionValues(properties, path, errors, out _))
+        {
+            return false;
+        }
+
+        if (!properties.TryGetValue("options", out var options))
+        {
+            return true;
+        }
+
+        var optionIndex = 0;
+        foreach (var option in options.EnumerateArray())
+        {
+            var optionPath = $"{path}.options[{optionIndex}]";
+            if (!TryReadObject(option, OptionProperties, optionPath, errors, out var optionProperties) ||
+                !TryValidateOptionShape(optionProperties, optionPath, errors))
+            {
+                return false;
+            }
+
+            optionIndex++;
+        }
+
+        return true;
+    }
+
+    private static bool TryValidateOptionShape(
+        IReadOnlyDictionary<string, JsonElement> properties,
+        string path,
+        List<ApiErrorDetail> errors)
+    {
+        if (properties.TryGetValue("id", out var idElement) &&
+            !TryReadId(idElement, $"{path}.id", errors, out _))
+        {
+            return false;
+        }
+
+        if (!properties.ContainsKey("id") &&
+            (!Require(properties, "label", path, errors) ||
+             !Require(properties, "value", path, errors) ||
+             !Require(properties, "sortOrder", path, errors)))
+        {
+            return false;
+        }
+
+        return (properties.Count == 1 && properties.ContainsKey("id")) ||
+               TryReadOptionValues(properties, path, errors, out _);
+    }
+
+    private static bool TryValidateOwnership(
+        Form form,
+        IReadOnlyList<QuestionDelta> deltas,
+        List<ApiErrorDetail> errors)
+    {
+        foreach (var delta in deltas)
+        {
+            var properties = delta.Properties;
+            if (!properties.TryGetValue("id", out var idElement))
+            {
+                if (properties.TryGetValue("options", out var newQuestionOptions))
+                {
+                    foreach (var option in newQuestionOptions.EnumerateArray().Select((element, index) => (element, index)))
+                    {
+                        if (option.element.TryGetProperty("id", out _))
+                        {
+                            errors.Add(new ApiErrorDetail(
+                                $"{delta.Path}.options[{option.index}].id",
+                                "OPTION_NOT_FOUND",
+                                "The option was not found in this question."));
+                            return false;
+                        }
+                    }
+                }
+
+                continue;
+            }
+
+            _ = TryReadId(idElement, $"{delta.Path}.id", errors, out var questionId);
+            if (form.Questions.SingleOrDefault(question => question.Id == questionId) is not { } question)
+            {
+                errors.Add(new ApiErrorDetail($"{delta.Path}.id", "QUESTION_NOT_FOUND", "The question was not found in this form."));
+                return false;
+            }
+
+            if (!properties.TryGetValue("options", out var options))
+            {
+                continue;
+            }
+
+            foreach (var option in options.EnumerateArray().Select((element, index) => (element, index)))
+            {
+                if (!option.element.TryGetProperty("id", out var optionIdElement))
+                {
+                    continue;
+                }
+
+                _ = TryReadId(optionIdElement, $"{delta.Path}.options[{option.index}].id", errors, out var optionId);
+                if (question.Options.All(currentOption => currentOption.Id != optionId))
+                {
+                    errors.Add(new ApiErrorDetail(
+                        $"{delta.Path}.options[{option.index}].id",
+                        "OPTION_NOT_FOUND",
+                        "The option was not found in this question."));
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private static bool TryValidateDuplicates(
+        IReadOnlyList<QuestionDelta> deltas,
+        List<ApiErrorDetail> errors)
+    {
+        var questionIds = new HashSet<Guid>();
+        foreach (var delta in deltas)
+        {
+            if (delta.Properties.TryGetValue("id", out var questionIdElement))
+            {
+                _ = TryReadId(questionIdElement, $"{delta.Path}.id", errors, out var questionId);
+                if (!questionIds.Add(questionId))
+                {
+                    errors.Add(Invalid($"{delta.Path}.id", "Question IDs must not be repeated within a patch."));
+                    return false;
+                }
+            }
+
+            if (!delta.Properties.TryGetValue("options", out var options))
+            {
+                continue;
+            }
+
+            var optionIds = new HashSet<Guid>();
+            foreach (var option in options.EnumerateArray().Select((element, index) => (element, index)))
+            {
+                if (!option.element.TryGetProperty("id", out var optionIdElement))
+                {
+                    continue;
+                }
+
+                _ = TryReadId(optionIdElement, $"{delta.Path}.options[{option.index}].id", errors, out var optionId);
+                if (!optionIds.Add(optionId))
+                {
+                    errors.Add(Invalid($"{delta.Path}.options[{option.index}].id", "Option IDs must not be repeated within a patch."));
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private static IReadOnlyList<ApiErrorDetail> MapCandidateErrors(
+        IReadOnlyList<ApiErrorDetail> candidateErrors,
+        IReadOnlyList<Question> currentQuestions,
+        IReadOnlyDictionary<Guid, string> questionRequestPaths,
+        IReadOnlyDictionary<Guid, string> optionRequestPaths) =>
+        candidateErrors
+            .Select(error => error with
+            {
+                Path = MapCandidatePath(error, currentQuestions, questionRequestPaths, optionRequestPaths)
+            })
+            .ToArray();
+
+    private static string MapCandidatePath(
+        ApiErrorDetail error,
+        IReadOnlyList<Question> currentQuestions,
+        IReadOnlyDictionary<Guid, string> questionRequestPaths,
+        IReadOnlyDictionary<Guid, string> optionRequestPaths)
+    {
+        if (!TryTakeIndexedPath(error.Path, "questions[", out var questionIndex, out var questionTail) ||
+            questionIndex >= currentQuestions.Count)
+        {
+            return error.Path;
+        }
+
+        var question = currentQuestions[questionIndex];
+        if (TryTakeIndexedPath(questionTail, ".options[", out var optionIndex, out var optionTail))
+        {
+            var currentOptions = question.Options
+                .ToArray();
+            if (optionIndex >= currentOptions.Length)
+            {
+                return error.Path;
+            }
+
+            var option = currentOptions[optionIndex];
+            if (optionRequestPaths.TryGetValue(option.Id, out var optionPath))
+            {
+                return optionPath + optionTail;
+            }
+
+            var matchingOption = currentOptions.FirstOrDefault(currentOption =>
+                optionRequestPaths.ContainsKey(currentOption.Id) &&
+                (error.Code == "DUPLICATE_SORT_ORDER" && currentOption.SortOrder == option.SortOrder ||
+                 error.Code == "INVALID_OPTION" && string.Equals(currentOption.Value, option.Value, StringComparison.Ordinal)));
+            if (matchingOption is not null && optionRequestPaths.TryGetValue(matchingOption.Id, out optionPath))
+            {
+                return optionPath + optionTail;
+            }
+
+            return questionRequestPaths.TryGetValue(question.Id, out var questionPath)
+                ? questionPath + questionTail
+                : error.Path;
+        }
+
+        if (questionRequestPaths.TryGetValue(question.Id, out var requestPath))
+        {
+            return requestPath + questionTail;
+        }
+
+        if (error.Code == "DUPLICATE_SORT_ORDER")
+        {
+            var matchingQuestion = currentQuestions.FirstOrDefault(currentQuestion =>
+                questionRequestPaths.ContainsKey(currentQuestion.Id) && currentQuestion.SortOrder == question.SortOrder);
+            if (matchingQuestion is not null && questionRequestPaths.TryGetValue(matchingQuestion.Id, out requestPath))
+            {
+                return requestPath + questionTail;
+            }
+        }
+
+        return error.Path;
+    }
+
+    private static bool TryTakeIndexedPath(string path, string prefix, out int index, out string tail)
+    {
+        index = default;
+        tail = string.Empty;
+        if (!path.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var closingBracket = path.IndexOf(']', prefix.Length);
+        if (closingBracket <= prefix.Length || !int.TryParse(path[prefix.Length..closingBracket], out index))
+        {
+            return false;
+        }
+
+        tail = path[(closingBracket + 1)..];
         return true;
     }
 
@@ -136,17 +426,21 @@ public static class DraftDefinitionDelta
         IReadOnlyDictionary<string, JsonElement> properties,
         string path,
         DateTimeOffset now,
-        List<ApiErrorDetail> errors)
+        Dictionary<Guid, string> optionRequestPaths,
+        List<Option> replacements,
+        List<ApiErrorDetail> errors,
+        out Question question)
     {
         if (!Require(properties, "type", path, errors) ||
             !Require(properties, "title", path, errors) ||
             !Require(properties, "sortOrder", path, errors) ||
             !TryReadQuestionValues(properties, path, errors, out var values))
         {
+            question = default!;
             return false;
         }
 
-        var question = new Question
+        question = new Question
         {
             Id = Guid.NewGuid(),
             FormId = form.Id,
@@ -161,7 +455,15 @@ public static class DraftDefinitionDelta
         };
         form.Questions.Add(question);
         database.Add(question);
-        return TryApplyOptions(database, question, values.Options.GetValueOrDefault(EmptyArray), $"{path}.options", now, errors);
+        return TryApplyOptions(
+            database,
+            question,
+            values.Options.GetValueOrDefault(EmptyArray),
+            $"{path}.options",
+            now,
+            optionRequestPaths,
+            replacements,
+            errors);
     }
 
     private static bool TryUpdateQuestion(
@@ -170,6 +472,8 @@ public static class DraftDefinitionDelta
         IReadOnlyDictionary<string, JsonElement> properties,
         string path,
         DateTimeOffset now,
+        Dictionary<Guid, string> optionRequestPaths,
+        List<Option> replacements,
         List<ApiErrorDetail> errors)
     {
         if (!TryReadQuestionValues(properties, path, errors, out var values, question))
@@ -217,7 +521,15 @@ public static class DraftDefinitionDelta
         }
 
         return values.Options is null ||
-            TryApplyOptions(database, question, values.Options.GetValueOrDefault(), $"{path}.options", now, errors);
+            TryApplyOptions(
+                database,
+                question,
+                values.Options.GetValueOrDefault(),
+                $"{path}.options",
+                now,
+                optionRequestPaths,
+                replacements,
+                errors);
     }
 
     private static bool TryReadQuestionValues(
@@ -326,6 +638,8 @@ public static class DraftDefinitionDelta
         JsonElement optionsElement,
         string path,
         DateTimeOffset now,
+        Dictionary<Guid, string> optionRequestPaths,
+        List<Option> replacements,
         List<ApiErrorDetail> errors)
     {
         var seenOptionIds = new HashSet<Guid>();
@@ -360,6 +674,7 @@ public static class DraftDefinitionDelta
                 };
                 question.Options.Add(option);
                 database.Add(option);
+                optionRequestPaths.Add(option.Id, itemPath);
             }
             else if (!TryReadId(idElement, $"{itemPath}.id", errors, out var optionId))
             {
@@ -386,9 +701,31 @@ public static class DraftDefinitionDelta
             }
             else
             {
-                option.Label = values.Label;
-                option.Value = values.Value;
-                option.SortOrder = values.SortOrder;
+                if (string.Equals(option.Value, values.Value, StringComparison.Ordinal))
+                {
+                    option.Label = values.Label;
+                    option.SortOrder = values.SortOrder;
+                    optionRequestPaths[option.Id] = itemPath;
+                }
+                else
+                {
+                    var replacement = new Option
+                    {
+                        Id = option.Id,
+                        QuestionId = option.QuestionId,
+                        Label = values.Label,
+                        Value = values.Value,
+                        SortOrder = values.SortOrder,
+                        CreatedAt = option.CreatedAt,
+                        UpdatedAt = option.UpdatedAt,
+                        Question = question
+                    };
+                    database.Remove(option);
+                    question.Options.Remove(option);
+                    question.Options.Add(replacement);
+                    replacements.Add(replacement);
+                    optionRequestPaths[replacement.Id] = itemPath;
+                }
             }
 
             index++;
@@ -544,6 +881,8 @@ public static class DraftDefinitionDelta
         JsonElement Config,
         JsonElement? Options);
 
+    private sealed record QuestionDelta(string Path, IReadOnlyDictionary<string, JsonElement> Properties);
+
     private readonly record struct OptionValues(string Label, string Value, int SortOrder);
 }
 
@@ -564,22 +903,29 @@ public sealed class DefinitionSnapshot
 
     public void UpdateChangedTimestamps(DbContext database, Form form, DateTimeOffset now)
     {
-        foreach (var question in form.Questions.Where(question => database.Entry(question).State != EntityState.Deleted))
+        foreach (var question in form.Questions)
         {
             if (!_questions.TryGetValue(question.Id, out var before) || !string.Equals(before, SerializeQuestion(question), StringComparison.Ordinal))
             {
                 question.UpdatedAt = now;
+                var entry = database.Entry(question);
+                if (entry.State == EntityState.Unchanged)
+                {
+                    entry.State = EntityState.Modified;
+                }
             }
         }
 
-        foreach (var option in form.Questions
-                     .Where(question => database.Entry(question).State != EntityState.Deleted)
-                     .SelectMany(question => question.Options)
-                     .Where(option => database.Entry(option).State != EntityState.Deleted))
+        foreach (var option in form.Questions.SelectMany(question => question.Options))
         {
             if (!_options.TryGetValue(option.Id, out var before) || !string.Equals(before, SerializeOption(option), StringComparison.Ordinal))
             {
                 option.UpdatedAt = now;
+                var entry = database.Entry(option);
+                if (entry.State == EntityState.Unchanged)
+                {
+                    entry.State = EntityState.Modified;
+                }
             }
         }
     }

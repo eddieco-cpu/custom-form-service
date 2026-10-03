@@ -1,8 +1,11 @@
+using System.Collections.Concurrent;
+using System.Data.Common;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CustomFormService.Api.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -448,6 +451,269 @@ public sealed class FormEndpointsTests
         await AssertErrorAsync(published, HttpStatusCode.Conflict, "FORM_NOT_EDITABLE");
     }
 
+    [TestMethod]
+    public async Task Patch_uses_top_level_validation_and_request_paths_before_resource_delta_errors()
+    {
+        var owner = await CreateMemberAsync("R6 Validation Owner");
+        var create = await SendWithCookieAsync(
+            HttpMethod.Post,
+            "/api/v1/forms",
+            owner.Cookie,
+            JsonContent.Create(new
+            {
+                title = "Validation paths",
+                questions = new object[]
+                {
+                    new { type = "text", title = "First", sortOrder = 0 },
+                    new
+                    {
+                        type = "single_choice",
+                        title = "Second",
+                        sortOrder = 1,
+                        options = new[] { new { label = "Original", value = "original", sortOrder = 0 } }
+                    }
+                }
+            }));
+        using var created = await ReadJsonAsync(create);
+        var formId = created.RootElement.GetProperty("id").GetGuid();
+        var secondQuestionId = created.RootElement.GetProperty("questions")[1].GetProperty("id").GetGuid();
+        var secondOptionId = created.RootElement.GetProperty("questions")[1].GetProperty("options")[0].GetProperty("id").GetGuid();
+
+        var nullQuestions = await SendWithCookieAsync(
+            HttpMethod.Patch,
+            $"/api/v1/forms/{formId}",
+            owner.Cookie,
+            JsonContent.Create(new { questions = (object?)null }));
+        await AssertErrorAsync(nullQuestions, HttpStatusCode.BadRequest, "VALIDATION_ERROR");
+
+        var nonArrayQuestions = await SendWithCookieAsync(
+            HttpMethod.Patch,
+            $"/api/v1/forms/{formId}",
+            owner.Cookie,
+            JsonContent.Create(new { questions = "not-an-array" }));
+        await AssertErrorAsync(nonArrayQuestions, HttpStatusCode.BadRequest, "VALIDATION_ERROR");
+
+        var invalidTitle = await SendWithCookieAsync(
+            HttpMethod.Patch,
+            $"/api/v1/forms/{formId}",
+            owner.Cookie,
+            JsonContent.Create(new { questions = new[] { new { id = secondQuestionId, title = "   " } } }));
+        await AssertErrorAsync(invalidTitle, HttpStatusCode.BadRequest, "FORM_DEFINITION_INVALID");
+        using (var error = await ReadJsonAsync(invalidTitle))
+        {
+            Assert.AreEqual("questions[0].title", error.RootElement.GetProperty("error").GetProperty("details")[0].GetProperty("path").GetString());
+        }
+
+        var invalidOptionLabel = await SendWithCookieAsync(
+            HttpMethod.Patch,
+            $"/api/v1/forms/{formId}",
+            owner.Cookie,
+            JsonContent.Create(new
+            {
+                questions = new[]
+                {
+                    new { id = secondQuestionId, options = new[] { new { id = secondOptionId, label = "   " } } }
+                }
+            }));
+        await AssertErrorAsync(invalidOptionLabel, HttpStatusCode.BadRequest, "FORM_DEFINITION_INVALID");
+        using (var error = await ReadJsonAsync(invalidOptionLabel))
+        {
+            Assert.AreEqual("questions[0].options[0].label", error.RootElement.GetProperty("error").GetProperty("details")[0].GetProperty("path").GetString());
+        }
+
+        var shapeBeforeOwnership = await SendWithCookieAsync(
+            HttpMethod.Patch,
+            $"/api/v1/forms/{formId}",
+            owner.Cookie,
+            JsonContent.Create(new
+            {
+                questions = new object[]
+                {
+                    new { id = Guid.NewGuid() },
+                    "not-a-question-object"
+                }
+            }));
+        await AssertErrorAsync(shapeBeforeOwnership, HttpStatusCode.BadRequest, "FORM_DEFINITION_INVALID");
+        using (var error = await ReadJsonAsync(shapeBeforeOwnership))
+        {
+            Assert.AreEqual("questions[1]", error.RootElement.GetProperty("error").GetProperty("details")[0].GetProperty("path").GetString());
+        }
+    }
+
+    [TestMethod]
+    public async Task Concurrent_patches_are_serialized_before_candidate_validation()
+    {
+        var owner = await CreateMemberAsync("R6 Concurrent Owner");
+        var create = await SendWithCookieAsync(
+            HttpMethod.Post,
+            "/api/v1/forms",
+            owner.Cookie,
+            JsonContent.Create(new
+            {
+                title = "Concurrent draft",
+                questions = new[]
+                {
+                    new { type = "text", title = "First", sortOrder = 0 },
+                    new { type = "text", title = "Second", sortOrder = 1 }
+                }
+            }));
+        using var created = await ReadJsonAsync(create);
+        var formId = created.RootElement.GetProperty("id").GetGuid();
+        var firstQuestionId = created.RootElement.GetProperty("questions")[0].GetProperty("id").GetGuid();
+        var secondQuestionId = created.RootElement.GetProperty("questions")[1].GetProperty("id").GetGuid();
+
+        await using var lockConnection = new NpgsqlConnection(BuildConnectionString());
+        await lockConnection.OpenAsync();
+        await using var lockTransaction = await lockConnection.BeginTransactionAsync();
+        await using (var lockCommand = new NpgsqlCommand(
+                         "SELECT 1 FROM forms WHERE id = @formId FOR UPDATE;",
+                         lockConnection,
+                         lockTransaction))
+        {
+            lockCommand.Parameters.AddWithValue("formId", formId);
+            Assert.AreEqual(1, await lockCommand.ExecuteScalarAsync());
+        }
+
+        var firstPatch = SendWithCookieAsync(
+            HttpMethod.Patch,
+            $"/api/v1/forms/{formId}",
+            owner.Cookie,
+            JsonContent.Create(new { questions = new[] { new { id = firstQuestionId, sortOrder = 2 } } }));
+        var secondPatch = SendWithCookieAsync(
+            HttpMethod.Patch,
+            $"/api/v1/forms/{formId}",
+            owner.Cookie,
+            JsonContent.Create(new { questions = new[] { new { id = secondQuestionId, sortOrder = 2 } } }));
+
+        await Task.Delay(200);
+        await lockTransaction.CommitAsync();
+        var responses = await Task.WhenAll(firstPatch, secondPatch);
+        var statusCodes = responses.Select(response => response.StatusCode).OrderBy(status => status).ToArray();
+        CollectionAssert.AreEqual(new[] { HttpStatusCode.OK, HttpStatusCode.BadRequest }, statusCodes);
+        foreach (var response in responses.Where(response => response.StatusCode == HttpStatusCode.BadRequest))
+        {
+            using var error = await ReadJsonAsync(response);
+            Assert.AreEqual("FORM_DEFINITION_INVALID", error.RootElement.GetProperty("error").GetProperty("code").GetString());
+            Assert.AreEqual("DUPLICATE_SORT_ORDER", error.RootElement.GetProperty("error").GetProperty("details")[0].GetProperty("code").GetString());
+        }
+
+        var detail = await SendWithCookieAsync(HttpMethod.Get, $"/api/v1/forms/{formId}", owner.Cookie);
+        using var detailBody = await ReadJsonAsync(detail);
+        var sortOrders = detailBody.RootElement.GetProperty("questions").EnumerateArray().Select(question => question.GetProperty("sortOrder").GetInt32()).ToArray();
+        Assert.AreEqual(sortOrders.Length, sortOrders.Distinct().Count());
+        Assert.IsTrue(sortOrders.Contains(2));
+    }
+
+    [TestMethod]
+    public async Task Patch_allows_option_value_swap_and_reuse_after_delete()
+    {
+        var owner = await CreateMemberAsync("R6 Option Owner");
+        var create = await SendWithCookieAsync(
+            HttpMethod.Post,
+            "/api/v1/forms",
+            owner.Cookie,
+            JsonContent.Create(new
+            {
+                title = "Option values",
+                questions = new[]
+                {
+                    new
+                    {
+                        type = "single_choice",
+                        title = "Choice",
+                        sortOrder = 0,
+                        options = new[]
+                        {
+                            new { label = "Alpha", value = "alpha", sortOrder = 0 },
+                            new { label = "Beta", value = "beta", sortOrder = 1 }
+                        }
+                    }
+                }
+            }));
+        using var created = await ReadJsonAsync(create);
+        var formId = created.RootElement.GetProperty("id").GetGuid();
+        var question = created.RootElement.GetProperty("questions")[0];
+        var questionId = question.GetProperty("id").GetGuid();
+        var alphaOptionId = question.GetProperty("options")[0].GetProperty("id").GetGuid();
+        var betaOptionId = question.GetProperty("options")[1].GetProperty("id").GetGuid();
+
+        var swap = await SendWithCookieAsync(
+            HttpMethod.Patch,
+            $"/api/v1/forms/{formId}",
+            owner.Cookie,
+            JsonContent.Create(new
+            {
+                questions = new[]
+                {
+                    new
+                    {
+                        id = questionId,
+                        options = new[]
+                        {
+                            new { id = alphaOptionId, value = " beta " },
+                            new { id = betaOptionId, value = " alpha " }
+                        }
+                    }
+                }
+            }));
+        Assert.AreEqual(HttpStatusCode.OK, swap.StatusCode, await swap.Content.ReadAsStringAsync());
+
+        var replace = await SendWithCookieAsync(
+            HttpMethod.Patch,
+            $"/api/v1/forms/{formId}",
+            owner.Cookie,
+            JsonContent.Create(new
+            {
+                questions = new[]
+                {
+                    new
+                    {
+                        id = questionId,
+                        options = new object[]
+                        {
+                            new { id = betaOptionId },
+                            new { label = "Replacement", value = "alpha", sortOrder = 1 }
+                        }
+                    }
+                }
+            }));
+        Assert.AreEqual(HttpStatusCode.OK, replace.StatusCode, await replace.Content.ReadAsStringAsync());
+        using var replacement = await ReadJsonAsync(replace);
+        var values = replacement.RootElement.GetProperty("questions")[0].GetProperty("options").EnumerateArray().Select(option => option.GetProperty("value").GetString()).ToArray();
+        CollectionAssert.AreEquivalent(new[] { "beta", "alpha" }, values);
+    }
+
+    [TestMethod]
+    public async Task Patch_does_not_update_untouched_options_after_candidate_validation()
+    {
+        var capture = new SqlCaptureInterceptor();
+        _client.Dispose();
+        await _factory.DisposeAsync();
+        _factory = new CustomFormServiceApiFactory(interceptors: [capture]);
+        _client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            HandleCookies = false,
+            AllowAutoRedirect = false
+        });
+
+        var owner = await CreateMemberAsync("R6 SQL Owner");
+        var formId = await CreateNestedFormAsync(owner.Cookie, "SQL capture");
+        var detail = await SendWithCookieAsync(HttpMethod.Get, $"/api/v1/forms/{formId}", owner.Cookie);
+        using var detailBody = await ReadJsonAsync(detail);
+        var questionId = detailBody.RootElement.GetProperty("questions")[0].GetProperty("id").GetGuid();
+
+        capture.Clear();
+        var patch = await SendWithCookieAsync(
+            HttpMethod.Patch,
+            $"/api/v1/forms/{formId}",
+            owner.Cookie,
+            JsonContent.Create(new { questions = new[] { new { id = questionId, title = "Renamed" } } }));
+        Assert.AreEqual(HttpStatusCode.OK, patch.StatusCode, await patch.Content.ReadAsStringAsync());
+
+        Assert.IsTrue(capture.Commands.Any(command => command.Contains("UPDATE questions", StringComparison.OrdinalIgnoreCase)));
+        Assert.IsFalse(capture.Commands.Any(command => command.Contains("UPDATE options", StringComparison.OrdinalIgnoreCase)));
+    }
+
     private async Task<TestMember> CreateMemberAsync(string displayName)
     {
         var email = $"r5-{Guid.NewGuid():N}@example.test";
@@ -536,6 +802,40 @@ public sealed class FormEndpointsTests
 
     private string BuildConnectionString() =>
         _factory.Services.GetRequiredService<IOptions<PostgreSqlOptions>>().Value.BuildConnectionString();
+
+    private sealed class SqlCaptureInterceptor : DbCommandInterceptor
+    {
+        private readonly ConcurrentQueue<string> _commands = new();
+
+        public IReadOnlyCollection<string> Commands => _commands.ToArray();
+
+        public void Clear()
+        {
+            while (_commands.TryDequeue(out _))
+            {
+            }
+        }
+
+        public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+            DbCommand command,
+            CommandEventData eventData,
+            InterceptionResult<DbDataReader> result,
+            CancellationToken cancellationToken = default)
+        {
+            _commands.Enqueue(command.CommandText);
+            return base.ReaderExecutingAsync(command, eventData, result, cancellationToken);
+        }
+
+        public override ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(
+            DbCommand command,
+            CommandEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            _commands.Enqueue(command.CommandText);
+            return base.NonQueryExecutingAsync(command, eventData, result, cancellationToken);
+        }
+    }
 
     private sealed record TestMember(string Email, Guid Id, string Cookie);
 }

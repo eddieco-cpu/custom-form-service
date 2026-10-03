@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Data;
 using System.Text.Json;
 using CustomFormService.Api.Authentication;
 using CustomFormService.Api.Contracts.Errors;
@@ -238,11 +239,14 @@ public sealed class FormsController(
             return ApiErrors.Validation([RequestJson.Invalid("body", "The request body must be a JSON object.")]);
         }
 
-        var form = await LoadEditableFormAsync(id, cancellationToken);
-        if (form is null)
+        await using var transaction = await database.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
+        if (!await FormAggregateLock.TryAcquireActiveFormAsync(database, id, cancellationToken))
         {
             return FormNotFound();
         }
+
+        var form = await LoadEditableFormAsync(id, cancellationToken)
+            ?? throw new InvalidOperationException("The locked form could not be loaded.");
 
         if (form.UserId != RequiredCurrentUser().Id)
         {
@@ -265,8 +269,14 @@ public sealed class FormsController(
             return ApiErrors.Validation(shapeErrors);
         }
 
+        if (properties.TryGetValue("questions", out var suppliedQuestions) && suppliedQuestions.ValueKind != JsonValueKind.Array)
+        {
+            return ApiErrors.Validation([RequestJson.Invalid("questions", "Questions must be an array.")]);
+        }
+
         var now = timeProvider.GetUtcNow();
         var snapshot = DraftDefinitionDelta.Capture(form);
+        IReadOnlyList<Option> deferredOptionReplacements = [];
         if (!TryApplyFormPatch(properties, form, out var fieldErrors))
         {
             return ApiErrors.Validation(fieldErrors);
@@ -278,6 +288,7 @@ public sealed class FormsController(
                 form,
                 questionsElement,
                 now,
+                out deferredOptionReplacements,
                 out var definitionErrors))
         {
             return ApiErrors.Result(
@@ -292,10 +303,20 @@ public sealed class FormsController(
             return Ok(FormDetailResponse.From(form));
         }
 
-        form.UpdatedAt = now;
-        snapshot.UpdateChangedTimestamps(database, form, now);
-        await using var transaction = await database.Database.BeginTransactionAsync(cancellationToken);
-        await database.SaveChangesAsync(cancellationToken);
+        var autoDetectChanges = database.ChangeTracker.AutoDetectChangesEnabled;
+        database.ChangeTracker.AutoDetectChangesEnabled = false;
+        try
+        {
+            form.UpdatedAt = now;
+            database.Entry(form).State = EntityState.Modified;
+            snapshot.UpdateChangedTimestamps(database, form, now);
+            await OptionValueTransitionWriter.SaveAsync(database, deferredOptionReplacements, cancellationToken);
+        }
+        finally
+        {
+            database.ChangeTracker.AutoDetectChangesEnabled = autoDetectChanges;
+        }
+
         await transaction.CommitAsync(cancellationToken);
         return Ok(FormDetailResponse.From(form));
     }

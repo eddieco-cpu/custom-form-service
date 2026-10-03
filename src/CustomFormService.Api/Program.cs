@@ -6,6 +6,8 @@ using CustomFormService.Api.Middleware;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,6 +50,7 @@ builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =
 {
     var postgres = serviceProvider.GetRequiredService<IOptions<PostgreSqlOptions>>().Value;
     options.UseNpgsql(postgres.BuildConnectionString(), PostgreSqlEnumMappings.Configure);
+    options.AddInterceptors(serviceProvider.GetServices<IInterceptor>());
 });
 builder.Services
     .AddHealthChecks()
