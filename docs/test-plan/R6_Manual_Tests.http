@@ -1,6 +1,8 @@
 # R6 sequential companion to R6_Acceptance_Test.md.
 # Owner approved commit 034a0be and explicitly authorized AI execution; completed 2026-10-04.
-# AI: 56/56 HTTP PASS; Windows full 118/118 PASS; manual: 待執行. Details in Markdown.
+# R6 accepted 2026-10-04: Owner reviewed AI evidence commit 81b64f3 and explicitly confirmed acceptance.
+# AI: 56/56 HTTP PASS; Windows native API PASS; Windows full 118/118 PASS; manual: 未執行.
+# Owner confirmation is based on submitted AI evidence/review; no manual PASS. No rerun in closeout.
 # Read Markdown prerequisites, DB snapshots, startup/full regression, lifecycle fixture
 # setup, concurrency harness and cleanup. Do not run all requests blindly.
 # Keep retained R4 members/R5 Forms; each independent run uses a fresh matching runId.
@@ -49,7 +51,7 @@
 # R6-01a — 200；body 為 {"status":"healthy"}。
 # Prerequisite: complete preceding cases and Markdown R6-01 operations.
 # Identity: No Cookie.
-# AI actual: PASS：200；工程回應／OpenAPI PATCH 已核對；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；工程回應／OpenAPI PATCH 已核對；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 GET {{apiBase}}/health HTTP/1.1
 
@@ -57,7 +59,7 @@ GET {{apiBase}}/health HTTP/1.1
 # R6-01b — 200；Healthy，確認原生 API 可連既有 DB。
 # Prerequisite: complete preceding cases and Markdown R6-01 operations.
 # Identity: No Cookie.
-# AI actual: PASS：200；工程回應／OpenAPI PATCH 已核對；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；工程回應／OpenAPI PATCH 已核對；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 GET {{apiBase}}/health/ready HTTP/1.1
 
@@ -65,7 +67,7 @@ GET {{apiBase}}/health/ready HTTP/1.1
 # R6-01c — 200；Development 文件包含 PATCH /api/v1/forms/{formId}。
 # Prerequisite: complete preceding cases and Markdown R6-01 operations.
 # Identity: No Cookie.
-# AI actual: PASS：200；工程回應／OpenAPI PATCH 已核對；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；工程回應／OpenAPI PATCH 已核對；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 GET {{apiBase}}/openapi/v1.json HTTP/1.1
 
@@ -73,7 +75,7 @@ GET {{apiBase}}/openapi/v1.json HTTP/1.1
 # R6-01d — 200 User + access_token Cookie；不在 body 回 JWT。只在本機暫填 memberAToken。
 # Prerequisite: complete preceding cases and Markdown R6-01 operations.
 # Identity: No Cookie.
-# AI actual: PASS：200 User＋Cookie；無 body JWT；01d helper 診斷見執行紀錄；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200 User＋Cookie；無 body JWT；01d helper 診斷見執行紀錄；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/auth/login HTTP/1.1
 Content-Type: application/json
@@ -87,7 +89,7 @@ Content-Type: application/json
 # R6-01e — 200 User + Cookie；只在本機暫填 memberBToken。
 # Prerequisite: complete preceding cases and Markdown R6-01 operations.
 # Identity: No Cookie.
-# AI actual: PASS：200 User＋Cookie；無 body JWT；01d helper 診斷見執行紀錄；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200 User＋Cookie；無 body JWT；01d helper 診斷見執行紀錄；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/auth/login HTTP/1.1
 Content-Type: application/json
@@ -101,7 +103,7 @@ Content-Type: application/json
 # R6-01f — 200；A 的保留清單。逐頁記錄所有 ID／totalItems；之後恢復 listPage=1。
 # Prerequisite: complete preceding cases and Markdown R6-01 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200；A totalItems=1，完整 IDs 與既有 DB 一致；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；A totalItems=1，完整 IDs 與既有 DB 一致；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms?page={{listPage}}&pageSize=100 HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -110,7 +112,7 @@ Cookie: access_token={{memberAToken}}
 # R6-02 — 本次完整回歸（非 HTTP）
 # Prerequisites/DB/non-HTTP steps: Markdown R6-02.
 # Non-HTTP: complete matching Markdown operations. No request to send.
-# AI: PASS Windows 118/118, exit 0; Linux not executed (fallback not needed); manual: 待執行。
+# AI: PASS Windows 118/118, exit 0; Linux not executed (fallback not needed); manual: 未執行。
 
 ###
 # R6-03 — 建立本次 Draft fixtures 與 ID 基準
@@ -120,7 +122,7 @@ Cookie: access_token={{memberAToken}}
 # R6-03a — 201 Draft；6 Questions／6 Options；placeholder trim；Rating 缺 max 仍合法。按 sortOrder 排序，defaults、ID 與 createdAt 由 Server 決定。
 # Prerequisite: complete preceding cases and Markdown R6-03 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：201，6Q／6O；Server ID／defaults／排序／完整 DB 核對；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：201，6Q／6O；Server ID／defaults／排序／完整 DB 核對；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms HTTP/1.1
 Content-Type: application/json
@@ -224,7 +226,7 @@ Cookie: access_token={{memberAToken}}
 # R6-03b — 201；記錄 scopeFormId／qForeign／oForeign；後續狀態只限此 fixture。
 # Prerequisite: complete preceding cases and Markdown R6-03 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：201，1Q／1O；Server ID／defaults／排序／完整 DB 核對；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：201，1Q／1O；Server ID／defaults／排序／完整 DB 核對；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms HTTP/1.1
 Content-Type: application/json
@@ -252,7 +254,7 @@ Cookie: access_token={{memberAToken}}
 # R6-03c — 201；記錄 concurrentFormId／qConcurrentA／qConcurrentB。
 # Prerequisite: complete preceding cases and Markdown R6-03 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：201，2Q／0O；Server ID／defaults／排序／完整 DB 核對；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：201，2Q／0O；Server ID／defaults／排序／完整 DB 核對；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms HTTP/1.1
 Content-Type: application/json
@@ -282,7 +284,7 @@ Cookie: access_token={{memberAToken}}
 # R6-04a — 200；title trim 為 R6 edited {{runId}}；description=null；模式更新；deadline 仍 null，Questions／Options 未變；只有 Form updatedAt 改變。
 # Prerequisite: complete preceding cases and Markdown R6-04 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200；Form 欄位更新、子列不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；Form 欄位更新、子列不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -299,7 +301,7 @@ Cookie: access_token={{memberAToken}}
 # R6-04b — 200；完整 FormDetail 與 04a 一致（JSON Object key 順序無關）。
 # Prerequisite: complete preceding cases and Markdown R6-04 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200；GET＝前次成功 PATCH；DB 無副作用；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；GET＝前次成功 PATCH；DB 無副作用；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -312,7 +314,7 @@ Cookie: access_token={{memberAToken}}
 # R6-05a — 200；仍 6 Questions／6 Options。qRemove 與 cascade 子 Option 實體刪除；qText description=null／required=true；oAlpha=beta/order1、oBeta=alpha/order0，ID／createdAt 保留；新 gamma trim，ID 與 oDelete 不同。新增 qNew／oNew（記錄 ID）；oKeep 的大小寫 Delta 保留。最終排序唯一，不因中途 key／排序衝突回 500。
 # Prerequisite: complete preceding cases and Markdown R6-05 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200；6Q／6O；交換／重用／Cascade／ID／createdAt／未提及列核對；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；6Q／6O；交換／重用／Cascade／ID／createdAt／未提及列核對；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -375,7 +377,7 @@ Cookie: access_token={{memberAToken}}
 # R6-05b — 200；與已保存的 05a FormDetail 一致；DB 無刪除列、無多餘列或 orphan。
 # Prerequisite: complete preceding cases and Markdown R6-05 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200；GET＝前次成功 PATCH；DB 無副作用；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；GET＝前次成功 PATCH；DB 無副作用；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -388,7 +390,7 @@ Cookie: access_token={{memberAToken}}
 # R6-06a — 200；Text config 只剩 placeholder=Replacement/minLength=1/maxLength=3，舊 textarea 消失；Rating 變完整有效設定，required 不影響 Draft 可保存性。
 # Prerequisite: complete preceding cases and Markdown R6-06 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200；完整 Config replacement／trim；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；完整 Config replacement／trim；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -419,7 +421,7 @@ Cookie: access_token={{memberAToken}}
 # R6-06b — 200；Config 只剩 min/max，舊 placeholder 消失；DB min = 1e30::numeric、max = 1e31::numeric，無 decimal/double 捨入。JSONB 可改數字表示，數值必須精確相同。
 # Prerequisite: complete preceding cases and Markdown R6-06 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200；SQL numeric 1e30／1e31 精確相等；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；SQL numeric 1e30／1e31 精確相等；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -445,7 +447,7 @@ Cookie: access_token={{memberAToken}}
 # R6-07a — 200；Choice 互轉保留四個既有 Options 的 ID／createdAt／updatedAt，套用目標 config。
 # Prerequisite: complete preceding cases and Markdown R6-07 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200；Choice 互轉保留四個 Options 完整列；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；Choice 互轉保留四個 Options 完整列；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -467,7 +469,7 @@ Cookie: access_token={{memberAToken}}
 # R6-07b — 200；未提供 config，重設 {}；四個 Options 自動實體刪除，Question 保留。
 # Prerequisite: complete preceding cases and Markdown R6-07 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200；Config={}／四個 Options 實體清除；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；Config={}／四個 Options 實體清除；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -487,7 +489,7 @@ Cookie: access_token={{memberAToken}}
 # R6-07c — 200；Text→Choice 重設 config={} 並新建 oBranch（記錄）；Number→Rating 使用指定 config；Rating→Text 未指定 config 為 {} 且無 Options。qMultiple、qNew 保留。
 # Prerequisite: complete preceding cases and Markdown R6-07 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200；三個 Type 連動、目標 Config、新 Option；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；三個 Type 連動、目標 Config、新 Option；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -530,7 +532,7 @@ Cookie: access_token={{memberAToken}}
 # R6-08a — 400 VALIDATION_ERROR；path=resultVisibility，資料完全不變。
 # Prerequisite: complete preceding cases and Markdown R6-08 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：400 VALIDATION_ERROR；INVALID_VALUE＠resultVisibility；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：400 VALIDATION_ERROR；INVALID_VALUE＠resultVisibility；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -544,7 +546,7 @@ Cookie: access_token={{memberAToken}}
 # R6-08b — 400 FORM_DEFINITION_INVALID；INVALID_VALUE at questions[1].id（第二次出現）；更新與刪除不部分成功。
 # Prerequisite: complete preceding cases and Markdown R6-08 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：400 FORM_DEFINITION_INVALID；INVALID_VALUE＠questions[1].id；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：400 FORM_DEFINITION_INVALID；INVALID_VALUE＠questions[1].id；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -566,7 +568,7 @@ Cookie: access_token={{memberAToken}}
 # R6-08c — 400 FORM_DEFINITION_INVALID；INVALID_VALUE at questions[0].options[1].id。
 # Prerequisite: complete preceding cases and Markdown R6-08 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：400 FORM_DEFINITION_INVALID；INVALID_VALUE＠questions[0].options[1].id；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：400 FORM_DEFINITION_INVALID；INVALID_VALUE＠questions[0].options[1].id；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -593,7 +595,7 @@ Cookie: access_token={{memberAToken}}
 # R6-08d — 400 FORM_DEFINITION_INVALID；QUESTION_NOT_FOUND at questions[0].id；不 upsert／搬移。
 # Prerequisite: complete preceding cases and Markdown R6-08 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：400 FORM_DEFINITION_INVALID；QUESTION_NOT_FOUND＠questions[0].id；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：400 FORM_DEFINITION_INVALID；QUESTION_NOT_FOUND＠questions[0].id；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -612,7 +614,7 @@ Cookie: access_token={{memberAToken}}
 # R6-08e — 400 FORM_DEFINITION_INVALID；OPTION_NOT_FOUND at questions[0].options[0].id（同 Form 的另一 Question）。
 # Prerequisite: complete preceding cases and Markdown R6-08 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：400 FORM_DEFINITION_INVALID；OPTION_NOT_FOUND＠questions[0].options[0].id；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：400 FORM_DEFINITION_INVALID；OPTION_NOT_FOUND＠questions[0].options[0].id；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -636,7 +638,7 @@ Cookie: access_token={{memberAToken}}
 # R6-08f — 400 FORM_DEFINITION_INVALID；DUPLICATE_SORT_ORDER at questions[1].sortOrder，定位真正改排序欄位，非僅改 title 的項目。
 # Prerequisite: complete preceding cases and Markdown R6-08 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：400 FORM_DEFINITION_INVALID；DUPLICATE_SORT_ORDER＠questions[1].sortOrder；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：400 FORM_DEFINITION_INVALID；DUPLICATE_SORT_ORDER＠questions[1].sortOrder；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -659,7 +661,7 @@ Cookie: access_token={{memberAToken}}
 # R6-08g — 400 FORM_DEFINITION_INVALID；INVALID_OPTION at questions[0].options[0].value；trim 後重複 Branch，Form title 亦不得改。
 # Prerequisite: complete preceding cases and Markdown R6-08 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：400 FORM_DEFINITION_INVALID；INVALID_OPTION＠questions[0].options[0].value；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：400 FORM_DEFINITION_INVALID；INVALID_OPTION＠questions[0].options[0].value；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -685,7 +687,7 @@ Cookie: access_token={{memberAToken}}
 # R6-08h — 400 FORM_DEFINITION_INVALID；QUESTION_TYPE_CONFLICT at questions[0].options；不可一邊自動清除一邊帶非空 Delta。
 # Prerequisite: complete preceding cases and Markdown R6-08 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：400 FORM_DEFINITION_INVALID；QUESTION_TYPE_CONFLICT＠questions[0].options；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：400 FORM_DEFINITION_INVALID；QUESTION_TYPE_CONFLICT＠questions[0].options；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -709,7 +711,7 @@ Cookie: access_token={{memberAToken}}
 # R6-08i — 400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG at questions[0].config.variant（非合法 multiple_choice variant）。
 # Prerequisite: complete preceding cases and Markdown R6-08 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG＠questions[0].config.variant；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG＠questions[0].config.variant；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -730,7 +732,7 @@ Cookie: access_token={{memberAToken}}
 # R6-08j — 400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG at questions[0].config；精確 min > max，不可經浮點捨入為相等。
 # Prerequisite: complete preceding cases and Markdown R6-08 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG＠questions[0].config；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG＠questions[0].config；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -742,7 +744,7 @@ Cookie: access_token={{memberAToken}}
 # R6-08k — 400 VALIDATION_ERROR；INVALID_VALUE at title；非 nullable 欄位不能用 null 清除。
 # Prerequisite: complete preceding cases and Markdown R6-08 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：400 VALIDATION_ERROR；INVALID_VALUE＠title；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：400 VALIDATION_ERROR；INVALID_VALUE＠title；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -760,7 +762,7 @@ Cookie: access_token={{memberAToken}}
 # R6-09a — 200；實際 config 變更，Form/qChoice updatedAt 改變；其他列不變。保存此基準。
 # Prerequisite: complete preceding cases and Markdown R6-09 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200；實際 Config 更新；未變列保留；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；實際 Config 更新；未變列保留；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -783,7 +785,7 @@ Cookie: access_token={{memberAToken}}
 # R6-09b — 200 no-op；完整 DB snapshot／timestamps 不變。
 # Prerequisite: complete preceding cases and Markdown R6-09 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200 no-op；完整 DB 快照與所有 timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200 no-op；完整 DB 快照與所有 timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -795,7 +797,7 @@ Cookie: access_token={{memberAToken}}
 # R6-09c — 200 no-op；不清空 Questions。
 # Prerequisite: complete preceding cases and Markdown R6-09 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200 no-op；完整 DB 快照與所有 timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200 no-op；完整 DB 快照與所有 timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -809,7 +811,7 @@ Cookie: access_token={{memberAToken}}
 # R6-09d — 200 no-op；不清空 Options，任何 updatedAt 不變。
 # Prerequisite: complete preceding cases and Markdown R6-09 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200 no-op；完整 DB 快照與所有 timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200 no-op；完整 DB 快照與所有 timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -828,7 +830,7 @@ Cookie: access_token={{memberAToken}}
 # R6-09e — 200 no-op；文字 trim、Config 屬性順序和 1.0／1 等值；無任何列或 timestamps 變更。
 # Prerequisite: complete preceding cases and Markdown R6-09 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200 no-op；完整 DB 快照與所有 timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200 no-op；完整 DB 快照與所有 timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -840,7 +842,7 @@ Cookie: access_token={{memberAToken}}
 # R6-09f — 200；保存／回應 deadline=.123456Z。只有 Form updatedAt 改變，子列不變。保存 deadline 基準。
 # Prerequisite: complete preceding cases and Markdown R6-09 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200；保存 .123456Z；只有 Form deadline／updatedAt 改變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；保存 .123456Z；只有 Form deadline／updatedAt 改變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -854,7 +856,7 @@ Cookie: access_token={{memberAToken}}
 # R6-09g — 200 no-op；重送原始七位字串，與 09f 保存基準相等，updatedAt 不變。
 # Prerequisite: complete preceding cases and Markdown R6-09 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200 no-op；完整 DB 快照與所有 timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200 no-op；完整 DB 快照與所有 timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -868,7 +870,7 @@ Cookie: access_token={{memberAToken}}
 # R6-09h — 200 no-op；只差次微秒，實際保存相同，任何 timestamps 不變。
 # Prerequisite: complete preceding cases and Markdown R6-09 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200 no-op；完整 DB 快照與所有 timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200 no-op；完整 DB 快照與所有 timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -882,7 +884,7 @@ Cookie: access_token={{memberAToken}}
 # R6-09i — 200 no-op；重送 GET canonical 值亦不更新。
 # Prerequisite: complete preceding cases and Markdown R6-09 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200 no-op；完整 DB 快照與所有 timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200 no-op；完整 DB 快照與所有 timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -896,7 +898,7 @@ Cookie: access_token={{memberAToken}}
 # R6-09j — 200；真正差一微秒，deadline 與 Form updatedAt 改變；子列不變。
 # Prerequisite: complete preceding cases and Markdown R6-09 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200；保存 .123457Z；真正一微秒變更，子列不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；保存 .123457Z；真正一微秒變更，子列不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -910,7 +912,7 @@ Cookie: access_token={{memberAToken}}
 # R6-09k — 200；deadline 清除，只有 Form updatedAt 改變。保存 null 基準。
 # Prerequisite: complete preceding cases and Markdown R6-09 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200；deadline=null；只有 Form deadline／updatedAt 改變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；deadline=null；只有 Form deadline／updatedAt 改變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -924,7 +926,7 @@ Cookie: access_token={{memberAToken}}
 # R6-09l — 200 no-op；與 09k 全部保存資料／timestamps 一致。
 # Prerequisite: complete preceding cases and Markdown R6-09 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200 no-op；完整 DB 快照與所有 timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200 no-op；完整 DB 快照與所有 timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -938,7 +940,7 @@ Cookie: access_token={{memberAToken}}
 # R6-09m — 200；與 09l 完整 FormDetail 一致；deadline=null，status=draft。
 # Prerequisite: complete preceding cases and Markdown R6-09 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200；GET＝前次成功 PATCH；DB 無副作用；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；GET＝前次成功 PATCH；DB 無副作用；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -951,7 +953,7 @@ Cookie: access_token={{memberAToken}}
 # R6-10a — 401 AUTH_REQUIRED；沒有 Cookie，即使 path／欄位無效仍先判 Authentication。
 # Prerequisite: complete preceding cases and Markdown R6-10 operations.
 # Identity: No Cookie.
-# AI actual: PASS：401 AUTH_REQUIRED；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：401 AUTH_REQUIRED；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/not-a-uuid HTTP/1.1
 Content-Type: application/json
@@ -964,7 +966,7 @@ Content-Type: application/json
 # R6-10b — 400 VALIDATION_ERROR；有效 A 才檢查 UUID。
 # Prerequisite: complete preceding cases and Markdown R6-10 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：400 VALIDATION_ERROR；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：400 VALIDATION_ERROR；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/not-a-uuid HTTP/1.1
 Content-Type: application/json
@@ -976,7 +978,7 @@ Cookie: access_token={{memberAToken}}
 # R6-10c — 404 FORM_NOT_FOUND；不存在優先於欄位驗證。先用 DB 證明 missingFormId 未使用。
 # Prerequisite: complete preceding cases and Markdown R6-10 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：404 FORM_NOT_FOUND；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：404 FORM_NOT_FOUND；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{missingFormId}} HTTP/1.1
 Content-Type: application/json
@@ -990,7 +992,7 @@ Cookie: access_token={{memberAToken}}
 # R6-10d — 403 FORM_ACCESS_DENIED；非 Owner 優先於 Definition validation。
 # Prerequisite: complete preceding cases and Markdown R6-10 operations.
 # Identity: Member B (non-Owner).
-# AI actual: PASS：403 FORM_ACCESS_DENIED；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：403 FORM_ACCESS_DENIED；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -1004,7 +1006,7 @@ Cookie: access_token={{memberBToken}}
 # R6-10e — 404 FORM_NOT_FOUND；他人 Draft Detail 隱藏存在性。
 # Prerequisite: complete preceding cases and Markdown R6-10 operations.
 # Identity: Member B (non-Owner).
-# AI actual: PASS：404 FORM_NOT_FOUND；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：404 FORM_NOT_FOUND；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Cookie: access_token={{memberBToken}}
@@ -1013,7 +1015,7 @@ Cookie: access_token={{memberBToken}}
 # R6-10f — 404 FORM_NOT_FOUND；使用 DB 確認的 R5 Soft Delete ID，歷史資料仍原樣。
 # Prerequisite: complete preceding cases and Markdown R6-10 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：404 FORM_NOT_FOUND；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：404 FORM_NOT_FOUND；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{retainedDeletedFormId}} HTTP/1.1
 Content-Type: application/json
@@ -1029,7 +1031,7 @@ Cookie: access_token={{memberAToken}}
 # R6-10g — 409 FORM_NOT_EDITABLE；前置：僅將本次 scope fixture 設為 published。Lifecycle 優先於欄位驗證。
 # Prerequisite: complete preceding cases and Markdown R6-10 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：409 FORM_NOT_EDITABLE；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：409 FORM_NOT_EDITABLE；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{scopeFormId}} HTTP/1.1
 Content-Type: application/json
@@ -1043,7 +1045,7 @@ Cookie: access_token={{memberAToken}}
 # R6-10h — 403 FORM_ACCESS_DENIED；Published 非 Owner，Authorization 優先 Lifecycle；空 PATCH 也不跳過。
 # Prerequisite: complete preceding cases and Markdown R6-10 operations.
 # Identity: Member B (non-Owner).
-# AI actual: PASS：403 FORM_ACCESS_DENIED；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：403 FORM_ACCESS_DENIED；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{scopeFormId}} HTTP/1.1
 Content-Type: application/json
@@ -1057,7 +1059,7 @@ Cookie: access_token={{memberBToken}}
 # R6-10i — 409 FORM_NOT_EDITABLE；前置：僅將 scope fixture 設為 closed。空 PATCH 仍需 Draft。
 # Prerequisite: complete preceding cases and Markdown R6-10 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：409 FORM_NOT_EDITABLE；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：409 FORM_NOT_EDITABLE；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{scopeFormId}} HTTP/1.1
 Content-Type: application/json
@@ -1069,7 +1071,7 @@ Cookie: access_token={{memberAToken}}
 # R6-10j — 403 FORM_ACCESS_DENIED；Closed 非 Owner。完成後立即恢復 scope fixture 的 draft 原狀。
 # Prerequisite: complete preceding cases and Markdown R6-10 operations.
 # Identity: Member B (non-Owner).
-# AI actual: PASS：403 FORM_ACCESS_DENIED；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：403 FORM_ACCESS_DENIED；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{scopeFormId}} HTTP/1.1
 Content-Type: application/json
@@ -1087,7 +1089,7 @@ Cookie: access_token={{memberBToken}}
 # R6-11a — 400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG at questions[1].config；整份 Form／Questions／Options 含 ID、createdAt、updatedAt 完全不變。
 # Prerequisite: complete preceding cases and Markdown R6-11 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG＠questions[1].config；完整 DB／timestamps 不變；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG＠questions[1].config；完整 DB／timestamps 不變；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
 Content-Type: application/json
@@ -1118,7 +1120,7 @@ Cookie: access_token={{memberAToken}}
 # R6-12a — 與 12b 同時執行；二者恰一個 200，另一個 400 FORM_DEFINITION_INVALID／DUPLICATE_SORT_ORDER at questions[0].sortOrder。不指定哪方贏。
 # Prerequisite: complete preceding cases and Markdown R6-12 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200；2 lock waiters；12a 勝出，12b 無部分寫入；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；2 lock waiters；12a 勝出，12b 無部分寫入；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{concurrentFormId}} HTTP/1.1
 Content-Type: application/json
@@ -1137,7 +1139,7 @@ Cookie: access_token={{memberAToken}}
 # R6-12b — 與 12a 同時執行；敗者無部分寫入或 500；DB 恰一題 order2，另一題仍原 order0或1，ID／createdAt 保留。
 # Prerequisite: complete preceding cases and Markdown R6-12 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：400；2 lock waiters；12a 勝出，12b 無部分寫入；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：400；2 lock waiters；12a 勝出，12b 無部分寫入；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{concurrentFormId}} HTTP/1.1
 Content-Type: application/json
@@ -1156,7 +1158,7 @@ Cookie: access_token={{memberAToken}}
 # R6-12c — 200；Questions 依最終 sortOrder 排列，無重複；內容等於成功 PATCH 的保存狀態。
 # Prerequisite: complete preceding cases and Markdown R6-12 operations.
 # Identity: Member A (Owner).
-# AI actual: PASS：200；GET＝前次成功 PATCH；DB 無副作用；manual: 待執行（人工；尚未提供結果）。
+# AI actual: PASS：200；GET＝前次成功 PATCH；DB 無副作用；manual: 未執行（人工；Owner 依 AI 提交證據與 review 確認驗收）。
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{concurrentFormId}} HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -1165,10 +1167,10 @@ Cookie: access_token={{memberAToken}}
 # R6-13 — 人工檢視、復原暫存狀態與保留資料（非 HTTP）
 # Prerequisites/DB/non-HTTP steps: Markdown R6-13.
 # Non-HTTP: complete matching Markdown operations. No request to send.
-# AI: PASS scope restored, fixtures retained, 2 Cookie jars removed; manual: 待執行。
+# AI: PASS scope restored, fixtures retained, 2 Cookie jars removed; manual: 未執行。
 
 # Evidence: artifacts/r6-acceptance-evidence/r6-acceptance-20261003-01/
 # Approved/source commit: 034a0be8b4347f14c7609a8ec2460dfa2eccdd40.
-# Requests/expectations unchanged. Manual pending; do not rerun mutations on completed fixtures.
+# Requests/expectations unchanged. Manual not executed; do not rerun mutations on completed fixtures.
 # Fresh RunId/fixtures for independent manual execution per Markdown.
-# 驗收結果待 Owner 確認
+# R6 accepted；人工未執行，Owner 依 AI 提交證據與 review 確認驗收。
