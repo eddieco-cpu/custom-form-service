@@ -73,6 +73,15 @@ Keep all seven V1 domain tables, including `user_identities`.
 Nuxt frontend, Railway deployment, production domain setup, and live production
 HTTPS verification use separate implementation plans.
 
+## Repository-local workflow skills
+
+- Use `.agents/skills/v1-round-development/SKILL.md` for an explicitly
+  authorized Round's development or current-Round repair.
+- Use `.agents/skills/v1-acceptance-testing/SKILL.md` to prepare an API Round's
+  paired acceptance artifacts, then to execute only an Owner-approved plan.
+- These skills organize the workflow only. This file keeps common safeguards;
+  the approved specifications remain the source of truth for all contracts.
+
 ## Git and data safety
 
 - Inspect `git status` before editing.
