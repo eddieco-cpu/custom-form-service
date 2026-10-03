@@ -211,6 +211,64 @@ public static class FormDefinitionValidator
         return validationErrors.Count == 0;
     }
 
+    public static bool TryValidateForPublish(
+        FormDefinitionCandidate candidate,
+        DateTimeOffset publishTime,
+        out IReadOnlyList<ApiErrorDetail> errors)
+    {
+        // Caller supplies an independent candidate from the locked, scoped aggregate.
+        // Normalized values are for validation, not for persisting a new definition.
+        var validationErrors = new List<ApiErrorDetail>();
+        var titleLength = TextRules.CodePointCount(TextRules.Trim(candidate.Title));
+        if (titleLength == 0)
+            validationErrors.Add(new("title", "REQUIRED_FIELD", "Title is required."));
+        else if (titleLength > 200)
+            validationErrors.Add(new("title", "INVALID_VALUE", "Title must not exceed 200 characters."));
+        if (!Enum.IsDefined(candidate.ResponseMode))
+            validationErrors.Add(new("responseMode", "INVALID_VALUE", "The response mode is invalid."));
+        if (!Enum.IsDefined(candidate.ResponseIdentity))
+            validationErrors.Add(new("responseIdentity", "INVALID_VALUE", "The response identity is invalid."));
+        if (candidate.Questions.Count == 0)
+            validationErrors.Add(new("questions", "REQUIRED_FIELD", "At least one question is required."));
+
+        var ordered = candidate.Questions.OrderBy(question => question.SortOrder).ThenBy(question => question.Id).ToArray();
+        for (var index = 0; index < ordered.Length; index++)
+        {
+            var question = ordered[index];
+            var path = $"questions[{index}]";
+            foreach (var field in QuestionProperties) question.Source.Set(field, $"{path}.{field}");
+            if (!Enum.IsDefined(question.Type))
+                validationErrors.Add(new($"{path}.type", "INVALID_QUESTION_TYPE", "The question type is invalid."));
+            if (question.SortOrder < 0)
+                validationErrors.Add(new($"{path}.sortOrder", "INVALID_SORT_ORDER", "sortOrder must be non-negative."));
+            if (IsChoice(question.Type) && question.Options.Count == 0)
+                validationErrors.Add(new($"{path}.options", "INSUFFICIENT_OPTIONS", "Choice questions require at least one option."));
+            if (question.Type == QuestionType.Rating && question.Config.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var bound in new[] { "min", "max" })
+                    if (!question.Config.TryGetProperty(bound, out _))
+                        validationErrors.Add(new($"{path}.config.{bound}", "INVALID_QUESTION_CONFIG", "Rating requires min and max."));
+            }
+
+            var options = question.Options.OrderBy(option => option.SortOrder).ThenBy(option => option.Id).ToArray();
+            for (var optionIndex = 0; optionIndex < options.Length; optionIndex++)
+            {
+                var option = options[optionIndex];
+                foreach (var field in OptionProperties) option.Source.Set(field, $"{path}.options[{optionIndex}].{field}");
+                if (option.SortOrder < 0)
+                    validationErrors.Add(new(option.Source.Path("sortOrder"), "INVALID_SORT_ORDER", "sortOrder must be non-negative."));
+            }
+        }
+
+        // Invalid enum values must not reach the config switch. Other rules are shared.
+        TryNormalizeQuestions(ordered.Where(question => Enum.IsDefined(question.Type)).ToArray(), out var questionErrors);
+        validationErrors.AddRange(questionErrors);
+        if (candidate.SubmissionDeadlineAt is { } deadline && deadline <= publishTime)
+            validationErrors.Add(new("submissionDeadlineAt", "INVALID_VALUE", "The deadline must be later than publish time."));
+        errors = validationErrors;
+        return validationErrors.Count == 0;
+    }
+
     private static bool TryNormalizeConfig(
         QuestionType type,
         JsonElement configElement,

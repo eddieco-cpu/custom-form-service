@@ -5,8 +5,8 @@ namespace CustomFormService.Api.Infrastructure.Persistence;
 
 public static class FormAggregateLock
 {
-    // Every Form-definition writer must acquire this lock before reading the aggregate.
-    // R7 Publish will use the same lock to serialize its state transition with PATCH.
+    // PATCH, Publish, Close and Result Visibility acquire this before reading the aggregate.
+    // Hold it through validation and commit/rollback so definition/state/policy writes agree.
     public static async Task<bool> TryAcquireActiveFormAsync(
         ApplicationDbContext database,
         Guid formId,

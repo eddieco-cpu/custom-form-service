@@ -11,6 +11,7 @@ using CustomFormService.Api.Validation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CustomFormService.Api.Controllers;
 
@@ -55,6 +56,13 @@ public sealed class FormsController(
 
     private static readonly HashSet<string> ListQueryProperties =
         new(["page", "pageSize", "status"], StringComparer.Ordinal);
+
+    private static readonly HashSet<string> VisibilityProperties =
+        new(["resultVisibility"], StringComparer.Ordinal);
+
+    // The same sole property is required; Publish and Close have no body binding.
+    private static readonly HashSet<string> RequiredVisibilityProperties =
+        new(["resultVisibility"], StringComparer.Ordinal);
 
     [HttpPost]
     [ProducesResponseType<FormDetailResponse>(StatusCodes.Status201Created)]
@@ -317,6 +325,137 @@ public sealed class FormsController(
         await transaction.CommitAsync(cancellationToken);
         return Ok(response);
     }
+
+    [HttpPost("{formId}/publish")]
+    [ProducesResponseType<FormDetailResponse>(StatusCodes.Status200OK)]
+    public Task<IActionResult> Publish(string formId, CancellationToken cancellationToken) =>
+        ChangeLifecycleAsync(formId, publish: true, cancellationToken);
+
+    [HttpPost("{formId}/close")]
+    [ProducesResponseType<FormDetailResponse>(StatusCodes.Status200OK)]
+    public Task<IActionResult> Close(string formId, CancellationToken cancellationToken) =>
+        ChangeLifecycleAsync(formId, publish: false, cancellationToken);
+
+    private async Task<IActionResult> ChangeLifecycleAsync(
+        string formId, bool publish, CancellationToken cancellationToken)
+    {
+        if (!TryReadFormId(formId, out var id, out var validationError))
+        {
+            return ApiErrors.Validation([validationError]);
+        }
+
+        await using var transaction = await database.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
+        if (!await FormAggregateLock.TryAcquireActiveFormAsync(database, id, cancellationToken))
+        {
+            return FormNotFound();
+        }
+
+        var form = await LoadEditableFormAsync(id, cancellationToken)
+            ?? throw new InvalidOperationException("The locked form could not be loaded.");
+        if (form.UserId != RequiredCurrentUser().Id)
+        {
+            return FormAccessDenied();
+        }
+
+        var expectedStatus = publish ? FormStatus.Draft : FormStatus.Published;
+        if (form.Status != expectedStatus)
+        {
+            var code = publish && form.Status == FormStatus.Published
+                ? "FORM_ALREADY_PUBLISHED"
+                : !publish && form.Status == FormStatus.Closed
+                    ? "FORM_ALREADY_CLOSED"
+                    : "FORM_INVALID_STATE_TRANSITION";
+            return ApiErrors.Result(StatusCodes.Status409Conflict, code, "The requested lifecycle transition is not allowed.");
+        }
+
+        // Sample time only after the shared lock and current state have been read.
+        var now = timeProvider.GetUtcNow();
+        if (publish && !FormDefinitionValidator.TryValidateForPublish(
+                FormDefinitionCandidate.From(form), now, out var definitionErrors))
+        {
+            return ApiErrors.Result(StatusCodes.Status400BadRequest,
+                "FORM_NOT_PUBLISHABLE", "The form is not ready to publish.", definitionErrors);
+        }
+
+        // Publish normalization changes the detached candidate only, never this graph.
+        form.Status = publish ? FormStatus.Published : FormStatus.Closed;
+        form.UpdatedAt = now;
+        await database.SaveChangesAsync(cancellationToken);
+        return await CommitFormDetailAsync(id, transaction, cancellationToken);
+    }
+
+    [HttpPatch("{formId}/result-visibility")]
+    [ProducesResponseType<FormDetailResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ChangeResultVisibility(
+        string formId, CancellationToken cancellationToken)
+    {
+        if (!TryReadFormId(formId, out var id, out var validationError))
+        {
+            return ApiErrors.Validation([validationError]);
+        }
+
+        // Only this policy endpoint reads JSON. Parse errors (including an absent
+        // body) use the contract envelope before resource/owner checks, not MVC 415.
+        JsonDocument document;
+        try
+        {
+            document = await JsonDocument.ParseAsync(Request.Body, cancellationToken: cancellationToken);
+        }
+        catch (JsonException)
+        {
+            return ApiErrors.Validation([RequestJson.Invalid("body", "The request body must be valid JSON.")]);
+        }
+        using var parsedBody = document;
+        var body = parsedBody.RootElement;
+
+        await using var transaction = await database.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
+        if (!await FormAggregateLock.TryAcquireActiveFormAsync(database, id, cancellationToken))
+        {
+            return FormNotFound();
+        }
+
+        var form = await LoadEditableFormAsync(id, cancellationToken)
+            ?? throw new InvalidOperationException("The locked form could not be loaded.");
+        if (form.UserId != RequiredCurrentUser().Id)
+        {
+            return FormAccessDenied();
+        }
+
+        if (!RequestJson.TryReadObject(body, VisibilityProperties, RequiredVisibilityProperties,
+                out var properties, out var shapeErrors))
+        {
+            return ApiErrors.Validation(shapeErrors);
+        }
+
+        var fieldErrors = new List<ApiErrorDetail>();
+        if (!TryReadResultVisibility(properties, fieldErrors, out var visibility))
+        {
+            return ApiErrors.Validation(fieldErrors);
+        }
+
+        if (form.ResultVisibility != visibility)
+        {
+            form.ResultVisibility = visibility;
+            form.UpdatedAt = timeProvider.GetUtcNow();
+            await database.SaveChangesAsync(cancellationToken);
+        }
+
+        return await CommitFormDetailAsync(id, transaction, cancellationToken);
+    }
+
+    private async Task<IActionResult> CommitFormDetailAsync(
+        Guid id, IDbContextTransaction transaction, CancellationToken cancellationToken)
+    {
+        var persisted = await LoadAvailableFormAsync(id, cancellationToken)
+            ?? throw new InvalidOperationException("The saved form could not be loaded.");
+        var response = FormDetailResponse.From(persisted);
+        await transaction.CommitAsync(cancellationToken);
+        return Ok(response);
+    }
+
+    private static ObjectResult FormAccessDenied() =>
+        ApiErrors.Result(StatusCodes.Status403Forbidden, "FORM_ACCESS_DENIED",
+            "You do not have permission to access this form.");
 
     [HttpDelete("{formId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

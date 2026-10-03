@@ -115,15 +115,18 @@ public sealed class CustomFormServiceApiFactory : WebApplicationFactory<Program>
     private readonly string _environment;
     private readonly IReadOnlyDictionary<string, string?> _overrides;
     private readonly IReadOnlyList<IInterceptor> _interceptors;
+    private readonly TimeProvider? _timeProvider;
 
     public CustomFormServiceApiFactory(
         string environment = "Development",
         IReadOnlyDictionary<string, string?>? overrides = null,
-        IReadOnlyList<IInterceptor>? interceptors = null)
+        IReadOnlyList<IInterceptor>? interceptors = null,
+        TimeProvider? timeProvider = null)
     {
         _environment = environment;
         _overrides = overrides ?? new Dictionary<string, string?>();
         _interceptors = interceptors ?? [];
+        _timeProvider = timeProvider;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -153,6 +156,7 @@ public sealed class CustomFormServiceApiFactory : WebApplicationFactory<Program>
         });
         builder.ConfigureServices(services =>
         {
+            if (_timeProvider is not null) services.AddSingleton(_timeProvider);
             foreach (var interceptor in _interceptors)
             {
                 services.AddSingleton(typeof(IInterceptor), interceptor);
