@@ -79,7 +79,7 @@ Next round: prerequisite only; not started
 | R4 | Email Auth 與 User | 註冊、登入、登出、本人資料／更新 | **accepted（2026-10-01，人工確認完成）**：[`R4_Acceptance_Test.md`](../test-plan/R4_Acceptance_Test.md)；[`R4_Manual_Tests.http`](../test-plan/R4_Manual_Tests.http) |
 | R5 | Form 基礎讀寫 | Create／List／Detail／Delete；安全邊界 | **accepted（2026-10-03，Owner 人工驗收確認通過；AI case 執行紀錄仍有缺口）**：[`R5_Acceptance_Test.md`](../test-plan/R5_Acceptance_Test.md)；[`R5_Manual_Tests.http`](../test-plan/R5_Manual_Tests.http) |
 | R6 | Draft Definition 與 Delta | 完整 Question／Option／Config 編輯與原子性 | **accepted（2026-10-04，Owner review 提交證據後明確確認；人工未執行）**。AI：Windows 原生 API PASS、完整回歸 118/118、HTTP／DB 56/56 PASS；Linux 本次未執行（fallback 不需要）。計畫提交 `034a0be`、執行紀錄提交 `81b64f3`；保留資料與復原／秘密清理完成。成對紀錄：[`R6_Acceptance_Test.md`](../test-plan/R6_Acceptance_Test.md)、[`R6_Manual_Tests.http`](../test-plan/R6_Manual_Tests.http)。 |
-| R7 | Lifecycle 與 Result Policy | Publish／Close／Visibility、Freeze 與並行 | **實作計畫待 Owner 確認，尚未開發（2026-10-04）**：[`R7_Implementation_Plan.md`](R7_Implementation_Plan.md)；本次未修改業務程式或執行測試。 |
+| R7 | Lifecycle 與 Result Policy | Publish／Close／Visibility、Freeze 與並行 | **development verified，開發完成、待驗收（2026-10-04）**。僅完成 12～14 號端點，Publish／Close 不要求 Body／JSON，Publish 僅改 Form status／updatedAt；共用鎖、Freeze 與獨立 Visibility。Windows／Linux build 0 警告／0 錯誤、R7 37/37、全套 155/155 PASS，0 skipped；初次失敗／環境診斷分列，見 [開發報告](R7_Development_Report.md)。實作 `0496041`；正式成對驗收尚未準備／執行，未 accepted，未進入 R8。 |
 | R8 | Submission | 全題型 Answer／Response、single／multiple、並行 | not started |
 | R9 | Latest 與 Respondent Count | 最新整份回覆與有效人數 | not started |
 | R10 | Statistics | Closed／Visibility／anonymous／identified／分布 | not started |
@@ -138,7 +138,7 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 
 **歷史開發進度（2026-10-03，正式測試前有限收尾）**：保留 Candidate／ChangeSet 架構。新精度測試先以真實 Npgsql／PostgreSQL round-trip 確認假變更：12 案中 10 FAIL／2 PASS，含相同截止時間重送及僅差次微秒但保存值相同。ChangeSet 現以既有 Npgsql 10.0.3 的微秒編碼比較，保留 2000 年前後與 MinValue／MaxValue 的原保存行為，不改輸入格式／小數位限制／DB schema。修正後精度 12/12、受影響 Form 73/73 PASS，0 skipped；必要 build 0 警告／0 錯誤。DefinitionNumber 只將既有 PostgreSQL 17 限制值改為具名常數並補來源，不改數值範圍；後續 R8 Answer／R10 Statistics 須依 01 §3.3、05 §11.4 維持與 Validation／JSONB 一致的精確數值等值與排序，不能經 decimal／double 暗中捨入，本次僅登記、不實作。§3／6／7 已移除開發完成後自動準備／執行驗收的要求，明列四階段及 Owner gate。命令與證據見收尾開發報告；該開發階段只重跑受影響測試，尚未進入正式驗收。其後 Windows 原生確認、全套回歸與 Owner 確認已完成，現況見下方驗收收尾；UUID／lock 時機等延後項目維持原決定。
 
-**驗收收尾（2026-10-04）**：Owner 在本 chat 明確表示「R6 驗收證據已 review，我確認 R6 accepted」，依提交 `81b64f3c87b2e9efb4f1955cf0397acb99125114` 的 AI 執行證據確認通過。RunId `r6-acceptance-20261003-01`：Windows 原生 API PASS、全套 118/118 PASS、HTTP／DB 56/56 PASS、暫存狀態復原與秘密清理 PASS；Linux 未執行，人工全部未執行，沒有改填人工 PASS。兩份驗收文件已同步狀態並修正過期敘述；本次僅文件收尾，未擴充或重跑測試，R4／R5／R6 fixtures 保留。R7 本次另只準備精簡實作計畫，等待 Owner 確認後才開發。
+**驗收收尾（2026-10-04）**：Owner 在本 chat 明確表示「R6 驗收證據已 review，我確認 R6 accepted」，依提交 `81b64f3c87b2e9efb4f1955cf0397acb99125114` 的 AI 執行證據確認通過。RunId `r6-acceptance-20261003-01`：Windows 原生 API PASS、全套 118/118 PASS、HTTP／DB 56/56 PASS、暫存狀態復原與秘密清理 PASS；Linux 未執行，人工全部未執行，沒有改填人工 PASS。兩份驗收文件已同步狀態並修正過期敘述；本次僅文件收尾，未擴充或重跑測試，R4／R5／R6 fixtures 保留。R6 文件收尾當時，R7 另只準備精簡實作計畫；其後 R7 授權與進度見 R7 紀錄。
 
 ### R7 — Publish／Close／Result Visibility
 
@@ -146,7 +146,9 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 
 **驗收／證據**：不完整 Draft 被拒並回正式 error details；發布後 definition 修改被拒，visibility 仍可依規格變更；Close／Publish 重試依狀態回 409；截止時間**不自動 Close**。並行 Patch／Publish 測試保證正式定義不被舊寫入改動。**提交**：可拆 lifecycle／visibility。**停止**：記錄原子及並行策略與測試結果。
 
-**本次計畫（2026-10-04）**：依 Owner 最新指示僅交付 [R7 精簡實作計畫](R7_Implementation_Plan.md)，尚未授權開發。計畫列出共用 Validator／Form lock、生命週期與獨立 Visibility、必要局部整理與開發測試；交付後停止待確認。後續開發交付、成對驗收計畫 review、授權 AI 執行及 Owner 確認仍依 §3 四階段，未提前進入 R8～R11／G1。
+**本次計畫／授權（2026-10-04）**：Owner 已 review 並核准提交 `0f1f70a` 的 [R7 精簡實作計畫](R7_Implementation_Plan.md)，明確授權開發；補充 Publish／Close 不要求 Body／JSON、Result Visibility 才解析並驗證 JSON Body，以及 Publish 正規化只改獨立 Candidate、成功後 Definition／子列及 timestamps 原樣保留並以 DB 測試證明。直接納入實作，不需重送計畫。計畫涵蓋共用 Validator／Form lock、生命週期與獨立 Visibility、必要局部整理與開發測試。後續開發交付、成對驗收計畫 review、授權 AI 執行及 Owner 確認仍依 §3 四階段，未提前進入 R8～R11／G1。
+
+**開發交付（2026-10-04）**：實作提交 `0496041c762062f310bf61662276d44c8ea83e09`；[R7 開發報告](R7_Development_Report.md) 記錄規格對照、命令、資料安全與平台證據。完整 DB 快照／UPDATE SQL 證明 Publish 共用正規化不回寫 Definition 或子列；37 個開發案例涵蓋必要錯誤／no-op／deadline／rollback／七種可觀察 lock waiter 的並行。Windows 首次 testhost 封鎖與全套 CORS TestFactory 偶發例外均保留紀錄，最終 focused 37/37、full 155/155；Linux 同套亦 37/37、155/155。CORS 例外根因未在 R7 修正，未改該測試預期。R4／R5／R6 保留資料完整快照相等，SDK 暫存容器已清理、PostgreSQL／volume 與重新啟動的 API 保留。僅 development verified，不以自測標 accepted；交付後停止待另行授權準備成對驗收計畫。
 
 ### R8 — Submit／Response／Answer
 
