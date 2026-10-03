@@ -1,6 +1,6 @@
 # R6 驗收計畫：Draft Definition 與 Delta
 
-日期：2026-10-03。階段：**test plan pending owner review**。本文件與 [R6_Manual_Tests.http](R6_Manual_Tests.http) 是同一成對計畫；**尚未核准／尚未執行**。只準備 R6 驗收，不修改業務程式、不標 accepted、不啟動 R7。執行須 Owner 核准目前兩份文件並明確授權；核准前不得執行以下命令、HTTP 或 DB fixture 操作。
+計畫日期：2026-10-03；AI 執行／記錄日期：2026-10-03～04（Asia/Taipei）。階段：**acceptance results pending owner confirmation**。Owner 已明確核准 `034a0be8b4347f14c7609a8ec2460dfa2eccdd40` 的本文件與 [R6_Manual_Tests.http](R6_Manual_Tests.http)，並授權 AI 執行。以下保留原請求／前置／預期，更新實際結果；未修改業務程式或預期，未標 accepted、未啟動 R7。
 
 ## 依據、範圍及證據界線
 
@@ -14,7 +14,7 @@
 
 ## 執行方式與共用測資
 
-AI 可執行下列 HTTP、唯讀 DB、限定的新 fixture 狀態設定、既有測試與清理；人工項目是 Windows 原生終端確認、REST Client／DBeaver 獨立檢視及 Owner 手動結果。AI 不代填人工 PASS。每一主項與 HTTP 子項都有分開的 AI／人工結果；目前均為「待執行（等待 Owner review）」。執行後填 PASS／FAIL／BLOCKED／未執行及日期、SHA、工具、status/code/path、DB 差異或 TRX；不要記錄 token／完整 Cookie／密碼。前置失敗則依賴項 BLOCKED，不能當作已通過。
+AI 可執行下列 HTTP、唯讀 DB、限定的新 fixture 狀態設定、既有測試與清理；人工項目是 Windows 原生終端確認、REST Client／DBeaver 獨立檢視及 Owner 手動結果。AI 不代填人工 PASS。每一主項與 HTTP 子項都有分開的 AI／人工結果；本次 AI 結果見逐項欄位，人工全部維持待執行。執行後填 PASS／FAIL／BLOCKED／未執行及日期、SHA、工具、status/code/path、DB 差異或 TRX；不要記錄 token／完整 Cookie／密碼。前置失敗則依賴項 BLOCKED，不能當作已通過。
 
 以 `.http` 為唯一逐筆 request body 範例；Markdown 管非 HTTP 操作與斷言。AI 可用等價 curl／HttpClient，必須逐筆映射 R6-XXx。一般請求依序；12a／12b 僅供並行 harness 同時發送，不逐筆順序 Send。人工再次執行完整流程要換新 RunId，不能將 AI 已編輯過的 fixture 當作初始資料。只獨立讀取檢視時可用同 run，註明觀察來源。
 
@@ -177,7 +177,7 @@ if ($Before -cne $After) { throw 'Unexpected aggregate change.' }
 
 ## 依序案例
 
-下列表格的「請求」指同編號 `.http` 的完整內容；每組都需完成 prose 指定的 DB／非 HTTP 操作。實際結果先不填任何 PASS。
+下列表格的「請求」指同編號 `.http` 的完整內容；每組都需完成 prose 指定的 DB／非 HTTP 操作。本次已按實際 HTTP／DB 證據填入 AI 結果，人工結果未推論。
 
 ### R6-01 — Windows 原生啟動與保留資料
 
@@ -185,20 +185,20 @@ AI 可執行服務／HTTP／唯讀 DB 檢查；人工在 Windows 終端確認原
 
 | 編號／請求 | 前置與預期結果 | AI 實際結果 | 人工實際結果 |
 | --- | --- | --- | --- |
-| R6-01a · `GET /health` | 200；body 為 {"status":"healthy"}。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-01b · `GET /health/ready` | 200；Healthy，確認原生 API 可連既有 DB。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-01c · `GET /openapi/v1.json` | 200；Development 文件包含 PATCH /api/v1/forms/{formId}。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-01d · `POST /api/v1/auth/login` | 200 User + access_token Cookie；不在 body 回 JWT。只在本機暫填 memberAToken。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-01e · `POST /api/v1/auth/login` | 200 User + Cookie；只在本機暫填 memberBToken。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-01f · `GET /api/v1/forms?page={{listPage}}&pageSize=100` | 200；A 的保留清單。逐頁記錄所有 ID／totalItems；之後恢復 listPage=1。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
+| R6-01a · `GET /health` | 200；body 為 {"status":"healthy"}。 | PASS：200；工程回應／OpenAPI PATCH 已核對 | 待執行（人工；尚未提供結果） |
+| R6-01b · `GET /health/ready` | 200；Healthy，確認原生 API 可連既有 DB。 | PASS：200；工程回應／OpenAPI PATCH 已核對 | 待執行（人工；尚未提供結果） |
+| R6-01c · `GET /openapi/v1.json` | 200；Development 文件包含 PATCH /api/v1/forms/{formId}。 | PASS：200；工程回應／OpenAPI PATCH 已核對 | 待執行（人工；尚未提供結果） |
+| R6-01d · `POST /api/v1/auth/login` | 200 User + access_token Cookie；不在 body 回 JWT。只在本機暫填 memberAToken。 | PASS：200 User＋Cookie；無 body JWT；01d helper 診斷見執行紀錄 | 待執行（人工；尚未提供結果） |
+| R6-01e · `POST /api/v1/auth/login` | 200 User + Cookie；只在本機暫填 memberBToken。 | PASS：200 User＋Cookie；無 body JWT；01d helper 診斷見執行紀錄 | 待執行（人工；尚未提供結果） |
+| R6-01f · `GET /api/v1/forms?page={{listPage}}&pageSize=100` | 200；A 的保留清單。逐頁記錄所有 ID／totalItems；之後恢復 listPage=1。 | PASS：200；A totalItems=1，完整 IDs 與既有 DB 一致 | 待執行（人工；尚未提供結果） |
 
 ### R6-02 — 本次完整回歸（非 HTTP）
 
 AI 可執行／人工可獨立重跑。依 §環境與回歸命令跑目前 HEAD 的整個 solution，無 filter，記錄平台、SHA、exit code、實際 total／passed／failed／skipped 與 TRX。現有程式預計 118 案（前次 106 + 精度 12）；以實際探索數量核對，不以 exit 0 或 0 tests 視為 PASS。Windows DLL 封鎖和 Linux 結果分列。完整 suite 應包含精度、精確 Number、Config、SQL 欄位、三組混合操作、並行 PATCH、Save #2 與 commit 故障回滾；兩個故障測試回受控 500 並逐列驗證全部回滾。故障僅由現有 TestFactory／interceptor 對測試自建資料注入，禁止對常駐 API 或保留 fixture 注入故障。歷史 73/73、106/106 均不填入本次結果。
 
-**AI 實際結果：**待執行（等待 Owner review）。
+**AI 實際結果：**PASS（2026-10-04）：Windows 原生 118/118，0 failed／0 notExecuted，exit 0；12 個精度案例與兩個保存故障回滾均 Passed。Linux：未執行（Windows 已通過，fallback 條件未成立）。
 
-**人工實際結果：**待執行（等待 Owner review）。
+**人工實際結果：**待執行（人工；尚未提供結果）。
 
 ### R6-03 — 建立本次 Draft fixtures 與 ID 基準
 
@@ -206,9 +206,9 @@ AI／人工皆可。03a 建立完整五題型及一題待刪除 Choice，03b 建
 
 | 編號／請求 | 前置與預期結果 | AI 實際結果 | 人工實際結果 |
 | --- | --- | --- | --- |
-| R6-03a · `POST /api/v1/forms` | 201 Draft；6 Questions／6 Options；placeholder trim；Rating 缺 max 仍合法。按 sortOrder 排序，defaults、ID 與 createdAt 由 Server 決定。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-03b · `POST /api/v1/forms` | 201；記錄 scopeFormId／qForeign／oForeign；後續狀態只限此 fixture。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-03c · `POST /api/v1/forms` | 201；記錄 concurrentFormId／qConcurrentA／qConcurrentB。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
+| R6-03a · `POST /api/v1/forms` | 201 Draft；6 Questions／6 Options；placeholder trim；Rating 缺 max 仍合法。按 sortOrder 排序，defaults、ID 與 createdAt 由 Server 決定。 | PASS：201，6Q／6O；Server ID／defaults／排序／完整 DB 核對 | 待執行（人工；尚未提供結果） |
+| R6-03b · `POST /api/v1/forms` | 201；記錄 scopeFormId／qForeign／oForeign；後續狀態只限此 fixture。 | PASS：201，1Q／1O；Server ID／defaults／排序／完整 DB 核對 | 待執行（人工；尚未提供結果） |
+| R6-03c · `POST /api/v1/forms` | 201；記錄 concurrentFormId／qConcurrentA／qConcurrentB。 | PASS：201，2Q／0O；Server ID／defaults／排序／完整 DB 核對 | 待執行（人工；尚未提供結果） |
 
 ### R6-04 — Form 欄位、nullable replacement 與未提及保留
 
@@ -216,8 +216,8 @@ AI／人工皆可。先保存 editor 的完整 DB snapshot，再送 04a，之後
 
 | 編號／請求 | 前置與預期結果 | AI 實際結果 | 人工實際結果 |
 | --- | --- | --- | --- |
-| R6-04a · `PATCH /api/v1/forms/{{editorFormId}}` | 200；title trim 為 R6 edited {{runId}}；description=null；模式更新；deadline 仍 null，Questions／Options 未變；只有 Form updatedAt 改變。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-04b · `GET /api/v1/forms/{{editorFormId}}` | 200；完整 FormDetail 與 04a 一致（JSON Object key 順序無關）。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
+| R6-04a · `PATCH /api/v1/forms/{{editorFormId}}` | 200；title trim 為 R6 edited {{runId}}；description=null；模式更新；deadline 仍 null，Questions／Options 未變；只有 Form updatedAt 改變。 | PASS：200；Form 欄位更新、子列不變 | 待執行（人工；尚未提供結果） |
+| R6-04b · `GET /api/v1/forms/{{editorFormId}}` | 200；完整 FormDetail 與 04a 一致（JSON Object key 順序無關）。 | PASS：200；GET＝前次成功 PATCH；DB 無副作用 | 待執行（人工；尚未提供結果） |
 
 ### R6-05 — Question／Option 混合 Delta、排序交換與 value 重用
 
@@ -225,8 +225,8 @@ AI／人工皆可。05a 前保存 snapshot。一次完成 Question 更新／id-o
 
 | 編號／請求 | 前置與預期結果 | AI 實際結果 | 人工實際結果 |
 | --- | --- | --- | --- |
-| R6-05a · `PATCH /api/v1/forms/{{editorFormId}}` | 200；仍 6 Questions／6 Options。qRemove 與 cascade 子 Option 實體刪除；qText description=null／required=true；oAlpha=beta/order1、oBeta=alpha/order0，ID／createdAt 保留；新 gamma trim，ID 與 oDelete 不同。新增 qNew／oNew（記錄 ID）；oKeep 的大小寫 Delta 保留。最終排序唯一，不因中途 key／排序衝突回 500。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-05b · `GET /api/v1/forms/{{editorFormId}}` | 200；與已保存的 05a FormDetail 一致；DB 無刪除列、無多餘列或 orphan。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
+| R6-05a · `PATCH /api/v1/forms/{{editorFormId}}` | 200；仍 6 Questions／6 Options。qRemove 與 cascade 子 Option 實體刪除；qText description=null／required=true；oAlpha=beta/order1、oBeta=alpha/order0，ID／createdAt 保留；新 gamma trim，ID 與 oDelete 不同。新增 qNew／oNew（記錄 ID）；oKeep 的大小寫 Delta 保留。最終排序唯一，不因中途 key／排序衝突回 500。 | PASS：200；6Q／6O；交換／重用／Cascade／ID／createdAt／未提及列核對 | 待執行（人工；尚未提供結果） |
+| R6-05b · `GET /api/v1/forms/{{editorFormId}}` | 200；與已保存的 05a FormDetail 一致；DB 無刪除列、無多餘列或 orphan。 | PASS：200；GET＝前次成功 PATCH；DB 無副作用 | 待執行（人工；尚未提供結果） |
 
 ### R6-06 — Config 完整取代及精確 Number
 
@@ -234,8 +234,8 @@ AI／人工皆可。06a 是 replacement，不 deep merge。06b 直接傳 raw JSO
 
 | 編號／請求 | 前置與預期結果 | AI 實際結果 | 人工實際結果 |
 | --- | --- | --- | --- |
-| R6-06a · `PATCH /api/v1/forms/{{editorFormId}}` | 200；Text config 只剩 placeholder=Replacement/minLength=1/maxLength=3，舊 textarea 消失；Rating 變完整有效設定，required 不影響 Draft 可保存性。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-06b · `PATCH /api/v1/forms/{{editorFormId}}` | 200；Config 只剩 min/max，舊 placeholder 消失；DB min = 1e30::numeric、max = 1e31::numeric，無 decimal/double 捨入。JSONB 可改數字表示，數值必須精確相同。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
+| R6-06a · `PATCH /api/v1/forms/{{editorFormId}}` | 200；Text config 只剩 placeholder=Replacement/minLength=1/maxLength=3，舊 textarea 消失；Rating 變完整有效設定，required 不影響 Draft 可保存性。 | PASS：200；完整 Config replacement／trim | 待執行（人工；尚未提供結果） |
+| R6-06b · `PATCH /api/v1/forms/{{editorFormId}}` | 200；Config 只剩 min/max，舊 placeholder 消失；DB min = 1e30::numeric、max = 1e31::numeric，無 decimal/double 捨入。JSONB 可改數字表示，數值必須精確相同。 | PASS：200；SQL numeric 1e30／1e31 精確相等 | 待執行（人工；尚未提供結果） |
 
 ### R6-07 — Type 切換及 Options／Config 連動
 
@@ -243,9 +243,9 @@ AI／人工皆可。逐步執行，不共用舊 Options ID 作新增。每步比
 
 | 編號／請求 | 前置與預期結果 | AI 實際結果 | 人工實際結果 |
 | --- | --- | --- | --- |
-| R6-07a · `PATCH /api/v1/forms/{{editorFormId}}` | 200；Choice 互轉保留四個既有 Options 的 ID／createdAt／updatedAt，套用目標 config。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-07b · `PATCH /api/v1/forms/{{editorFormId}}` | 200；未提供 config，重設 {}；四個 Options 自動實體刪除，Question 保留。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-07c · `PATCH /api/v1/forms/{{editorFormId}}` | 200；Text→Choice 重設 config={} 並新建 oBranch（記錄）；Number→Rating 使用指定 config；Rating→Text 未指定 config 為 {} 且無 Options。qMultiple、qNew 保留。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
+| R6-07a · `PATCH /api/v1/forms/{{editorFormId}}` | 200；Choice 互轉保留四個既有 Options 的 ID／createdAt／updatedAt，套用目標 config。 | PASS：200；Choice 互轉保留四個 Options 完整列 | 待執行（人工；尚未提供結果） |
+| R6-07b · `PATCH /api/v1/forms/{{editorFormId}}` | 200；未提供 config，重設 {}；四個 Options 自動實體刪除，Question 保留。 | PASS：200；Config={}／四個 Options 實體清除 | 待執行（人工；尚未提供結果） |
+| R6-07c · `PATCH /api/v1/forms/{{editorFormId}}` | 200；Text→Choice 重設 config={} 並新建 oBranch（記錄）；Number→Rating 使用指定 config；Rating→Text 未指定 config 為 {} 且無 Options。qMultiple、qNew 保留。 | PASS：200；三個 Type 連動、目標 Config、新 Option | 待執行（人工；尚未提供結果） |
 
 ### R6-08 — 代表性錯誤、ID 歸屬與 Request path
 
@@ -253,17 +253,17 @@ AI／人工皆可。每筆前後都做完整 snapshot 相等檢查，不只查�
 
 | 編號／請求 | 前置與預期結果 | AI 實際結果 | 人工實際結果 |
 | --- | --- | --- | --- |
-| R6-08a · `PATCH /api/v1/forms/{{editorFormId}}` | 400 VALIDATION_ERROR；path=resultVisibility，資料完全不變。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-08b · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；INVALID_VALUE at questions[1].id（第二次出現）；更新與刪除不部分成功。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-08c · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；INVALID_VALUE at questions[0].options[1].id。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-08d · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；QUESTION_NOT_FOUND at questions[0].id；不 upsert／搬移。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-08e · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；OPTION_NOT_FOUND at questions[0].options[0].id（同 Form 的另一 Question）。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-08f · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；DUPLICATE_SORT_ORDER at questions[1].sortOrder，定位真正改排序欄位，非僅改 title 的項目。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-08g · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；INVALID_OPTION at questions[0].options[0].value；trim 後重複 Branch，Form title 亦不得改。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-08h · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；QUESTION_TYPE_CONFLICT at questions[0].options；不可一邊自動清除一邊帶非空 Delta。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-08i · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG at questions[0].config.variant（非合法 multiple_choice variant）。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-08j · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG at questions[0].config；精確 min > max，不可經浮點捨入為相等。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-08k · `PATCH /api/v1/forms/{{editorFormId}}` | 400 VALIDATION_ERROR；INVALID_VALUE at title；非 nullable 欄位不能用 null 清除。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
+| R6-08a · `PATCH /api/v1/forms/{{editorFormId}}` | 400 VALIDATION_ERROR；path=resultVisibility，資料完全不變。 | PASS：400 VALIDATION_ERROR；INVALID_VALUE＠resultVisibility；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-08b · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；INVALID_VALUE at questions[1].id（第二次出現）；更新與刪除不部分成功。 | PASS：400 FORM_DEFINITION_INVALID；INVALID_VALUE＠questions[1].id；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-08c · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；INVALID_VALUE at questions[0].options[1].id。 | PASS：400 FORM_DEFINITION_INVALID；INVALID_VALUE＠questions[0].options[1].id；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-08d · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；QUESTION_NOT_FOUND at questions[0].id；不 upsert／搬移。 | PASS：400 FORM_DEFINITION_INVALID；QUESTION_NOT_FOUND＠questions[0].id；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-08e · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；OPTION_NOT_FOUND at questions[0].options[0].id（同 Form 的另一 Question）。 | PASS：400 FORM_DEFINITION_INVALID；OPTION_NOT_FOUND＠questions[0].options[0].id；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-08f · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；DUPLICATE_SORT_ORDER at questions[1].sortOrder，定位真正改排序欄位，非僅改 title 的項目。 | PASS：400 FORM_DEFINITION_INVALID；DUPLICATE_SORT_ORDER＠questions[1].sortOrder；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-08g · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；INVALID_OPTION at questions[0].options[0].value；trim 後重複 Branch，Form title 亦不得改。 | PASS：400 FORM_DEFINITION_INVALID；INVALID_OPTION＠questions[0].options[0].value；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-08h · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；QUESTION_TYPE_CONFLICT at questions[0].options；不可一邊自動清除一邊帶非空 Delta。 | PASS：400 FORM_DEFINITION_INVALID；QUESTION_TYPE_CONFLICT＠questions[0].options；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-08i · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG at questions[0].config.variant（非合法 multiple_choice variant）。 | PASS：400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG＠questions[0].config.variant；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-08j · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG at questions[0].config；精確 min > max，不可經浮點捨入為相等。 | PASS：400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG＠questions[0].config；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-08k · `PATCH /api/v1/forms/{{editorFormId}}` | 400 VALIDATION_ERROR；INVALID_VALUE at title；非 nullable 欄位不能用 null 清除。 | PASS：400 VALIDATION_ERROR；INVALID_VALUE＠title；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
 
 ### R6-09 — no-op／updatedAt 與截止時間保存精度
 
@@ -271,19 +271,19 @@ AI／人工皆可。09a 先建立實際 Number config 基準。09b～09e 各自�
 
 | 編號／請求 | 前置與預期結果 | AI 實際結果 | 人工實際結果 |
 | --- | --- | --- | --- |
-| R6-09a · `PATCH /api/v1/forms/{{editorFormId}}` | 200；實際 config 變更，Form/qChoice updatedAt 改變；其他列不變。保存此基準。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-09b · `PATCH /api/v1/forms/{{editorFormId}}` | 200 no-op；完整 DB snapshot／timestamps 不變。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-09c · `PATCH /api/v1/forms/{{editorFormId}}` | 200 no-op；不清空 Questions。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-09d · `PATCH /api/v1/forms/{{editorFormId}}` | 200 no-op；不清空 Options，任何 updatedAt 不變。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-09e · `PATCH /api/v1/forms/{{editorFormId}}` | 200 no-op；文字 trim、Config 屬性順序和 1.0／1 等值；無任何列或 timestamps 變更。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-09f · `PATCH /api/v1/forms/{{editorFormId}}` | 200；保存／回應 deadline=.123456Z。只有 Form updatedAt 改變，子列不變。保存 deadline 基準。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-09g · `PATCH /api/v1/forms/{{editorFormId}}` | 200 no-op；重送原始七位字串，與 09f 保存基準相等，updatedAt 不變。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-09h · `PATCH /api/v1/forms/{{editorFormId}}` | 200 no-op；只差次微秒，實際保存相同，任何 timestamps 不變。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-09i · `PATCH /api/v1/forms/{{editorFormId}}` | 200 no-op；重送 GET canonical 值亦不更新。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-09j · `PATCH /api/v1/forms/{{editorFormId}}` | 200；真正差一微秒，deadline 與 Form updatedAt 改變；子列不變。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-09k · `PATCH /api/v1/forms/{{editorFormId}}` | 200；deadline 清除，只有 Form updatedAt 改變。保存 null 基準。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-09l · `PATCH /api/v1/forms/{{editorFormId}}` | 200 no-op；與 09k 全部保存資料／timestamps 一致。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-09m · `GET /api/v1/forms/{{editorFormId}}` | 200；與 09l 完整 FormDetail 一致；deadline=null，status=draft。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
+| R6-09a · `PATCH /api/v1/forms/{{editorFormId}}` | 200；實際 config 變更，Form/qChoice updatedAt 改變；其他列不變。保存此基準。 | PASS：200；實際 Config 更新；未變列保留 | 待執行（人工；尚未提供結果） |
+| R6-09b · `PATCH /api/v1/forms/{{editorFormId}}` | 200 no-op；完整 DB snapshot／timestamps 不變。 | PASS：200 no-op；完整 DB 快照與所有 timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-09c · `PATCH /api/v1/forms/{{editorFormId}}` | 200 no-op；不清空 Questions。 | PASS：200 no-op；完整 DB 快照與所有 timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-09d · `PATCH /api/v1/forms/{{editorFormId}}` | 200 no-op；不清空 Options，任何 updatedAt 不變。 | PASS：200 no-op；完整 DB 快照與所有 timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-09e · `PATCH /api/v1/forms/{{editorFormId}}` | 200 no-op；文字 trim、Config 屬性順序和 1.0／1 等值；無任何列或 timestamps 變更。 | PASS：200 no-op；完整 DB 快照與所有 timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-09f · `PATCH /api/v1/forms/{{editorFormId}}` | 200；保存／回應 deadline=.123456Z。只有 Form updatedAt 改變，子列不變。保存 deadline 基準。 | PASS：200；保存 .123456Z；只有 Form deadline／updatedAt 改變 | 待執行（人工；尚未提供結果） |
+| R6-09g · `PATCH /api/v1/forms/{{editorFormId}}` | 200 no-op；重送原始七位字串，與 09f 保存基準相等，updatedAt 不變。 | PASS：200 no-op；完整 DB 快照與所有 timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-09h · `PATCH /api/v1/forms/{{editorFormId}}` | 200 no-op；只差次微秒，實際保存相同，任何 timestamps 不變。 | PASS：200 no-op；完整 DB 快照與所有 timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-09i · `PATCH /api/v1/forms/{{editorFormId}}` | 200 no-op；重送 GET canonical 值亦不更新。 | PASS：200 no-op；完整 DB 快照與所有 timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-09j · `PATCH /api/v1/forms/{{editorFormId}}` | 200；真正差一微秒，deadline 與 Form updatedAt 改變；子列不變。 | PASS：200；保存 .123457Z；真正一微秒變更，子列不變 | 待執行（人工；尚未提供結果） |
+| R6-09k · `PATCH /api/v1/forms/{{editorFormId}}` | 200；deadline 清除，只有 Form updatedAt 改變。保存 null 基準。 | PASS：200；deadline=null；只有 Form deadline／updatedAt 改變 | 待執行（人工；尚未提供結果） |
+| R6-09l · `PATCH /api/v1/forms/{{editorFormId}}` | 200 no-op；與 09k 全部保存資料／timestamps 一致。 | PASS：200 no-op；完整 DB 快照與所有 timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-09m · `GET /api/v1/forms/{{editorFormId}}` | 200；與 09l 完整 FormDetail 一致；deadline=null，status=draft。 | PASS：200；GET＝前次成功 PATCH；DB 無副作用 | 待執行（人工；尚未提供結果） |
 
 ### R6-10 — Authentication、權限、存在性與生命週期優先序
 
@@ -291,16 +291,16 @@ AI 可執行 HTTP／DB fixture 設定；人工可逐筆檢查錯誤優先序。�
 
 | 編號／請求 | 前置與預期結果 | AI 實際結果 | 人工實際結果 |
 | --- | --- | --- | --- |
-| R6-10a · `PATCH /api/v1/forms/not-a-uuid` | 401 AUTH_REQUIRED；沒有 Cookie，即使 path／欄位無效仍先判 Authentication。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-10b · `PATCH /api/v1/forms/not-a-uuid` | 400 VALIDATION_ERROR；有效 A 才檢查 UUID。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-10c · `PATCH /api/v1/forms/{{missingFormId}}` | 404 FORM_NOT_FOUND；不存在優先於欄位驗證。先用 DB 證明 missingFormId 未使用。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-10d · `PATCH /api/v1/forms/{{editorFormId}}` | 403 FORM_ACCESS_DENIED；非 Owner 優先於 Definition validation。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-10e · `GET /api/v1/forms/{{editorFormId}}` | 404 FORM_NOT_FOUND；他人 Draft Detail 隱藏存在性。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-10f · `PATCH /api/v1/forms/{{retainedDeletedFormId}}` | 404 FORM_NOT_FOUND；使用 DB 確認的 R5 Soft Delete ID，歷史資料仍原樣。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-10g · `PATCH /api/v1/forms/{{scopeFormId}}` | 409 FORM_NOT_EDITABLE；前置：僅將本次 scope fixture 設為 published。Lifecycle 優先於欄位驗證。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-10h · `PATCH /api/v1/forms/{{scopeFormId}}` | 403 FORM_ACCESS_DENIED；Published 非 Owner，Authorization 優先 Lifecycle；空 PATCH 也不跳過。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-10i · `PATCH /api/v1/forms/{{scopeFormId}}` | 409 FORM_NOT_EDITABLE；前置：僅將 scope fixture 設為 closed。空 PATCH 仍需 Draft。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-10j · `PATCH /api/v1/forms/{{scopeFormId}}` | 403 FORM_ACCESS_DENIED；Closed 非 Owner。完成後立即恢復 scope fixture 的 draft 原狀。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
+| R6-10a · `PATCH /api/v1/forms/not-a-uuid` | 401 AUTH_REQUIRED；沒有 Cookie，即使 path／欄位無效仍先判 Authentication。 | PASS：401 AUTH_REQUIRED；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-10b · `PATCH /api/v1/forms/not-a-uuid` | 400 VALIDATION_ERROR；有效 A 才檢查 UUID。 | PASS：400 VALIDATION_ERROR；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-10c · `PATCH /api/v1/forms/{{missingFormId}}` | 404 FORM_NOT_FOUND；不存在優先於欄位驗證。先用 DB 證明 missingFormId 未使用。 | PASS：404 FORM_NOT_FOUND；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-10d · `PATCH /api/v1/forms/{{editorFormId}}` | 403 FORM_ACCESS_DENIED；非 Owner 優先於 Definition validation。 | PASS：403 FORM_ACCESS_DENIED；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-10e · `GET /api/v1/forms/{{editorFormId}}` | 404 FORM_NOT_FOUND；他人 Draft Detail 隱藏存在性。 | PASS：404 FORM_NOT_FOUND；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-10f · `PATCH /api/v1/forms/{{retainedDeletedFormId}}` | 404 FORM_NOT_FOUND；使用 DB 確認的 R5 Soft Delete ID，歷史資料仍原樣。 | PASS：404 FORM_NOT_FOUND；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-10g · `PATCH /api/v1/forms/{{scopeFormId}}` | 409 FORM_NOT_EDITABLE；前置：僅將本次 scope fixture 設為 published。Lifecycle 優先於欄位驗證。 | PASS：409 FORM_NOT_EDITABLE；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-10h · `PATCH /api/v1/forms/{{scopeFormId}}` | 403 FORM_ACCESS_DENIED；Published 非 Owner，Authorization 優先 Lifecycle；空 PATCH 也不跳過。 | PASS：403 FORM_ACCESS_DENIED；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-10i · `PATCH /api/v1/forms/{{scopeFormId}}` | 409 FORM_NOT_EDITABLE；前置：僅將 scope fixture 設為 closed。空 PATCH 仍需 Draft。 | PASS：409 FORM_NOT_EDITABLE；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
+| R6-10j · `PATCH /api/v1/forms/{{scopeFormId}}` | 403 FORM_ACCESS_DENIED；Closed 非 Owner。完成後立即恢復 scope fixture 的 draft 原狀。 | PASS：403 FORM_ACCESS_DENIED；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
 
 ### R6-10 的 DB fixture 狀態操作
 
@@ -346,7 +346,7 @@ AI／人工皆可。11a 同時包含合法 Form 修改、合法 Choice→Text �
 
 | 編號／請求 | 前置與預期結果 | AI 實際結果 | 人工實際結果 |
 | --- | --- | --- | --- |
-| R6-11a · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG at questions[1].config；整份 Form／Questions／Options 含 ID、createdAt、updatedAt 完全不變。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
+| R6-11a · `PATCH /api/v1/forms/{{editorFormId}}` | 400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG at questions[1].config；整份 Form／Questions／Options 含 ID、createdAt、updatedAt 完全不變。 | PASS：400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG＠questions[1].config；完整 DB／timestamps 不變 | 待執行（人工；尚未提供結果） |
 
 ### R6-12 — 兩個並行 PATCH 的最終 Candidate 唯一性
 
@@ -354,9 +354,9 @@ AI 可依下方 PowerShell harness 執行；人工依相同步驟獨立操作，
 
 | 編號／請求 | 前置與預期結果 | AI 實際結果 | 人工實際結果 |
 | --- | --- | --- | --- |
-| R6-12a · `PATCH /api/v1/forms/{{concurrentFormId}}` | 與 12b 同時執行；二者恰一個 200，另一個 400 FORM_DEFINITION_INVALID／DUPLICATE_SORT_ORDER at questions[0].sortOrder。不指定哪方贏。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-12b · `PATCH /api/v1/forms/{{concurrentFormId}}` | 與 12a 同時執行；敗者無部分寫入或 500；DB 恰一題 order2，另一題仍原 order0或1，ID／createdAt 保留。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6-12c · `GET /api/v1/forms/{{concurrentFormId}}` | 200；Questions 依最終 sortOrder 排列，無重複；內容等於成功 PATCH 的保存狀態。 | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
+| R6-12a · `PATCH /api/v1/forms/{{concurrentFormId}}` | 與 12b 同時執行；二者恰一個 200，另一個 400 FORM_DEFINITION_INVALID／DUPLICATE_SORT_ORDER at questions[0].sortOrder。不指定哪方贏。 | PASS：200；2 lock waiters；12a 勝出，12b 無部分寫入 | 待執行（人工；尚未提供結果） |
+| R6-12b · `PATCH /api/v1/forms/{{concurrentFormId}}` | 與 12a 同時執行；敗者無部分寫入或 500；DB 恰一題 order2，另一題仍原 order0或1，ID／createdAt 保留。 | PASS：400；2 lock waiters；12a 勝出，12b 無部分寫入 | 待執行（人工；尚未提供結果） |
+| R6-12c · `GET /api/v1/forms/{{concurrentFormId}}` | 200；Questions 依最終 sortOrder 排列，無重複；內容等於成功 PATCH 的保存狀態。 | PASS：200；GET＝前次成功 PATCH；DB 無副作用 | 待執行（人工；尚未提供結果） |
 
 ### R6-12 的並行 harness（不得先手動送 12a／12b）
 
@@ -434,9 +434,9 @@ if (($Statuses -join ',') -ne '200,400') { throw 'Expected exactly one 200 and o
 
 AI 可執行暫存檔／placeholder 清理及唯讀核對；人工使用 REST Client／DBeaver 獨立核對 05／07／09／10／11／12 的主要流程、error paths、timestamps 與 DB 資料，結果只填人工欄。檢查不依賴 Nuxt。依下方收尾操作恢復 scope fixture，保留所有 R4／R5 與本次三張 R6 fixture、非秘密測試證據；不做 hard-delete／TRUNCATE／rebuild／volume cleanup。Owner 確認前不標 accepted。
 
-**AI 實際結果：**待執行（等待 Owner review）。
+**AI 實際結果：**PASS（2026-10-04）：三張既有 Form 與 R4 公開會員欄位逐一相等；新三張 Form 保留；scope 完整復原；兩個 TEMP Cookie jar 移除；221 個證據／文件掃描未命中實際密碼、signing key 或 JWT。原生 API／開發 PostgreSQL 保留供人工驗收。
 
-**人工實際結果：**待執行（等待 Owner review）。
+**人工實際結果：**待執行（人工；尚未提供結果）。
 
 ### R6-13 收尾及資料核對
 
@@ -472,7 +472,7 @@ git status --short
 
 ## 尚待確認與後續邊界
 
-Windows 原生新版 API 啟動、Windows testhost 與本次全套 regression 全是待執行項，不能用開發報告代填。Linux 全套若成功只證明該平台；Windows 缺口須分列交 Owner 判定。真正 PATCH／Publish、Submit／Close／Delete、Deadline Submit 臨界、Statistics 數值排序與 Google 整合分屬 R7～R10／G1，未執行、不提前建立其 API。UUID 接受格式／lock 取得時機等既有延後事項不在本次改契約。
+本次已實跑 Windows 原生新版 API 與完整 testhost regression，見 01／02；沒有使用歷史開發結果代填。本次 Linux 未執行，Windows 已成功而未啟用條件式 fallback。人工結果仍待執行。真正 PATCH／Publish、Submit／Close／Delete、Deadline Submit 臨界、Statistics 數值排序與 Google 整合分屬 R7～R10／G1，未執行、不提前建立其 API。UUID 接受格式／lock 取得時機等既有延後事項不在本次改契約。
 
 人工 HTTP 不展開每個 Config variant／Unicode 極限／JSONB 極端指數／日期邊界／全部巢狀 Shape；02 完整 suite 覆蓋已有開發回歸，新增手動案例只驗主流程及不同錯誤類型。未由本次 plan 證明的細部邊界保持未驗證，不降低正式規格。若發現規格衝突，記文件／章節／影響並停止受影響項；若發現產品缺陷，交回 R6 修正階段，不能在本階段修改程式或更改預期結果求 PASS。
 
@@ -480,12 +480,52 @@ Windows 原生新版 API 啟動、Windows testhost 與本次全套 regression �
 
 | 項目 | AI 實際結果 | 人工實際結果／來源 |
 | --- | --- | --- |
-| Windows 原生 API 啟動（01） | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| Windows 原生全套 testhost（02） | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| 本次全套回歸／必要時 Linux（02；平台分列） | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| R6 HTTP／DB 主要案例（03～12） | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
-| 暫存狀態復原與保留資料（13） | 待執行（等待 Owner review） | 待執行（等待 Owner review） |
+| Windows 原生 API 啟動（01） | PASS：PID 12064、Development／5000；01a～01f 通過 | 待執行（人工；尚未提供結果） |
+| Windows 原生全套 testhost（02） | PASS：118/118，exit 0，0 failed／0 notExecuted | 待執行（人工；尚未提供結果） |
+| 本次全套回歸／必要時 Linux（02；平台分列） | Windows PASS；Linux 未執行（fallback 條件未成立） | 待執行（人工；尚未提供結果） |
+| R6 HTTP／DB 主要案例（03～12） | PASS：50 個 HTTP 子項；完整 DB／原子性／並行已核對 | 待執行（人工；尚未提供結果） |
+| 暫存狀態復原與保留資料（13） | PASS：scope 完整復原；資料保留；Cookie／秘密清理完成 | 待執行（人工；尚未提供結果） |
 
 執行紀錄另記 RunId、Owner 核准版本／執行授權、實際 SHA、平台／工具、實跑命令、子項結果、保留 ID、清理紀錄、FAIL／BLOCKED／未驗證事項及剩餘 Git state。實際執行報告以「驗收結果待 Owner 確認」交付，不推論 accepted。
 
-**目前狀態：成對計畫準備完成、待 Owner 審核；所有 AI／人工驗收待執行。** 審核後仍需明確執行授權；本次交付後停止，不啟動 R7。
+**目前狀態：AI 執行完成，人工全部待執行；驗收結果待 Owner 確認。** 未標 R6 accepted，未啟動 R7；本次交付後停止。
+
+## 本次 AI 執行紀錄（2026-10-03～04）
+
+Owner 核准與執行授權來源：本 chat 明確核准兩份目前文件並授權 AI 驗收。核准文件／執行 source HEAD 均為 `034a0be8b4347f14c7609a8ec2460dfa2eccdd40`（程式基準 `af1a5a3`）；起始 Git 乾淨。唯一 RunId：`r6-acceptance-20261003-01`，先查 DB 確認未使用；跨午夜續跑保留同 RunId，沒有重建或覆寫測資。
+
+**AI 結果：**56/56 HTTP 子項 PASS；02 完整 Windows 自動回歸 PASS；13 復原／清理 PASS。沒有產品案例 FAIL／BLOCKED，沒有修改業務程式、schema、migration、請求或預期。**人工結果：**全部待執行，無 Owner 手動結果可記錄。
+
+| 平台／操作 | 實跑命令／結果 |
+| --- | --- |
+| Windows SDK／DB | `dotnet --version`＝10.0.400；`docker compose config --quiet` exit 0；`docker compose up -d`／`docker compose ps` 確認 PostgreSQL 17.11 healthy，原 volume 保留 |
+| Windows restore | `dotnet restore CustomFormService.sln --disable-build-servers -m:1` exit 0 |
+| Windows build | `dotnet build CustomFormService.sln --no-restore --configuration Debug --disable-build-servers -m:1 -p:UseSharedCompilation=false` exit 0，0 warnings／0 errors，20.04 秒 |
+| Windows native API | `dotnet run --project src/CustomFormService.Api/CustomFormService.Api.csproj --launch-profile http --no-build` 啟動成功，Development、localhost:5000，PID 12064／dotnet exec 本專案 DLL；01 工程端點通過 |
+| Windows full regression | `dotnet test CustomFormService.sln --no-build --no-restore --configuration Debug -m:1 --logger "console;verbosity=normal" --logger "trx;LogFileName=windows-full.trx" --results-directory artifacts/r6-acceptance-evidence/r6-acceptance-20261003-01` exit 0；2026-10-04 00:21:42～00:21:58，118 executed／118 passed／0 failed／0 notExecuted，15.7945 秒 |
+| Linux | 未執行；Windows testhost 本次正常，核准計畫的條件式 fallback 未啟用，未建立 SDK 暫存容器 |
+| HTTP／DB | bundled Python `.../dependencies/python/python.exe` 執行 ignored helper `execute.py` 的 `baseline`、`01`、`retained`、`03-05`、`06-09`、`10-11`、`12`、`13`；urllib 逐筆讀取 .http 原始 JSON，代入本次 ID／保留身分；psql 經 `docker compose exec -T postgres psql -X -q -A -t -v ON_ERROR_STOP=1` 執行計畫 SQL 與完整 snapshots |
+| 文件檢查 | 56 個同編號／請求／預期／AI 結果一致，人工欄全待執行；可執行 HTTP 內容與核准版本相同；`git diff --check` PASS；文件更新後最終秘密掃描 226 個檔案、0 命中，TEMP Cookie jar 剩餘 0 |
+
+本次 02 TRX 明確包含 `Patch_deadline_uses_actual_storage_precision_for_no_op` 的 12 案、`Concurrent_patches_are_serialized_before_candidate_validation`、`Patch_rolls_back_first_save_when_second_save_has_database_failure`、`Patch_does_not_return_success_and_rolls_back_when_commit_fails`，全部 Passed。故障只發生於 TestFactory 自建資料／交易；常駐 API 未被注入故障。
+
+12 的 PowerShell Start-Job 範例以等價 Python subprocess＋兩個 HTTP workers 執行，未改 barrier／請求／資料效果：`pg_sleep(15)` 自然 COMMIT，00:30:03 觀察到兩個 Lock waiters（transactionid／tuple）；12a＝200，12b＝400，detail＝`DUPLICATE_SORT_ORDER`／`questions[0].sortOrder`。只更新 qConcurrentA order0→2，qConcurrentB 仍 order1；ID／createdAt 與敗者 updatedAt 保留，12c GET 等於成功回應。這是相同測試語意的工具轉換，未以順序送出替代並行。
+
+證據目錄：[artifacts/r6-acceptance-evidence/r6-acceptance-20261003-01/](../../artifacts/r6-acceptance-evidence/r6-acceptance-20261003-01/)（gitignored，本機保留）。逐筆映射見 `results.json`、`R6-XXx.request.json`（登入 request 不保存）、`R6-XXx.response.json` 與 before／after DB snapshots；全套 `windows-full.trx`／`windows-full.log`／`windows-full.exit.txt`；並行 `R6-12-overlap.json`／`R6-12-barrier.log`；保留基準 `retained-baseline.json`；清理 `R6-13-cleanup.json`。證據不含 Cookie／Set-Cookie／密碼或 User passwordHash。
+
+| 保留資源 | 實際 ID／狀態 |
+| --- | --- |
+| R4 兩位會員／既有三張 Form | User 公開欄位及三個 Aggregate 全列快照與執行前相等；兩位 active，沒有刪除 |
+| R5 nested Draft | `f8eb26cc-2c74-4ff5-b64c-65bda613916b`，保留原狀 |
+| R5 Soft Deleted Form | `fce3cdc1-a9ec-426c-a278-7a689b3a6b46`，含子資料保留原狀 |
+| 本次 editor | `5975fea4-c75e-4a16-a5e7-6e53f976594d`，Draft／6Q／3O、deadline=null |
+| 本次 scope | `78b14621-30d2-40d8-aabc-1057200f3b7d`，恢復 Draft，整份快照等於 03b 後基準 |
+| 本次 concurrent | `2427ed41-2dc1-4f07-ba10-10147e82fda9`，Draft，保留 order1／2 的合法贏家結果 |
+
+清理實際完成：移除本次兩個 TEMP Cookie jar；文件的 HTTP/password placeholders 始終未寫入有效憑證；Python 過程內秘密隨 process 結束消失。掃描當時 221 個證據／文件，對本機實際兩份 JWT、保留合成密碼、User Secrets signing key／DB password 與 JWT 格式均無命中。未新增秘密設定或需還原的 User Secrets；本次無其他秘密暫存 request／header 檔，未建立 Linux SDK container。PostgreSQL container／volume、原生 API 保留供人工驗收。
+
+**工具／環境診斷（保留，不視為產品缺陷）：**起初 sandbox 無法連 Docker pipe，通過自動審核後正常；先前額度耗盡時 DB 基準查詢未執行，Owner 指示重置後才續跑。續跑時誤嘗試啟動第二個 API，該程序因 address in use 終止；已核對本次原先啟動的 PID 12064 仍正常，未停止其他程序。Helper 最初以 cp950 讀 UTF-8 R4 文件失敗，沒有送登入；修正 UTF-8 後，01d 曾因未展開 R4 本機密碼模板收到 401（保留 `R6-01d-helper-template-attempt.response.json`），再正確解析 R4 自身 RunId、使用同一保留密碼得到 200。未重設密碼、修改會員或改請求契約。最終 56 個核准子項的 PASS 均有實跑證據；此額外診斷 401 不冒稱成功。
+
+本次只更新兩份成對文件的執行結果與狀態，無測試語意修訂。人工與 Linux 未執行項保持分開；資料、HTTP 與 DB 結果不代表 Owner 已確認 Round 完成。驗收紀錄提交 SHA 與最終 Git 狀態由交付訊息提供。
+
+**驗收結果待 Owner 確認**
