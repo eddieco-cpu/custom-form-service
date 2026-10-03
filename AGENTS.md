@@ -16,59 +16,65 @@ Before changing project behavior, read:
 
 The approved specifications are the source of truth for business rules,
 database schema, API contracts, error codes, authorization, transactions,
-concurrency behavior, and validation order.
+concurrency behavior, and validation order. Use the Implementation Plan for
+Round scope, dependencies, and progress.
 
 If authoritative documents conflict, report the filenames, sections, conflict,
-and affected work. Do not silently choose one interpretation.
+and affected work. Stop only the affected work until the conflict is resolved;
+do not silently choose one interpretation or change a frozen contract.
 
-## Implementation rounds
+## Implementation rounds and phase boundaries
 
-Execute only the implementation Round explicitly requested by the user.
+Execute only the Round and workflow phase explicitly authorized by the user.
+The default sequence is:
 
-For the current Round:
+1. Development: implement the requested Round, run its required build and
+   necessary automated tests, inspect the diff, and update affected documents.
+   Deliver the development report and stop. Do not automatically prepare
+   acceptance artifacts.
+2. Acceptance preparation: when requested, use the acceptance skill to create
+   or revise the paired Markdown and `.http` plan. Deliver both files and stop
+   for the Owner's review. Do not execute acceptance operations in this phase.
+3. AI acceptance execution: execute only the current Owner-approved paired
+   plan. Record actual results and deliver the execution report, then stop
+   for manual acceptance and Owner confirmation.
+4. Manual acceptance and completion: keep AI and manual results separate.
+   Mark the Round accepted only after the Owner explicitly confirms acceptance
+   based on the recorded results and any agreed outstanding work.
 
-1. Read the relevant specifications.
-2. Inspect the existing repository and Git status.
-3. State the Round scope and verification approach.
-4. Implement only the current Round; during development run its required build
-   and necessary automated tests.
-5. Commit verified development changes using single-purpose commits.
-6. For every Round that accepts APIs, create both
-   `docs/test-plan/Rn_Acceptance_Test.md` and
-   `docs/test-plan/Rn_Manual_Tests.http`, then stop for the user's review. The
-   Markdown must be runnable in sequence by a person or Codex, and include
-   purpose, prerequisites, curl or `.http` request examples, expected results,
-   and an actual-result field. The `.http` file must provide sequential,
-   commented manual requests; every comment identifies its matching Markdown
-   test number, prerequisite operations, and expected result. Keep test
-   numbers, order, synthetic data, requests, and expected results consistent
-   between both files. Keep DB and other non-HTTP operations in Markdown, and
-   place a matching `.http` comment that directs the operator there. Provide
-   links to both files in the review delivery.
-7. Only after the user approves the plan, execute it and record every result as
-   PASS, FAIL, BLOCKED, or 未執行 with necessary evidence. Focus on main
-   behavior, authorization, DB writes, and representative errors; record
-   deferred fine-grained boundaries briefly without relaxing specs or creating
-   large matrices.
-8. Restore temporary test state and configuration, retain local synthetic data
-   for later Rounds, and stop for the user's confirmation of the results.
-9. Mark the Round accepted only after that confirmation; report results,
-   commands, verification evidence, unresolved issues, changed files, and
-   commit SHA. Do not start the next Round.
+A request may explicitly authorize multiple phases. Follow that authorization,
+but retain the approval gate before acceptance execution. Approval of a plan
+authorizes execution when the Owner's instruction makes that intent clear.
+Do not treat plan preparation, development completion, or acknowledgment of
+results as acceptance approval.
 
-Do not automatically start the next Round.
+Development builds, automated tests, and self-checks do not require acceptance
+plan approval. Development self-checks do not replace a separately requested
+code review or manual acceptance.
 
-When review feedback concerns the current Round, complete the fixes,
-repeat verification, and report the new commit before stopping.
+Commit verified, authorized changes using single-purpose commits. Preserve the
+distinction between development, plan preparation, execution, and acceptance
+in progress records. Report actual commands and results, changed files,
+unverified work, unresolved issues, commit SHA, and remaining Git state.
+Never claim an unexecuted check passed.
+
+When review feedback concerns the current Round, complete the authorized
+fixes, repeat affected verification, and report the new commit. If a fix
+invalidates an existing acceptance plan or recorded result, flag it and keep
+that result from being treated as current; follow the appropriate phase and
+approval gates for any subsequent acceptance work.
+
+Do not automatically start the next phase or the next Round.
 
 ## Current delivery boundary
 
 The first delivery stage is the local Email/Password backend.
 
 Google Authentication remains part of the formal V1 backend, but is scheduled
-for the later G1 Round.
+for the later G1 Round. Do not implement it before G1 is explicitly requested.
 
-Keep all seven V1 domain tables, including `user_identities`.
+Keep the complete V1 schema, including `user_identities`, as defined by the
+approved database specification.
 
 Nuxt frontend, Railway deployment, production domain setup, and live production
 HTTPS verification use separate implementation plans.
@@ -77,10 +83,13 @@ HTTPS verification use separate implementation plans.
 
 - Use `.agents/skills/v1-round-development/SKILL.md` for an explicitly
   authorized Round's development or current-Round repair.
-- Use `.agents/skills/v1-acceptance-testing/SKILL.md` to prepare an API Round's
-  paired acceptance artifacts, then to execute only an Owner-approved plan.
-- These skills organize the workflow only. This file keeps common safeguards;
-  the approved specifications remain the source of truth for all contracts.
+- Use `.agents/skills/v1-acceptance-testing/SKILL.md` for acceptance-plan
+  preparation or Owner-approved acceptance execution. The skill owns the
+  paired-file format, case mapping, result recording, and handoff details.
+- These skills organize workflows. This file owns common safeguards and phase
+  boundaries; the approved specifications own all business contracts.
+- If the Implementation Plan or a skill conflicts with these phase boundaries,
+  report the conflict before advancing to the affected phase.
 
 ## Git and data safety
 
@@ -92,4 +101,6 @@ HTTPS verification use separate implementation plans.
 - Do not delete the regular development database volume.
 - Use the local development DB for ordinary acceptance and preserve its
   synthetic fixtures.
-- Do not commit work from a later Round.
+- Restore temporary configuration and test files without reverting user changes
+  or deleting retained acceptance fixtures.
+- Do not commit unrelated work or work from a later Round.

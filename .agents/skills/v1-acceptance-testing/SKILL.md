@@ -1,84 +1,124 @@
 ---
 name: v1-acceptance-testing
-description: Prepare or execute a V1 API Round's paired acceptance test plan after the required Owner approval gates. Do not use to implement product behavior.
+description: Prepare paired Markdown and .http acceptance plans for a named V1 API Round, or execute the current Owner-approved plan. Do not implement product behavior.
 ---
 
 # V1 Acceptance Testing
 
-Use this skill for the acceptance workflow of one named V1 Round. Select an
-explicit mode: **Prepare** creates or repairs the plan; **Execute** runs an
-Owner-approved plan. Do not implement product behavior in this skill.
+## Mode and required input
 
-## Required input
+Select the mode from the user's request and session context:
 
-- The named Round, its implemented scope, and relevant formal specifications.
-- The mode: Prepare or Execute.
-- Existing `docs/test-plan/Rn_Acceptance_Test.md` and
-  `docs/test-plan/Rn_Manual_Tests.http`, when present.
-- For Execute, evidence that the Owner approved the current paired plan.
+- **Prepare**: create or revise the acceptance plan for Owner review.
+- **Execute**: run the current paired plan after Owner approval and execution
+  authorization.
+
+When the user asks to start acceptance testing without an approved plan,
+start with Prepare. Never infer approval from the plan's existence or from
+development completion. Clarify ambiguous execution authorization before
+running acceptance operations.
 
 Read `AGENTS.md`, the Round entry and workflow in
-`docs/implementation/V1_Backend_Implementation_Plan.md`, and the relevant
-formal specifications. Use `R4_Acceptance_Test.md` / `R4_Manual_Tests.http` and
-`R5_Acceptance_Test.md` / `R5_Manual_Tests.http` as the local style and case-
-granularity precedents; do not copy their credentials, tokens, run IDs, or
-recorded results.
-
-## Prepare
-
-For every Round that accepts APIs, create or revise both files:
+`docs/implementation/V1_Backend_Implementation_Plan.md`, and relevant formal
+specifications. Confirm the implemented scope and inspect existing artifacts:
 
 - `docs/test-plan/Rn_Acceptance_Test.md`
 - `docs/test-plan/Rn_Manual_Tests.http`
 
-Keep them executable in sequence and mutually consistent in test number, order,
-synthetic data, requests, prerequisites, and expected result. The Markdown plan
-is the authority for purpose, environment setup, database or other non-HTTP
-operations, cleanup, and result recording. Every `.http` request is sequential
-and commented with its matching Markdown test number, prerequisite operation,
-and expected result; a non-HTTP Markdown operation needs a matching `.http`
-comment that directs the operator to it.
+Use the R4 and R5 paired acceptance files as style and case-granularity
+precedents. Verify their actual repository paths; do not rename existing files
+just to match a precedent reference. Do not copy credentials, tokens, run IDs,
+or recorded results from an earlier run.
 
-Use representative main-success, authorization or existence-boundary, database-
-write or atomicity, and error cases. Keep the coverage proportional to the
-Round; record deferred fine-grained boundaries briefly rather than weakening
-the contract or creating a large matrix. Use synthetic data, preserve the local
-development database and its fixtures, and describe only temporary-state
-cleanup. Never store credentials, database passwords, or usable JWTs; restore
-token placeholders in `.http` files.
+For Execute, identify the Owner approval covering the current paired plan and
+the authorization to execute it. Resolve substantive changes made since that
+approval before proceeding.
 
-Each planned test must include expected results and distinct fields for **AI
-acceptance result** and **manual acceptance result**, both initially
-`未執行（等待 Owner review）`. Deliver the two paths, planned coverage, data
-retention or cleanup approach, and any known gaps, then stop for Owner approval.
-Do not execute the requests in Prepare mode.
+## Prepare
+
+Create or revise both paired files. Keep test numbers, order, synthetic data,
+requests, prerequisites, and expected results mutually consistent.
+
+The Markdown plan owns:
+
+- purpose and planned coverage;
+- environment prerequisites and startup instructions;
+- ordered cases, requests, and expected results;
+- database and other non-HTTP operations;
+- data retention and temporary-state cleanup; and
+- separate AI and manual actual-result fields with concise evidence.
+
+Make each `.http` request sequential and comment it with its matching Markdown
+test number, prerequisites, and expected result. For non-HTTP steps, add a
+matching `.http` comment directing the operator to the Markdown instructions.
+Use `.http` examples or equivalent curl requests in the Markdown; avoid
+duplicating both forms unnecessarily.
+
+Cover representative success behavior, authorization or existence boundaries,
+database writes or atomicity where applicable, and error cases. Keep coverage
+proportional to the Round. Briefly identify deferred fine-grained boundaries
+without weakening the contract or creating large matrices.
+
+Use synthetic fixtures and follow `AGENTS.md` for database preservation and
+cleanup. Describe run identifiers, repeated-run handling, and retained data.
+Use credential and token placeholders; keep usable secrets out of both files
+and recorded evidence.
+
+For a new or substantively revised case, initialize both result fields to
+`未執行（等待 Owner review）`. Preserve prior results as clearly labeled
+historical runs; do not present them as evidence for a changed case.
+
+Deliver links to both files, planned coverage, data retention or cleanup, and
+known gaps. Stop for Owner approval. Do not execute acceptance requests or
+planned database mutations in Prepare mode.
 
 ## Execute
 
-Execute only the exact plan the Owner approved. If that approval is absent or a
-case or operation must expand the approved scope, explain the change and stop
-for approval. A clerical correction that does not alter scope must update both
-paired files consistently and be called out in the result.
+Run only the current paired plan covered by Owner approval. Missing approval
+or a substantive plan change requires review before execution of the affected
+operations.
 
-Map every AI-performed HTTP operation to its `.http` test number. If using
-`curl`, a test client, or another HTTP tool instead of the `.http` companion,
-record the equivalent `.http` case and the tool used in the Markdown result.
-Keep DB and other non-HTTP evidence with the matching Markdown test.
+Clerical corrections are limited to changes that do not alter test semantics,
+such as formatting, spelling, or broken links. Keep the paired files consistent
+and disclose these corrections in the report. Changes to requests, identities,
+preconditions, expected results, case coverage, or data effects require renewed
+Owner approval. Re-check any approval affected by implementation repairs.
 
-Record each actual result as `PASS`, `FAIL`, `BLOCKED`, or `未執行`, with concise
-evidence, and keep AI and manual acceptance results separate. Restore only
-temporary configuration and test files after execution; retain local synthetic
-fixtures and never delete the regular development database volume. A destructive
-rebuild may use only an isolated disposable database resource.
+Follow the approved sequence and prerequisites. Map every AI HTTP operation
+to its `.http` test number. If using curl, a test client, or another HTTP tool,
+record the equivalent `.http` case and the tool used. Passing development
+integration tests alone does not establish that acceptance cases passed.
 
-If an implementation defect is found, return it to current-Round development;
-if a test-document defect is found, correct the paired cases; if a specification
-question is found, report it for discussion. Never change an expected result
-just to obtain a pass.
+Record each case as `PASS`, `FAIL`, `BLOCKED`, or `未執行`, with concise evidence.
+Keep database and non-HTTP evidence with the matching Markdown case. If a
+prerequisite fails, mark dependent cases accordingly rather than treating them
+as executed successfully.
+
+Keep AI and manual results separate. Do not infer manual PASS from AI PASS.
+Record manual results only from Owner-provided results or an explicitly
+authorized, observed manual run, and identify their source.
+
+Restore temporary configuration and test files according to the approved
+plan and `AGENTS.md`; retain synthetic fixtures. Remove usable tokens or
+credentials introduced during execution and restore placeholders. Keep
+evidence sufficient to assess results without exposing secrets.
+
+Route implementation defects to current-Round development, test-document
+defects to paired-plan correction, and specification questions to discussion.
+Do not silently switch to product implementation. Never change expected
+results solely to obtain a pass.
 
 ## Handoff standard
 
-Report the executed commands, case-to-`.http` mapping, evidence, cleanup,
-separate AI and manual result summaries, failures or unverified work, and any
-development or specification follow-up. End with **「驗收結果待 Owner 確認」**.
-Only the Owner may confirm the Round as accepted.
+Report:
+
+- the executed plan and run identifier;
+- commands actually run and tools used;
+- case-to-`.http` mapping and concise evidence;
+- separate AI and manual result summaries;
+- retained data and completed temporary-state cleanup; and
+- failures, blocked or unexecuted cases, and required follow-up.
+
+End with **「驗收結果待 Owner 確認」**. This indicates pending review, not a
+passing outcome. Do not mark the Round accepted; follow `AGENTS.md` for Owner
+confirmation and progress updates.
