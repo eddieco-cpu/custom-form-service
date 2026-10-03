@@ -9,6 +9,12 @@ public sealed record DraftDefinitionChangeSet(
     IReadOnlyList<Guid> DeletedQuestions,
     IReadOnlyList<QuestionDefinitionChange> Questions)
 {
+    // Npgsql 10.0.3 PgTimestamp encodes whole microseconds relative to 2000-01-01,
+    // truncating toward zero (not flooring .NET ticks). Keep its default infinity
+    // conversions for DateTime.MinValue/MaxValue distinct from finite timestamps.
+    // https://github.com/npgsql/npgsql/blob/v10.0.3/src/Npgsql/Internal/Converters/Temporal/PgTimestamp.cs
+    private static readonly long PostgreSqlEpochTicks = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc).Ticks;
+
     public bool HasChanges => FormFieldsChanged || DeletedQuestions.Count > 0 || Questions.Count > 0;
 
     public static DraftDefinitionChangeSet Between(Form form, FormDefinitionCandidate candidate)
@@ -42,8 +48,23 @@ public sealed record DraftDefinitionChangeSet(
         return new(candidate,
             form.Title != candidate.Title || form.Description != candidate.Description ||
             form.ResponseMode != candidate.ResponseMode || form.ResponseIdentity != candidate.ResponseIdentity ||
-            form.SubmissionDeadlineAt != candidate.SubmissionDeadlineAt,
+            !DeadlinesEqualAtStoragePrecision(form.SubmissionDeadlineAt, candidate.SubmissionDeadlineAt),
             existing.Keys.Where(id => !finalIds.Contains(id)).ToArray(), changes);
+    }
+
+    private static bool DeadlinesEqualAtStoragePrecision(DateTimeOffset? before, DateTimeOffset? after)
+    {
+        if (before == after) return true;
+        if (before is not { } saved || after is not { } requested) return false;
+        return EncodeDeadline(saved) == EncodeDeadline(requested);
+    }
+
+    private static long EncodeDeadline(DateTimeOffset value)
+    {
+        var ticks = value.UtcTicks;
+        if (ticks == DateTime.MinValue.Ticks) return long.MinValue;
+        if (ticks == DateTime.MaxValue.Ticks) return long.MaxValue;
+        return (ticks - PostgreSqlEpochTicks) / TimeSpan.TicksPerMicrosecond;
     }
 }
 
