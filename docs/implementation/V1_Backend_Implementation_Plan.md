@@ -79,7 +79,7 @@ Next round: prerequisite only; not started
 | R4 | Email Auth 與 User | 註冊、登入、登出、本人資料／更新 | **accepted（2026-10-01，人工確認完成）**：[`R4_Acceptance_Test.md`](../test-plan/R4_Acceptance_Test.md)；[`R4_Manual_Tests.http`](../test-plan/R4_Manual_Tests.http) |
 | R5 | Form 基礎讀寫 | Create／List／Detail／Delete；安全邊界 | **accepted（2026-10-03，Owner 人工驗收確認通過；AI case 執行紀錄仍有缺口）**：[`R5_Acceptance_Test.md`](../test-plan/R5_Acceptance_Test.md)；[`R5_Manual_Tests.http`](../test-plan/R5_Manual_Tests.http) |
 | R6 | Draft Definition 與 Delta | 完整 Question／Option／Config 編輯與原子性 | **accepted（2026-10-04，Owner review 提交證據後明確確認；人工未執行）**。AI：Windows 原生 API PASS、完整回歸 118/118、HTTP／DB 56/56 PASS；Linux 本次未執行（fallback 不需要）。計畫提交 `034a0be`、執行紀錄提交 `81b64f3`；保留資料與復原／秘密清理完成。成對紀錄：[`R6_Acceptance_Test.md`](../test-plan/R6_Acceptance_Test.md)、[`R6_Manual_Tests.http`](../test-plan/R6_Manual_Tests.http)。 |
-| R7 | Lifecycle 與 Result Policy | Publish／Close／Visibility、Freeze 與並行 | not started |
+| R7 | Lifecycle 與 Result Policy | Publish／Close／Visibility、Freeze 與並行 | **實作計畫待 Owner 確認，尚未開發（2026-10-04）**：[`R7_Implementation_Plan.md`](R7_Implementation_Plan.md)；本次未修改業務程式或執行測試。 |
 | R8 | Submission | 全題型 Answer／Response、single／multiple、並行 | not started |
 | R9 | Latest 與 Respondent Count | 最新整份回覆與有效人數 | not started |
 | R10 | Statistics | Closed／Visibility／anonymous／identified／分布 | not started |
@@ -145,6 +145,8 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 **輸入**：01 FORM-01／03／04／07／09、CON；03b §8.2～8.4、04、05 §8～10。**工作**：完成 12～14 號端點；Draft 發布完整性驗證、Published Definition Freeze、Closed 不可 Reopen、未刪除時獨立修改 resultVisibility；與 R6 的 Patch／Publish 競爭控制。
 
 **驗收／證據**：不完整 Draft 被拒並回正式 error details；發布後 definition 修改被拒，visibility 仍可依規格變更；Close／Publish 重試依狀態回 409；截止時間**不自動 Close**。並行 Patch／Publish 測試保證正式定義不被舊寫入改動。**提交**：可拆 lifecycle／visibility。**停止**：記錄原子及並行策略與測試結果。
+
+**本次計畫（2026-10-04）**：依 Owner 最新指示僅交付 [R7 精簡實作計畫](R7_Implementation_Plan.md)，尚未授權開發。計畫列出共用 Validator／Form lock、生命週期與獨立 Visibility、必要局部整理與開發測試；交付後停止待確認。後續開發交付、成對驗收計畫 review、授權 AI 執行及 Owner 確認仍依 §3 四階段，未提前進入 R8～R11／G1。
 
 ### R8 — Submit／Response／Answer
 
