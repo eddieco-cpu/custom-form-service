@@ -17,7 +17,9 @@ internal readonly record struct DefinitionNumber(int Sign, string Digits, int Ex
         var exponentIndex = token.IndexOfAny(['e', 'E']);
         var exponent = exponentIndex < 0 ? BigInteger.Zero
             : BigInteger.Parse(token[(exponentIndex + 1)..], CultureInfo.InvariantCulture);
-        if (exponent < int.MinValue || exponent > int.MaxValue) return false;
+        // PostgreSQL's numeric input parser caps the raw exponent even for zero.
+        // Checking only the nonzero storage weight would let these tokens reach 500.
+        if (exponent < -(int.MaxValue / 2) || exponent > int.MaxValue / 2) return false;
         var mantissa = token[(negative ? 1 : 0)..(exponentIndex < 0 ? token.Length : exponentIndex)];
         var dot = mantissa.IndexOf('.');
         var fractionDigits = dot < 0 ? 0 : mantissa.Length - dot - 1;

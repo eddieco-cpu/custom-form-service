@@ -6,7 +6,7 @@
 
 依 AGENTS.md、v1-round-development skill、最新正式規格與 Owner 授權，先建立測試基準，再做有限 Candidate／ChangeSet 重構。沒有修改正式規格、DB schema 或 Migration；R7、G1、驗收準備與驗收執行均未開始。
 
-新增 `tests/CustomFormService.IntegrationTests/FormEndpointsTests.CandidateContract.cs`，共 36 個資料驅動／一般測試案例：空 Question／Option 陣列 no-op（1）、Type 切換與 Choice 互轉（6）、Config 完整取代與語意 no-op（1）、共享 Create／PATCH Config 邊界（12）、Number 精確數值（11）、JSONB 實際儲存邊界（2）、Question／Option 排序交換（1）、欄位來源 path（2）。沿用既有 fixture、查詢與清理流程；不重複新增已有的 value 交換／重用、三組混合操作或第二次 SaveChanges 故障回滾測試。
+新增 `tests/CustomFormService.IntegrationTests/FormEndpointsTests.CandidateContract.cs`，共 39 個資料驅動／一般測試案例：空 Question／Option 陣列 no-op（1）、Type 切換與 Choice 互轉（6）、Config 完整取代與語意 no-op（1）、共享 Create／PATCH Config 邊界（12）、Number 精確數值（12）、JSONB 實際儲存邊界（4）、Question／Option 排序交換（1）、欄位來源 path（2）。沿用既有 fixture、查詢與清理流程；不重複新增已有的 value 交換／重用、三組混合操作或第二次 SaveChanges 故障回滾測試。
 
 已重現並修正：Number Config 使用 decimal 拒絕 JSONB 可精確保存的 1e30／1e400，且將高精度相鄰數值或 1e-40 與 0 在比較時捨入為相同，錯誤接受 min > max。新增 DefinitionNumber 直接比较十進位有效數字與指數，保留 JSON 原數值，不經 decimal／double；超出實際 JSONB numeric 儲存能力時受控拒絕。案例先以實際 JSONB cast 證明安全／不安全，再檢查 Create／PATCH 與 DB。儲存邊界依 [PostgreSQL JSONB](https://www.postgresql.org/docs/17/datatype-json.html) 與 [numeric](https://www.postgresql.org/docs/17/datatype-numeric.html)，不是新增產品精度或業務範圍。
 
@@ -39,8 +39,12 @@ Owner 已另行授權 Docker Linux 測試。官方 SDK 10.0.400 的 Docker pull 
 | 必要修正與 JSONB 邊界補測後 Form filter 命令 | 47/47 PASS，contracts-fixed.trx |
 | 精確數值補強後 `dotnet build CustomFormService.sln --no-restore -m:1 -p:UseSharedCompilation=false` | 成功，0 警告／0 錯誤，4.90 秒 |
 | `dotnet test CustomFormService.sln --no-build --no-restore -m:1 --logger "console;verbosity=minimal" --logger "trx;LogFileName=contracts-regression.trx"` | 97/97 PASS，0 skipped |
+| 零值指數補測，先以必要修正階段程式執行 Number filter | 16 案，14 PASS／2 FAIL；`0e1073741824` 與 `-0e2147483647` 回 500，而不是受控 400；numeric-zero-baseline.trx |
+| 零值指數修正後相同 build 與 full test 命令（numeric-zero-regression.trx） | build 成功，0 警告／0 錯誤，5.06 秒；100/100 PASS，0 skipped |
 
 TRX 保存在容器 `/work/baseline/tests/CustomFormService.IntegrationTests/TestResults/`；交付時保留可讀證據，不以此取代驗收成對文件。
+
+最後邊界檢查另重現零帶極大指數的保存錯誤。PostgreSQL 的 [numeric 解析器](https://github.com/postgres/postgres/blob/REL_17_STABLE/src/backend/utils/adt/numeric.c#L6768-L6819) 即使數值為零，也拒絕原始指數絕對值大於 `int.MaxValue / 2`。唯讀 DB cast 確認 `0e1073741823` 合法，下一值 `0e1073741824` 不合法；測試覆蓋合法零值仍成功、非法輸入 Create／PATCH 400 且不寫入。此必要修正與 Candidate 重構分開提交；首筆測試基準／必要修正提交為 `a19237f6ef5d2a2eef1dc954fd26dc2850653b3a`。
 
 ## 待處理與停止點
 

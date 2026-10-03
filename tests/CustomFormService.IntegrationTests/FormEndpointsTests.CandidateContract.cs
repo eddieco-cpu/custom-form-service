@@ -162,6 +162,7 @@ public sealed partial class FormEndpointsTests
     [DataRow("1.00000000000000000000000000002", "1.00000000000000000000000000001", false)]
     [DataRow("1e-40", "0", false)]
     [DataRow("0", "-0", true)]
+    [DataRow("0e1073741823", "0", true)]
     [DataRow("1.0", "1e0", true)]
     [DataRow("-2", "-1", true)]
     [DataRow("-1", "-2", false)]
@@ -201,6 +202,8 @@ public sealed partial class FormEndpointsTests
     [TestMethod]
     [DataRow("1e131072")]
     [DataRow("1e-16384")]
+    [DataRow("0e1073741824")]
+    [DataRow("-0e2147483647")]
     public async Task Number_config_rejects_values_outside_actual_jsonb_storage_without_writes(string number)
     {
         var owner = await CreateMemberAsync("R6 JSONB Number Boundary Owner");

@@ -134,7 +134,7 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 
 **前次開發驗證（2026-10-03）**：已修正 PATCH 新增 Option 的一般文字 trim；新 Option 與既有 value 修改的同 ID replacement 均在完整 Candidate 驗證後、舊 key 刪除保存後才追蹤／插入。新增 6 個測試案例（2 個正規化、3 個 Owner 指定的混合操作、1 個第二次保存故障回滾），另保留原有競爭、value 交換／重用、錯誤 path 與 SQL 回歸測試。正式驗收尚未準備或執行；開發測試 PASS 不代表驗收 PASS。格式檢查另發現 Controller 既有 switch expression 縮排問題，未擴大修正，見前次開發報告。
 
-**最新開發進度（2026-10-03，有限 Candidate 重構）**：Owner 已授權有限重構及 Docker 隔離測試。先重新執行既有 Windows Form 測試 16/16 與全套回歸 61/61，均 PASS；新增 DLL 隨後被 Smart App Control 封鎖，Owner 手動執行亦總計 0。已在官方 .NET SDK 10.0.400 Linux 容器恢復同套測試，未更動 Windows 安全設定；先重現 8 個契約案例失敗，再修正 Number Config 的 decimal 範圍／捨入誤判、Config 等值 no-op 與 sortOrder 錯誤的欄位來源 path。新增契約案例總計 36（包含 DB 安全範圍與精確數值補強），focused 47/47 後擴充全套 97/97 PASS；build 0 警告／0 錯誤。測試與必要修正先獨立提交；Candidate／ChangeSet 有限重構為下一個同 Round 開發步驟，尚未完成。Linux 結果不冒稱 Windows 原生執行結果，開發 PASS 不代表正式驗收 PASS。R7／G1、驗收準備與執行均未開始。
+**最新開發進度（2026-10-03，有限 Candidate 重構）**：Owner 已授權有限重構及 Docker 隔離測試。先重新執行既有 Windows Form 測試 16/16 與全套回歸 61/61，均 PASS；新增 DLL 隨後被 Smart App Control 封鎖，Owner 手動執行亦總計 0。已在官方 .NET SDK 10.0.400 Linux 容器恢復同套測試，未更動 Windows 安全設定；先重現 8 個契約案例失敗，再修正 Number Config 的 decimal 範圍／捨入誤判、Config 等值 no-op 與 sortOrder 錯誤的欄位來源 path。新增契約案例總計 39（包含 DB 安全範圍與精確數值補強），focused 47/47 後擴充全套 97/97 PASS；最後另重現零值極大指數的 500，按實際 PostgreSQL 解析邊界修正後全套 100/100 PASS；build 0 警告／0 錯誤。測試與必要修正先獨立提交；Candidate／ChangeSet 有限重構為下一個同 Round 開發步驟，尚未完成。Linux 結果不冒稱 Windows 原生執行結果，開發 PASS 不代表正式驗收 PASS。R7／G1、驗收準備與執行均未開始。
 
 ### R7 — Publish／Close／Result Visibility
 
