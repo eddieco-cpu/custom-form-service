@@ -1,0 +1,1168 @@
+# R6 sequential companion to R6_Acceptance_Test.md.
+# PREPARE ONLY: await Owner approval of both files and explicit execution authorization.
+# Actual AI/manual results: 待執行（等待 Owner review）. Record results in Markdown.
+# Read Markdown prerequisites, DB snapshots, startup/full regression, lifecycle fixture
+# setup, concurrency harness and cleanup. Do not run all requests blindly.
+# Keep retained R4 members/R5 Forms; each independent run uses a fresh matching runId.
+# Credentials and tokens below are placeholders; obtain retained R4 password locally.
+# REST Client: Clear All Cookies first. @no-cookie-jar on every request.
+# Copy only access_token's VALUE from each login into its token variable.
+# Restore password/token placeholders after the run; never commit secrets.
+# R6-12a/12b are PARALLEL TEMPLATES; use the Markdown harness, not sequential Send.
+
+@apiBase = http://localhost:5000
+@runId = r6-acceptance-20261003-01
+@testPassword = ENTER_RETAINED_R4_PASSWORD_LOCALLY
+@memberAEmail = r4-member-a-r4-acceptance-20261001-01@example.test
+@memberBEmail = r4-member-b-r4-acceptance-20261001-01@example.test
+@memberAToken = PASTE_ACCESS_TOKEN_VALUE_ONLY
+@memberBToken = PASTE_ACCESS_TOKEN_VALUE_ONLY
+@listPage = 1
+@missingFormId = 00000000-0000-0000-0000-000000000006
+@retainedDeletedFormId = PASTE_VERIFIED_R5_SOFT_DELETED_FORM_ID_FROM_01
+@editorFormId = PASTE_FORM_ID_FROM_03a
+@scopeFormId = PASTE_FORM_ID_FROM_03b
+@concurrentFormId = PASTE_FORM_ID_FROM_03c
+@qText = PASTE_TEXT_ID_FROM_03a
+@qNumber = PASTE_NUMBER_ID_FROM_03a
+@qChoice = PASTE_CHOICE_ID_FROM_03a
+@qMultiple = PASTE_MULTIPLE_ID_FROM_03a
+@qRating = PASTE_RATING_ID_FROM_03a
+@qRemove = PASTE_REMOVE_QUESTION_ID_FROM_03a
+@oAlpha = PASTE_ALPHA_ID_FROM_03a
+@oBeta = PASTE_BETA_ID_FROM_03a
+@oDelete = PASTE_GAMMA_ID_FROM_03a
+@oKeep = PASTE_DELTA_ID_FROM_03a
+@oOther = PASTE_OTHER_PARENT_OPTION_ID_FROM_03a
+@qForeign = PASTE_FOREIGN_QUESTION_ID_FROM_03b
+@oForeign = PASTE_FOREIGN_OPTION_ID_FROM_03b
+@qConcurrentA = PASTE_FIRST_QUESTION_ID_FROM_03c
+@qConcurrentB = PASTE_SECOND_QUESTION_ID_FROM_03c
+@qNew = PASTE_ADDED_CHOICE_ID_FROM_05a
+@oNew = PASTE_NEW_CHILD_ID_FROM_05a
+
+###
+# R6-01 — Windows 原生啟動與保留資料
+# Prerequisites/DB/non-HTTP steps: Markdown R6-01.
+
+###
+# R6-01a — 200；body 為 {"status":"healthy"}。
+# Prerequisite: complete preceding cases and Markdown R6-01 operations.
+# Identity: No Cookie.
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+GET {{apiBase}}/health HTTP/1.1
+
+###
+# R6-01b — 200；Healthy，確認原生 API 可連既有 DB。
+# Prerequisite: complete preceding cases and Markdown R6-01 operations.
+# Identity: No Cookie.
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+GET {{apiBase}}/health/ready HTTP/1.1
+
+###
+# R6-01c — 200；Development 文件包含 PATCH /api/v1/forms/{formId}。
+# Prerequisite: complete preceding cases and Markdown R6-01 operations.
+# Identity: No Cookie.
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+GET {{apiBase}}/openapi/v1.json HTTP/1.1
+
+###
+# R6-01d — 200 User + access_token Cookie；不在 body 回 JWT。只在本機暫填 memberAToken。
+# Prerequisite: complete preceding cases and Markdown R6-01 operations.
+# Identity: No Cookie.
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "{{memberAEmail}}",
+  "password": "{{testPassword}}"
+}
+
+###
+# R6-01e — 200 User + Cookie；只在本機暫填 memberBToken。
+# Prerequisite: complete preceding cases and Markdown R6-01 operations.
+# Identity: No Cookie.
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "{{memberBEmail}}",
+  "password": "{{testPassword}}"
+}
+
+###
+# R6-01f — 200；A 的保留清單。逐頁記錄所有 ID／totalItems；之後恢復 listPage=1。
+# Prerequisite: complete preceding cases and Markdown R6-01 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms?page={{listPage}}&pageSize=100 HTTP/1.1
+Cookie: access_token={{memberAToken}}
+
+###
+# R6-02 — 本次完整回歸（非 HTTP）
+# Prerequisites/DB/non-HTTP steps: Markdown R6-02.
+# Non-HTTP: complete matching Markdown operations. No request to send.
+# AI result: 待執行（等待 Owner review）；manual result: 待執行（等待 Owner review）。
+
+###
+# R6-03 — 建立本次 Draft fixtures 與 ID 基準
+# Prerequisites/DB/non-HTTP steps: Markdown R6-03.
+
+###
+# R6-03a — 201 Draft；6 Questions／6 Options；placeholder trim；Rating 缺 max 仍合法。按 sortOrder 排序，defaults、ID 與 createdAt 由 Server 決定。
+# Prerequisite: complete preceding cases and Markdown R6-03 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "title": "R6 editor {{runId}}",
+  "description": "Initial form description",
+  "questions": [
+    {
+      "type": "text",
+      "title": "Text",
+      "description": "Initial question description",
+      "sortOrder": 0,
+      "config": {
+        "variant": "textarea",
+        "placeholder": "  Enter text  ",
+        "minLength": 0,
+        "maxLength": 20
+      }
+    },
+    {
+      "type": "number",
+      "title": "Number",
+      "sortOrder": 10,
+      "config": {
+        "placeholder": "  Amount  ",
+        "min": -1,
+        "max": 10
+      }
+    },
+    {
+      "type": "single_choice",
+      "title": "Choice",
+      "sortOrder": 20,
+      "config": {
+        "variant": "select"
+      },
+      "options": [
+        {
+          "label": "Alpha",
+          "value": "alpha",
+          "sortOrder": 0
+        },
+        {
+          "label": "Beta",
+          "value": "beta",
+          "sortOrder": 1
+        },
+        {
+          "label": "Delete gamma",
+          "value": "gamma",
+          "sortOrder": 2
+        },
+        {
+          "label": "Untouched Delta",
+          "value": "Delta",
+          "sortOrder": 3
+        }
+      ]
+    },
+    {
+      "type": "multiple_choice",
+      "title": "Multiple",
+      "sortOrder": 30,
+      "config": {
+        "variant": "checkbox"
+      },
+      "options": [
+        {
+          "label": "Other parent",
+          "value": "other",
+          "sortOrder": 0
+        }
+      ]
+    },
+    {
+      "type": "rating",
+      "title": "Incomplete rating",
+      "sortOrder": 40,
+      "config": {
+        "min": 0
+      }
+    },
+    {
+      "type": "single_choice",
+      "title": "Remove question",
+      "sortOrder": 50,
+      "options": [
+        {
+          "label": "Cascade child",
+          "value": "cascade",
+          "sortOrder": 0
+        }
+      ]
+    }
+  ]
+}
+
+###
+# R6-03b — 201；記錄 scopeFormId／qForeign／oForeign；後續狀態只限此 fixture。
+# Prerequisite: complete preceding cases and Markdown R6-03 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "title": "R6 scope {{runId}}",
+  "questions": [
+    {
+      "type": "single_choice",
+      "title": "Foreign question",
+      "sortOrder": 0,
+      "options": [
+        {
+          "label": "Foreign option",
+          "value": "foreign",
+          "sortOrder": 0
+        }
+      ]
+    }
+  ]
+}
+
+###
+# R6-03c — 201；記錄 concurrentFormId／qConcurrentA／qConcurrentB。
+# Prerequisite: complete preceding cases and Markdown R6-03 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "title": "R6 concurrent {{runId}}",
+  "questions": [
+    {
+      "type": "text",
+      "title": "Concurrent first",
+      "sortOrder": 0
+    },
+    {
+      "type": "text",
+      "title": "Concurrent second",
+      "sortOrder": 1
+    }
+  ]
+}
+
+###
+# R6-04 — Form 欄位、nullable replacement 與未提及保留
+# Prerequisites/DB/non-HTTP steps: Markdown R6-04.
+
+###
+# R6-04a — 200；title trim 為 R6 edited {{runId}}；description=null；模式更新；deadline 仍 null，Questions／Options 未變；只有 Form updatedAt 改變。
+# Prerequisite: complete preceding cases and Markdown R6-04 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "title": "  R6 edited {{runId}}  ",
+  "description": null,
+  "responseMode": "multiple",
+  "responseIdentity": "identified"
+}
+
+###
+# R6-04b — 200；完整 FormDetail 與 04a 一致（JSON Object key 順序無關）。
+# Prerequisite: complete preceding cases and Markdown R6-04 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Cookie: access_token={{memberAToken}}
+
+###
+# R6-05 — Question／Option 混合 Delta、排序交換與 value 重用
+# Prerequisites/DB/non-HTTP steps: Markdown R6-05.
+
+###
+# R6-05a — 200；仍 6 Questions／6 Options。qRemove 與 cascade 子 Option 實體刪除；qText description=null／required=true；oAlpha=beta/order1、oBeta=alpha/order0，ID／createdAt 保留；新 gamma trim，ID 與 oDelete 不同。新增 qNew／oNew（記錄 ID）；oKeep 的大小寫 Delta 保留。最終排序唯一，不因中途 key／排序衝突回 500。
+# Prerequisite: complete preceding cases and Markdown R6-05 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": [
+    {
+      "id": "{{qText}}",
+      "description": null,
+      "title": "  Text edited  ",
+      "required": true
+    },
+    {
+      "id": "{{qChoice}}",
+      "options": [
+        {
+          "id": "{{oAlpha}}",
+          "value": " beta ",
+          "sortOrder": 1,
+          "label": "  Now beta  "
+        },
+        {
+          "id": "{{oBeta}}",
+          "value": "alpha",
+          "sortOrder": 0
+        },
+        {
+          "id": "{{oDelete}}"
+        },
+        {
+          "label": "  Reused gamma  ",
+          "value": " gamma ",
+          "sortOrder": 2
+        }
+      ]
+    },
+    {
+      "id": "{{qRemove}}"
+    },
+    {
+      "type": "single_choice",
+      "title": "Added choice",
+      "sortOrder": 50,
+      "config": {
+        "variant": "radio"
+      },
+      "options": [
+        {
+          "label": "New child",
+          "value": "new",
+          "sortOrder": 0
+        }
+      ]
+    }
+  ]
+}
+
+###
+# R6-05b — 200；與已保存的 05a FormDetail 一致；DB 無刪除列、無多餘列或 orphan。
+# Prerequisite: complete preceding cases and Markdown R6-05 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Cookie: access_token={{memberAToken}}
+
+###
+# R6-06 — Config 完整取代及精確 Number
+# Prerequisites/DB/non-HTTP steps: Markdown R6-06.
+
+###
+# R6-06a — 200；Text config 只剩 placeholder=Replacement/minLength=1/maxLength=3，舊 textarea 消失；Rating 變完整有效設定，required 不影響 Draft 可保存性。
+# Prerequisite: complete preceding cases and Markdown R6-06 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": [
+    {
+      "id": "{{qText}}",
+      "config": {
+        "placeholder": "  Replacement  ",
+        "minLength": 1,
+        "maxLength": 3
+      }
+    },
+    {
+      "id": "{{qRating}}",
+      "config": {
+        "variant": "range",
+        "min": 0,
+        "max": 100
+      }
+    }
+  ]
+}
+
+###
+# R6-06b — 200；Config 只剩 min/max，舊 placeholder 消失；DB min = 1e30::numeric、max = 1e31::numeric，無 decimal/double 捨入。JSONB 可改數字表示，數值必須精確相同。
+# Prerequisite: complete preceding cases and Markdown R6-06 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": [
+    {
+      "id": "{{qNumber}}",
+      "config": {
+        "min": 1e+30,
+        "max": 1e+31
+      }
+    }
+  ]
+}
+
+###
+# R6-07 — Type 切換及 Options／Config 連動
+# Prerequisites/DB/non-HTTP steps: Markdown R6-07.
+
+###
+# R6-07a — 200；Choice 互轉保留四個既有 Options 的 ID／createdAt／updatedAt，套用目標 config。
+# Prerequisite: complete preceding cases and Markdown R6-07 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": [
+    {
+      "id": "{{qChoice}}",
+      "type": "multiple_choice",
+      "config": {
+        "variant": "multi_select"
+      }
+    }
+  ]
+}
+
+###
+# R6-07b — 200；未提供 config，重設 {}；四個 Options 自動實體刪除，Question 保留。
+# Prerequisite: complete preceding cases and Markdown R6-07 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": [
+    {
+      "id": "{{qChoice}}",
+      "type": "number",
+      "options": []
+    }
+  ]
+}
+
+###
+# R6-07c — 200；Text→Choice 重設 config={} 並新建 oBranch（記錄）；Number→Rating 使用指定 config；Rating→Text 未指定 config 為 {} 且無 Options。qMultiple、qNew 保留。
+# Prerequisite: complete preceding cases and Markdown R6-07 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": [
+    {
+      "id": "{{qText}}",
+      "type": "single_choice",
+      "options": [
+        {
+          "label": "Branch",
+          "value": "Branch",
+          "sortOrder": 0
+        }
+      ]
+    },
+    {
+      "id": "{{qNumber}}",
+      "type": "rating",
+      "config": {
+        "variant": "stars",
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "{{qRating}}",
+      "type": "text"
+    }
+  ]
+}
+
+###
+# R6-08 — 代表性錯誤、ID 歸屬與 Request path
+# Prerequisites/DB/non-HTTP steps: Markdown R6-08.
+
+###
+# R6-08a — 400 VALIDATION_ERROR；path=resultVisibility，資料完全不變。
+# Prerequisite: complete preceding cases and Markdown R6-08 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "resultVisibility": "public"
+}
+
+###
+# R6-08b — 400 FORM_DEFINITION_INVALID；INVALID_VALUE at questions[1].id（第二次出現）；更新與刪除不部分成功。
+# Prerequisite: complete preceding cases and Markdown R6-08 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": [
+    {
+      "id": "{{qNew}}",
+      "title": "Do not save"
+    },
+    {
+      "id": "{{qNew}}"
+    }
+  ]
+}
+
+###
+# R6-08c — 400 FORM_DEFINITION_INVALID；INVALID_VALUE at questions[0].options[1].id。
+# Prerequisite: complete preceding cases and Markdown R6-08 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": [
+    {
+      "id": "{{qNew}}",
+      "options": [
+        {
+          "id": "{{oNew}}",
+          "label": "Do not save"
+        },
+        {
+          "id": "{{oNew}}"
+        }
+      ]
+    }
+  ]
+}
+
+###
+# R6-08d — 400 FORM_DEFINITION_INVALID；QUESTION_NOT_FOUND at questions[0].id；不 upsert／搬移。
+# Prerequisite: complete preceding cases and Markdown R6-08 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": [
+    {
+      "id": "{{qForeign}}",
+      "title": "Do not upsert"
+    }
+  ]
+}
+
+###
+# R6-08e — 400 FORM_DEFINITION_INVALID；OPTION_NOT_FOUND at questions[0].options[0].id（同 Form 的另一 Question）。
+# Prerequisite: complete preceding cases and Markdown R6-08 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": [
+    {
+      "id": "{{qNew}}",
+      "options": [
+        {
+          "id": "{{oOther}}",
+          "label": "Do not move"
+        }
+      ]
+    }
+  ]
+}
+
+###
+# R6-08f — 400 FORM_DEFINITION_INVALID；DUPLICATE_SORT_ORDER at questions[1].sortOrder，定位真正改排序欄位，非僅改 title 的項目。
+# Prerequisite: complete preceding cases and Markdown R6-08 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": [
+    {
+      "id": "{{qMultiple}}",
+      "title": "Do not save"
+    },
+    {
+      "id": "{{qNew}}",
+      "sortOrder": 30
+    }
+  ]
+}
+
+###
+# R6-08g — 400 FORM_DEFINITION_INVALID；INVALID_OPTION at questions[0].options[0].value；trim 後重複 Branch，Form title 亦不得改。
+# Prerequisite: complete preceding cases and Markdown R6-08 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "title": "Do not save duplicate",
+  "questions": [
+    {
+      "id": "{{qText}}",
+      "options": [
+        {
+          "label": "Duplicate after trim",
+          "value": " Branch ",
+          "sortOrder": 1
+        }
+      ]
+    }
+  ]
+}
+
+###
+# R6-08h — 400 FORM_DEFINITION_INVALID；QUESTION_TYPE_CONFLICT at questions[0].options；不可一邊自動清除一邊帶非空 Delta。
+# Prerequisite: complete preceding cases and Markdown R6-08 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": [
+    {
+      "id": "{{qNew}}",
+      "type": "text",
+      "options": [
+        {
+          "id": "{{oNew}}"
+        }
+      ]
+    }
+  ]
+}
+
+###
+# R6-08i — 400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG at questions[0].config.variant（非合法 multiple_choice variant）。
+# Prerequisite: complete preceding cases and Markdown R6-08 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": [
+    {
+      "id": "{{qMultiple}}",
+      "config": {
+        "variant": "select"
+      }
+    }
+  ]
+}
+
+###
+# R6-08j — 400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG at questions[0].config；精確 min > max，不可經浮點捨入為相等。
+# Prerequisite: complete preceding cases and Markdown R6-08 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{"questions":[{"id":"{{qChoice}}","config":{"min":1.00000000000000000000000000002,"max":1.00000000000000000000000000001}}]}
+
+###
+# R6-08k — 400 VALIDATION_ERROR；INVALID_VALUE at title；非 nullable 欄位不能用 null 清除。
+# Prerequisite: complete preceding cases and Markdown R6-08 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "title": null
+}
+
+###
+# R6-09 — no-op／updatedAt 與截止時間保存精度
+# Prerequisites/DB/non-HTTP steps: Markdown R6-09.
+
+###
+# R6-09a — 200；實際 config 變更，Form/qChoice updatedAt 改變；其他列不變。保存此基準。
+# Prerequisite: complete preceding cases and Markdown R6-09 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": [
+    {
+      "id": "{{qChoice}}",
+      "config": {
+        "placeholder": "Amount",
+        "min": 1,
+        "max": 3
+      }
+    }
+  ]
+}
+
+###
+# R6-09b — 200 no-op；完整 DB snapshot／timestamps 不變。
+# Prerequisite: complete preceding cases and Markdown R6-09 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{}
+
+###
+# R6-09c — 200 no-op；不清空 Questions。
+# Prerequisite: complete preceding cases and Markdown R6-09 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": []
+}
+
+###
+# R6-09d — 200 no-op；不清空 Options，任何 updatedAt 不變。
+# Prerequisite: complete preceding cases and Markdown R6-09 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": [
+    {
+      "id": "{{qMultiple}}",
+      "options": []
+    }
+  ]
+}
+
+###
+# R6-09e — 200 no-op；文字 trim、Config 屬性順序和 1.0／1 等值；無任何列或 timestamps 變更。
+# Prerequisite: complete preceding cases and Markdown R6-09 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{"title":"  R6 edited {{runId}}  ","questions":[{"id":"{{qChoice}}","config":{"max":3.0,"min":1.0,"placeholder":"  Amount  "}}]}
+
+###
+# R6-09f — 200；保存／回應 deadline=.123456Z。只有 Form updatedAt 改變，子列不變。保存 deadline 基準。
+# Prerequisite: complete preceding cases and Markdown R6-09 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "submissionDeadlineAt": "2026-12-31T00:00:00.1234567Z"
+}
+
+###
+# R6-09g — 200 no-op；重送原始七位字串，與 09f 保存基準相等，updatedAt 不變。
+# Prerequisite: complete preceding cases and Markdown R6-09 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "submissionDeadlineAt": "2026-12-31T00:00:00.1234567Z"
+}
+
+###
+# R6-09h — 200 no-op；只差次微秒，實際保存相同，任何 timestamps 不變。
+# Prerequisite: complete preceding cases and Markdown R6-09 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "submissionDeadlineAt": "2026-12-31T00:00:00.1234568Z"
+}
+
+###
+# R6-09i — 200 no-op；重送 GET canonical 值亦不更新。
+# Prerequisite: complete preceding cases and Markdown R6-09 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "submissionDeadlineAt": "2026-12-31T00:00:00.123456Z"
+}
+
+###
+# R6-09j — 200；真正差一微秒，deadline 與 Form updatedAt 改變；子列不變。
+# Prerequisite: complete preceding cases and Markdown R6-09 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "submissionDeadlineAt": "2026-12-31T00:00:00.123457Z"
+}
+
+###
+# R6-09k — 200；deadline 清除，只有 Form updatedAt 改變。保存 null 基準。
+# Prerequisite: complete preceding cases and Markdown R6-09 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "submissionDeadlineAt": null
+}
+
+###
+# R6-09l — 200 no-op；與 09k 全部保存資料／timestamps 一致。
+# Prerequisite: complete preceding cases and Markdown R6-09 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "submissionDeadlineAt": null
+}
+
+###
+# R6-09m — 200；與 09l 完整 FormDetail 一致；deadline=null，status=draft。
+# Prerequisite: complete preceding cases and Markdown R6-09 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Cookie: access_token={{memberAToken}}
+
+###
+# R6-10 — Authentication、權限、存在性與生命週期優先序
+# Prerequisites/DB/non-HTTP steps: Markdown R6-10.
+
+###
+# R6-10a — 401 AUTH_REQUIRED；沒有 Cookie，即使 path／欄位無效仍先判 Authentication。
+# Prerequisite: complete preceding cases and Markdown R6-10 operations.
+# Identity: No Cookie.
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/not-a-uuid HTTP/1.1
+Content-Type: application/json
+
+{
+  "resultVisibility": "public"
+}
+
+###
+# R6-10b — 400 VALIDATION_ERROR；有效 A 才檢查 UUID。
+# Prerequisite: complete preceding cases and Markdown R6-10 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/not-a-uuid HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{}
+
+###
+# R6-10c — 404 FORM_NOT_FOUND；不存在優先於欄位驗證。先用 DB 證明 missingFormId 未使用。
+# Prerequisite: complete preceding cases and Markdown R6-10 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{missingFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "resultVisibility": "public"
+}
+
+###
+# R6-10d — 403 FORM_ACCESS_DENIED；非 Owner 優先於 Definition validation。
+# Prerequisite: complete preceding cases and Markdown R6-10 operations.
+# Identity: Member B (non-Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberBToken}}
+
+{
+  "resultVisibility": "public"
+}
+
+###
+# R6-10e — 404 FORM_NOT_FOUND；他人 Draft Detail 隱藏存在性。
+# Prerequisite: complete preceding cases and Markdown R6-10 operations.
+# Identity: Member B (non-Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Cookie: access_token={{memberBToken}}
+
+###
+# R6-10f — 404 FORM_NOT_FOUND；使用 DB 確認的 R5 Soft Delete ID，歷史資料仍原樣。
+# Prerequisite: complete preceding cases and Markdown R6-10 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{retainedDeletedFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "resultVisibility": "public"
+}
+
+# STOP: perform Markdown R6-10 DB setup -> scopeFormId published; snapshot first.
+
+###
+# R6-10g — 409 FORM_NOT_EDITABLE；前置：僅將本次 scope fixture 設為 published。Lifecycle 優先於欄位驗證。
+# Prerequisite: complete preceding cases and Markdown R6-10 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{scopeFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "resultVisibility": "public"
+}
+
+###
+# R6-10h — 403 FORM_ACCESS_DENIED；Published 非 Owner，Authorization 優先 Lifecycle；空 PATCH 也不跳過。
+# Prerequisite: complete preceding cases and Markdown R6-10 operations.
+# Identity: Member B (non-Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{scopeFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberBToken}}
+
+{}
+
+# STOP: perform Markdown R6-10 DB setup -> scopeFormId closed.
+
+###
+# R6-10i — 409 FORM_NOT_EDITABLE；前置：僅將 scope fixture 設為 closed。空 PATCH 仍需 Draft。
+# Prerequisite: complete preceding cases and Markdown R6-10 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{scopeFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{}
+
+###
+# R6-10j — 403 FORM_ACCESS_DENIED；Closed 非 Owner。完成後立即恢復 scope fixture 的 draft 原狀。
+# Prerequisite: complete preceding cases and Markdown R6-10 operations.
+# Identity: Member B (non-Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{scopeFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberBToken}}
+
+{}
+
+# STOP: immediately restore scope fixture to draft using Markdown R6-10; compare baseline.
+
+###
+# R6-11 — 完整 Candidate 原子性及保存故障證據
+# Prerequisites/DB/non-HTTP steps: Markdown R6-11.
+
+###
+# R6-11a — 400 FORM_DEFINITION_INVALID；INVALID_QUESTION_CONFIG at questions[1].config；整份 Form／Questions／Options 含 ID、createdAt、updatedAt 完全不變。
+# Prerequisite: complete preceding cases and Markdown R6-11 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{editorFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "title": "Do not save partial candidate",
+  "questions": [
+    {
+      "id": "{{qNew}}",
+      "type": "text"
+    },
+    {
+      "id": "{{qChoice}}",
+      "config": {
+        "min": 5,
+        "max": 4
+      }
+    }
+  ]
+}
+
+###
+# R6-12 — 兩個並行 PATCH 的最終 Candidate 唯一性
+# Prerequisites/DB/non-HTTP steps: Markdown R6-12.
+
+###
+# R6-12a — 與 12b 同時執行；二者恰一個 200，另一個 400 FORM_DEFINITION_INVALID／DUPLICATE_SORT_ORDER at questions[0].sortOrder。不指定哪方贏。
+# Prerequisite: complete preceding cases and Markdown R6-12 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{concurrentFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": [
+    {
+      "id": "{{qConcurrentA}}",
+      "sortOrder": 2
+    }
+  ]
+}
+
+###
+# R6-12b — 與 12a 同時執行；敗者無部分寫入或 500；DB 恰一題 order2，另一題仍原 order0或1，ID／createdAt 保留。
+# Prerequisite: complete preceding cases and Markdown R6-12 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{concurrentFormId}} HTTP/1.1
+Content-Type: application/json
+Cookie: access_token={{memberAToken}}
+
+{
+  "questions": [
+    {
+      "id": "{{qConcurrentB}}",
+      "sortOrder": 2
+    }
+  ]
+}
+
+###
+# R6-12c — 200；Questions 依最終 sortOrder 排列，無重複；內容等於成功 PATCH 的保存狀態。
+# Prerequisite: complete preceding cases and Markdown R6-12 operations.
+# Identity: Member A (Owner).
+# Actual AI/manual result: 待執行（等待 Owner review）。
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{concurrentFormId}} HTTP/1.1
+Cookie: access_token={{memberAToken}}
+
+###
+# R6-13 — 人工檢視、復原暫存狀態與保留資料（非 HTTP）
+# Prerequisites/DB/non-HTTP steps: Markdown R6-13.
+# Non-HTTP: complete matching Markdown operations. No request to send.
+# AI result: 待執行（等待 Owner review）；manual result: 待執行（等待 Owner review）。
