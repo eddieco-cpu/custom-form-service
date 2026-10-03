@@ -37,6 +37,21 @@ public sealed class FormsController(
     private static readonly HashSet<string> RequiredCreateProperties =
         new(["title"], StringComparer.Ordinal);
 
+    private static readonly HashSet<string> PatchProperties =
+        new(
+        [
+            "title",
+            "description",
+            "responseMode",
+            "responseIdentity",
+            "submissionDeadlineAt",
+            "questions"
+        ],
+        StringComparer.Ordinal);
+
+    private static readonly HashSet<string> RequiredPatchProperties =
+        new(StringComparer.Ordinal);
+
     private static readonly HashSet<string> ListQueryProperties =
         new(["page", "pageSize", "status"], StringComparer.Ordinal);
 
@@ -209,6 +224,82 @@ public sealed class FormsController(
         return Ok(FormDetailResponse.From(form));
     }
 
+    [HttpPatch("{formId}")]
+    [ProducesResponseType<FormDetailResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Patch(string formId, JsonElement body, CancellationToken cancellationToken)
+    {
+        if (!TryReadFormId(formId, out var id, out var validationError))
+        {
+            return ApiErrors.Validation([validationError]);
+        }
+
+        if (body.ValueKind != JsonValueKind.Object)
+        {
+            return ApiErrors.Validation([RequestJson.Invalid("body", "The request body must be a JSON object.")]);
+        }
+
+        var form = await LoadEditableFormAsync(id, cancellationToken);
+        if (form is null)
+        {
+            return FormNotFound();
+        }
+
+        if (form.UserId != RequiredCurrentUser().Id)
+        {
+            return ApiErrors.Result(
+                StatusCodes.Status403Forbidden,
+                "FORM_ACCESS_DENIED",
+                "You do not have permission to access this form.");
+        }
+
+        if (form.Status != FormStatus.Draft)
+        {
+            return ApiErrors.Result(
+                StatusCodes.Status409Conflict,
+                "FORM_NOT_EDITABLE",
+                "Only draft forms can be edited.");
+        }
+
+        if (!RequestJson.TryReadObject(body, PatchProperties, RequiredPatchProperties, out var properties, out var shapeErrors))
+        {
+            return ApiErrors.Validation(shapeErrors);
+        }
+
+        var now = timeProvider.GetUtcNow();
+        var snapshot = DraftDefinitionDelta.Capture(form);
+        if (!TryApplyFormPatch(properties, form, out var fieldErrors))
+        {
+            return ApiErrors.Validation(fieldErrors);
+        }
+
+        if (properties.TryGetValue("questions", out var questionsElement) &&
+            !DraftDefinitionDelta.TryApplyQuestions(
+                database,
+                form,
+                questionsElement,
+                now,
+                out var definitionErrors))
+        {
+            return ApiErrors.Result(
+                StatusCodes.Status400BadRequest,
+                "FORM_DEFINITION_INVALID",
+                "The form definition is invalid.",
+                definitionErrors);
+        }
+
+        if (!snapshot.IsChanged(form))
+        {
+            return Ok(FormDetailResponse.From(form));
+        }
+
+        form.UpdatedAt = now;
+        snapshot.UpdateChangedTimestamps(database, form, now);
+        await using var transaction = await database.Database.BeginTransactionAsync(cancellationToken);
+        await database.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return Ok(FormDetailResponse.From(form));
+    }
+
     [HttpDelete("{formId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(string formId, CancellationToken cancellationToken)
@@ -244,6 +335,16 @@ public sealed class FormsController(
     private async Task<Form?> LoadAvailableFormAsync(Guid formId, CancellationToken cancellationToken) =>
         await database.Forms
             .AsNoTracking()
+            .AsSplitQuery()
+            .Include(form => form.User)
+            .Include(form => form.Questions)
+                .ThenInclude(question => question.Options)
+            .SingleOrDefaultAsync(
+                form => form.Id == formId && form.DeletedAt == null,
+                cancellationToken);
+
+    private async Task<Form?> LoadEditableFormAsync(Guid formId, CancellationToken cancellationToken) =>
+        await database.Forms
             .AsSplitQuery()
             .Include(form => form.User)
             .Include(form => form.Questions)
@@ -344,6 +445,108 @@ public sealed class FormsController(
         candidate = new NewFormDefinition(title, description, responseMode, responseIdentity, resultVisibility, submissionDeadlineAt);
         errors = [];
         return true;
+    }
+
+    private static bool TryApplyFormPatch(
+        IReadOnlyDictionary<string, JsonElement> properties,
+        Form form,
+        out IReadOnlyList<ApiErrorDetail> errors)
+    {
+        var validationErrors = new List<ApiErrorDetail>();
+        if (properties.TryGetValue("title", out var titleElement))
+        {
+            if (titleElement.ValueKind != JsonValueKind.String)
+            {
+                validationErrors.Add(RequestJson.Invalid("title", "Title must be a non-null string."));
+            }
+            else
+            {
+                var title = TextRules.Trim(titleElement.GetString()!);
+                if (TextRules.CodePointCount(title) is 0 or > 200)
+                {
+                    validationErrors.Add(RequestJson.Invalid("title", "Title must contain 1 to 200 characters."));
+                }
+                else
+                {
+                    form.Title = title;
+                }
+            }
+        }
+
+        if (properties.TryGetValue("description", out var descriptionElement))
+        {
+            if (descriptionElement.ValueKind == JsonValueKind.Null)
+            {
+                form.Description = null;
+            }
+            else if (descriptionElement.ValueKind == JsonValueKind.String)
+            {
+                var description = TextRules.Trim(descriptionElement.GetString()!);
+                form.Description = description.Length == 0 ? null : description;
+            }
+            else
+            {
+                validationErrors.Add(RequestJson.Invalid("description", "Description must be a string or null."));
+            }
+        }
+
+        if (properties.TryGetValue("responseMode", out var responseModeElement))
+        {
+            form.ResponseMode = responseModeElement.ValueKind == JsonValueKind.String
+                ? responseModeElement.GetString() switch
+                {
+                    "single" => ResponseMode.Single,
+                    "multiple" => ResponseMode.Multiple,
+                    _ => (ResponseMode)(-1)
+                }
+                : (ResponseMode)(-1);
+            if (form.ResponseMode == (ResponseMode)(-1))
+            {
+                validationErrors.Add(RequestJson.Invalid("responseMode", "responseMode must be single or multiple."));
+            }
+        }
+
+        if (properties.TryGetValue("responseIdentity", out var responseIdentityElement))
+        {
+            form.ResponseIdentity = responseIdentityElement.ValueKind == JsonValueKind.String
+                ? responseIdentityElement.GetString() switch
+                {
+                    "anonymous" => ResponseIdentity.Anonymous,
+                    "identified" => ResponseIdentity.Identified,
+                    _ => (ResponseIdentity)(-1)
+                }
+                : (ResponseIdentity)(-1);
+            if (form.ResponseIdentity == (ResponseIdentity)(-1))
+            {
+                validationErrors.Add(RequestJson.Invalid("responseIdentity", "responseIdentity must be anonymous or identified."));
+            }
+        }
+
+        if (properties.TryGetValue("submissionDeadlineAt", out var deadlineElement))
+        {
+            if (deadlineElement.ValueKind == JsonValueKind.Null)
+            {
+                form.SubmissionDeadlineAt = null;
+            }
+            else if (deadlineElement.ValueKind == JsonValueKind.String &&
+                     deadlineElement.GetString()!.EndsWith('Z') &&
+                     DateTimeOffset.TryParse(
+                         deadlineElement.GetString(),
+                         CultureInfo.InvariantCulture,
+                         DateTimeStyles.RoundtripKind,
+                         out var deadline) &&
+                     deadline.Offset == TimeSpan.Zero)
+            {
+                form.SubmissionDeadlineAt = deadline;
+            }
+            else
+            {
+                validationErrors.Add(RequestJson.Invalid("submissionDeadlineAt", "submissionDeadlineAt must be a UTC ISO 8601 datetime or null."));
+            }
+        }
+
+        errors = validationErrors;
+        return validationErrors.Count == 0;
     }
 
     private static bool TryReadRequiredTitle(
