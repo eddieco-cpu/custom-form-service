@@ -275,20 +275,16 @@ public sealed class FormsController(
         }
 
         var now = timeProvider.GetUtcNow();
-        var snapshot = DraftDefinitionDelta.Capture(form);
-        IReadOnlyList<Option> deferredOptions = [];
-        if (!TryApplyFormPatch(properties, form, out var fieldErrors))
+        var candidate = FormDefinitionCandidate.From(form);
+        if (!TryApplyFormPatch(properties, candidate, out var fieldErrors))
         {
             return ApiErrors.Validation(fieldErrors);
         }
 
         if (properties.TryGetValue("questions", out var questionsElement) &&
             !DraftDefinitionDelta.TryApplyQuestions(
-                database,
-                form,
+                candidate,
                 questionsElement,
-                now,
-                out deferredOptions,
                 out var definitionErrors))
         {
             return ApiErrors.Result(
@@ -298,27 +294,28 @@ public sealed class FormsController(
                 definitionErrors);
         }
 
-        if (!snapshot.IsChanged(form))
+        if (!FormDefinitionValidator.TryNormalizeQuestions(candidate.Questions, out var candidateErrors))
         {
-            return Ok(FormDetailResponse.From(form));
+            return ApiErrors.Result(
+                StatusCodes.Status400BadRequest,
+                "FORM_DEFINITION_INVALID",
+                "The form definition is invalid.",
+                candidateErrors);
         }
 
-        var autoDetectChanges = database.ChangeTracker.AutoDetectChangesEnabled;
-        database.ChangeTracker.AutoDetectChangesEnabled = false;
-        try
+        var changes = DraftDefinitionChangeSet.Between(form, candidate);
+        if (changes.HasChanges)
         {
-            form.UpdatedAt = now;
-            database.Entry(form).State = EntityState.Modified;
-            snapshot.UpdateChangedTimestamps(database, form, now);
-            await OptionValueTransitionWriter.SaveAsync(database, deferredOptions, cancellationToken);
-        }
-        finally
-        {
-            database.ChangeTracker.AutoDetectChangesEnabled = autoDetectChanges;
+            await DraftDefinitionWriter.SaveAsync(database, form, changes, now, cancellationToken);
         }
 
+        // Read actual persisted JSONB/timestamp values, not identity-map entities.
+        // Still inside the locked transaction; never return before commit succeeds.
+        var persisted = await LoadAvailableFormAsync(id, cancellationToken)
+            ?? throw new InvalidOperationException("The saved form could not be loaded.");
+        var response = FormDetailResponse.From(persisted);
         await transaction.CommitAsync(cancellationToken);
-        return Ok(FormDetailResponse.From(form));
+        return Ok(response);
     }
 
     [HttpDelete("{formId}")]
@@ -470,7 +467,7 @@ public sealed class FormsController(
 
     private static bool TryApplyFormPatch(
         IReadOnlyDictionary<string, JsonElement> properties,
-        Form form,
+        FormDefinitionCandidate form,
         out IReadOnlyList<ApiErrorDetail> errors)
     {
         var validationErrors = new List<ApiErrorDetail>();

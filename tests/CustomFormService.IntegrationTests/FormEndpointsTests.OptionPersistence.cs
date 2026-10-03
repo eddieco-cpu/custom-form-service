@@ -166,12 +166,8 @@ public sealed partial class FormEndpointsTests
         var detail = await SendWithCookieAsync(HttpMethod.Get, $"/api/v1/forms/{formId}", owner.Cookie);
         Assert.AreEqual(HttpStatusCode.OK, detail.StatusCode);
         using var persisted = await ReadJsonAsync(detail);
-        foreach (var property in patched.RootElement.EnumerateObject().Where(property => property.Name != "updatedAt"))
-        {
-            Assert.IsTrue(JsonElement.DeepEquals(property.Value, persisted.RootElement.GetProperty(property.Name)), $"PATCH and GET differ at {property.Name}.");
-        }
-        Assert.IsLessThan(10L, Math.Abs((patched.RootElement.GetProperty("updatedAt").GetDateTimeOffset() - persisted.RootElement.GetProperty("updatedAt").GetDateTimeOffset()).Ticks),
-            "PostgreSQL stores microseconds; only sub-microsecond truncation may differ.");
+        Assert.AreEqual(patched.RootElement.GetRawText(), persisted.RootElement.GetRawText(),
+            "PATCH must return the same persisted fields and timestamp precision as GET.");
         using var afterRows = JsonDocument.Parse(await ReadDefinitionRowsAsync(formId));
         AssertApiDefinitionMatchesRows(persisted.RootElement, afterRows.RootElement);
         var afterChangedOption = FindRow(afterRows.RootElement, "options", changedOptionId);

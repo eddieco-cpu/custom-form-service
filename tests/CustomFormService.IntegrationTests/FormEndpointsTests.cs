@@ -741,6 +741,30 @@ public sealed partial class FormEndpointsTests
 
         Assert.IsTrue(capture.Commands.Any(command => command.Contains("UPDATE questions", StringComparison.OrdinalIgnoreCase)));
         Assert.IsFalse(capture.Commands.Any(command => command.Contains("UPDATE options", StringComparison.OrdinalIgnoreCase)));
+        var updates = System.Text.RegularExpressions.Regex.Matches(string.Join('\n', capture.Commands),
+            @"UPDATE questions SET (.*?) WHERE", System.Text.RegularExpressions.RegexOptions.Singleline);
+        Assert.HasCount(1, updates);
+        var assignments = updates[0].Groups[1].Value;
+        Assert.IsTrue(assignments.Contains("title =", StringComparison.Ordinal));
+        Assert.IsTrue(assignments.Contains("updated_at =", StringComparison.Ordinal));
+        Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(assignments, @"\b(config|type|required|sort_order|description)\s*="), assignments);
+
+        capture.Clear();
+        var formOnly = await SendWithCookieAsync(HttpMethod.Patch, $"/api/v1/forms/{formId}", owner.Cookie,
+            JsonContent.Create(new { title = "Form only" }));
+        Assert.AreEqual(HttpStatusCode.OK, formOnly.StatusCode);
+        Assert.IsFalse(capture.Commands.Any(command => command.Contains("UPDATE questions", StringComparison.OrdinalIgnoreCase)));
+        Assert.IsFalse(capture.Commands.Any(command => command.Contains("UPDATE options", StringComparison.OrdinalIgnoreCase)));
+
+        var rows = await ReadDefinitionRowsAsync(formId);
+        using var current = await GetFormJsonAsync(formId, owner.Cookie);
+        capture.Clear();
+        var noop = await SendWithCookieAsync(HttpMethod.Patch, $"/api/v1/forms/{formId}", owner.Cookie,
+            JsonContent.Create(new { questions = new[] { new { id = questionId,
+                config = current.RootElement.GetProperty("questions")[0].GetProperty("config"), options = Array.Empty<object>() } } }));
+        Assert.AreEqual(HttpStatusCode.OK, noop.StatusCode);
+        Assert.IsFalse(capture.Commands.Any(command => command.Contains("UPDATE ", StringComparison.OrdinalIgnoreCase)));
+        Assert.AreEqual(rows, await ReadDefinitionRowsAsync(formId));
     }
 
     private async Task<TestMember> CreateMemberAsync(string displayName)

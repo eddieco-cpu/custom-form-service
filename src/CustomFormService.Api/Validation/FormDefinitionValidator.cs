@@ -25,7 +25,7 @@ public static class FormDefinitionValidator
         out IReadOnlyList<ApiErrorDetail> errors)
     {
         var validationErrors = new List<ApiErrorDetail>();
-        var definitions = new List<NewQuestionDefinition>();
+        var candidates = new List<QuestionDefinitionCandidate>();
 
         if (questionsElement.ValueKind != JsonValueKind.Array)
         {
@@ -34,33 +34,24 @@ public static class FormDefinitionValidator
             return false;
         }
 
-        var questionSortOrders = new Dictionary<int, int>();
         var index = 0;
         foreach (var questionElement in questionsElement.EnumerateArray())
         {
             var path = $"questions[{index}]";
             if (TryCreateQuestion(questionElement, path, out var definition, out var questionErrors))
             {
-                if (questionSortOrders.TryGetValue(definition.SortOrder, out _))
-                {
-                    validationErrors.Add(new ApiErrorDetail(
-                        $"{path}.sortOrder",
-                        "DUPLICATE_SORT_ORDER",
-                        "Question sortOrder values must be unique within a form."));
-                }
-                else
-                {
-                    questionSortOrders.Add(definition.SortOrder, index);
-                }
-
-                definitions.Add(definition);
+                candidates.Add(definition);
             }
 
             validationErrors.AddRange(questionErrors);
             index++;
         }
 
-        questions = definitions;
+        TryNormalizeQuestions(candidates, out var candidateErrors);
+        validationErrors.AddRange(candidateErrors);
+        questions = candidates.Select(question => new NewQuestionDefinition(
+            question.Type, question.Title, question.Description, question.Required, question.SortOrder, question.Config,
+            question.Options.Select(option => new NewOptionDefinition(option.Label, option.Value, option.SortOrder)).ToArray())).ToArray();
         errors = validationErrors;
         return validationErrors.Count == 0;
     }
@@ -68,7 +59,7 @@ public static class FormDefinitionValidator
     private static bool TryCreateQuestion(
         JsonElement questionElement,
         string path,
-        out NewQuestionDefinition definition,
+        out QuestionDefinitionCandidate definition,
         out IReadOnlyList<ApiErrorDetail> errors)
     {
         var validationErrors = new List<ApiErrorDetail>();
@@ -97,10 +88,7 @@ public static class FormDefinitionValidator
             configElement = suppliedConfig;
         }
 
-        var config = EmptyObject;
-        var hasConfig = hasType && TryNormalizeConfig(type, configElement, $"{path}.config", validationErrors, out config);
-
-        var optionDefinitions = Array.Empty<NewOptionDefinition>();
+        var optionDefinitions = Array.Empty<OptionDefinitionCandidate>();
         if (properties.TryGetValue("options", out var optionsElement))
         {
             if (optionsElement.ValueKind != JsonValueKind.Array)
@@ -120,13 +108,19 @@ public static class FormDefinitionValidator
             }
         }
 
-        if (!hasType || !hasTitle || !hasSortOrder || !hasConfig || validationErrors.Count > 0)
+        if (!hasType || !hasTitle || !hasSortOrder || validationErrors.Count > 0)
         {
             errors = validationErrors;
             return false;
         }
 
-        definition = new NewQuestionDefinition(type, title, description, required, sortOrder, config, optionDefinitions);
+        definition = new QuestionDefinitionCandidate
+        {
+            Id = Guid.NewGuid(), Type = type, Title = title, Description = description,
+            Required = required, SortOrder = sortOrder, Config = configElement.Clone()
+        };
+        definition.Options.AddRange(optionDefinitions);
+        foreach (var property in properties.Keys) definition.Source.Set(property, $"{path}.{property}");
         errors = [];
         return true;
     }
@@ -135,11 +129,9 @@ public static class FormDefinitionValidator
         JsonElement optionsElement,
         string optionsPath,
         List<ApiErrorDetail> validationErrors,
-        out NewOptionDefinition[] options)
+        out OptionDefinitionCandidate[] options)
     {
-        var definitions = new List<NewOptionDefinition>();
-        var optionSortOrders = new HashSet<int>();
-        var optionValues = new HashSet<string>(StringComparer.Ordinal);
+        var definitions = new List<OptionDefinitionCandidate>();
         var index = 0;
         foreach (var optionElement in optionsElement.EnumerateArray())
         {
@@ -155,34 +147,12 @@ public static class FormDefinitionValidator
             {
                 var hasLabel = TryReadRequiredText(properties, "label", $"{path}.label", itemErrors, out var label);
                 var hasValue = TryReadRequiredText(properties, "value", $"{path}.value", itemErrors, out var value);
-                if (hasValue && TextRules.CodePointCount(value) > 255)
-                {
-                    itemErrors.Add(new ApiErrorDetail(
-                        $"{path}.value",
-                        "INVALID_OPTION",
-                        "Option value must not exceed 255 characters."));
-                }
-
                 var hasSortOrder = TryReadSortOrder(properties, "sortOrder", $"{path}.sortOrder", itemErrors, out var sortOrder);
-                if (hasSortOrder && !optionSortOrders.Add(sortOrder))
-                {
-                    itemErrors.Add(new ApiErrorDetail(
-                        $"{path}.sortOrder",
-                        "DUPLICATE_SORT_ORDER",
-                        "Option sortOrder values must be unique within a question."));
-                }
-
-                if (hasValue && !optionValues.Add(value))
-                {
-                    itemErrors.Add(new ApiErrorDetail(
-                        $"{path}.value",
-                        "INVALID_OPTION",
-                        "Option values must be unique within a question."));
-                }
-
                 if (hasLabel && hasValue && hasSortOrder && itemErrors.Count == 0)
                 {
-                    definitions.Add(new NewOptionDefinition(label, value, sortOrder));
+                    var option = new OptionDefinitionCandidate { Id = Guid.NewGuid(), Label = label, Value = value, SortOrder = sortOrder };
+                    foreach (var property in properties.Keys) option.Source.Set(property, $"{path}.{property}");
+                    definitions.Add(option);
                 }
             }
 
@@ -193,6 +163,54 @@ public static class FormDefinitionValidator
         options = [.. definitions];
     }
 
+    public static bool TryNormalizeQuestions(
+        IReadOnlyList<QuestionDefinitionCandidate> questions,
+        out IReadOnlyList<ApiErrorDetail> errors)
+    {
+        var validationErrors = new List<ApiErrorDetail>();
+        var orders = new Dictionary<int, QuestionDefinitionCandidate>();
+        foreach (var question in questions)
+        {
+            question.Title = TextRules.Trim(question.Title);
+            if (question.Title.Length == 0)
+                validationErrors.Add(new(question.Source.Path("title"), "REQUIRED_FIELD", "Title is required."));
+            if (question.Description is { } description)
+            {
+                description = TextRules.Trim(description);
+                question.Description = description.Length == 0 ? null : description;
+            }
+            if (TryNormalizeConfig(question.Type, question.Config, question.Source.Path("config"), validationErrors, out var config))
+                question.Config = config;
+            if (!orders.TryAdd(question.SortOrder, question))
+                validationErrors.Add(new(question.Source.ConflictPath("sortOrder", orders[question.SortOrder].Source),
+                    "DUPLICATE_SORT_ORDER", "Question sortOrder values must be unique within a form."));
+            if (!IsChoice(question.Type) && question.Options.Count > 0)
+                validationErrors.Add(new(question.Source.Path("options"), "INVALID_OPTION", "Only choice questions may contain options."));
+
+            var optionOrders = new Dictionary<int, OptionDefinitionCandidate>();
+            var values = new Dictionary<string, OptionDefinitionCandidate>(StringComparer.Ordinal);
+            foreach (var option in question.Options)
+            {
+                option.Label = TextRules.Trim(option.Label);
+                option.Value = TextRules.Trim(option.Value);
+                if (option.Label.Length == 0)
+                    validationErrors.Add(new(option.Source.Path("label"), "REQUIRED_FIELD", "Label is required."));
+                if (option.Value.Length == 0)
+                    validationErrors.Add(new(option.Source.Path("value"), "REQUIRED_FIELD", "Value is required."));
+                else if (TextRules.CodePointCount(option.Value) > 255)
+                    validationErrors.Add(new(option.Source.Path("value"), "INVALID_OPTION", "Option value must not exceed 255 characters."));
+                if (!optionOrders.TryAdd(option.SortOrder, option))
+                    validationErrors.Add(new(option.Source.ConflictPath("sortOrder", optionOrders[option.SortOrder].Source),
+                        "DUPLICATE_SORT_ORDER", "Option sortOrder values must be unique within a question."));
+                if (!values.TryAdd(option.Value, option))
+                    validationErrors.Add(new(option.Source.ConflictPath("value", values[option.Value].Source),
+                        "INVALID_OPTION", "Option values must be unique within a question."));
+            }
+        }
+        errors = validationErrors;
+        return validationErrors.Count == 0;
+    }
+
     private static bool TryNormalizeConfig(
         QuestionType type,
         JsonElement configElement,
@@ -201,6 +219,7 @@ public static class FormDefinitionValidator
         out JsonElement config)
     {
         config = EmptyObject;
+        var initialErrorCount = errors.Count;
         if (configElement.ValueKind != JsonValueKind.Object)
         {
             errors.Add(new ApiErrorDetail(path, "INVALID_QUESTION_CONFIG", "Config must be a JSON object."));
@@ -296,12 +315,12 @@ public static class FormDefinitionValidator
         }
 
         ValidateConfigRelationships(type, result, path, errors);
-        if (errors.Any(error => error.Path == path || error.Path.StartsWith(path + ".", StringComparison.Ordinal)))
+        if (errors.Count > initialErrorCount)
         {
             return false;
         }
 
-        config = JsonDocument.Parse(result.ToJsonString()).RootElement.Clone();
+        config = JsonSerializer.SerializeToElement(result);
         return true;
     }
 
@@ -322,10 +341,12 @@ public static class FormDefinitionValidator
         }
 
         if (type == QuestionType.Number &&
-            config["min"] is not null &&
-            config["max"] is not null &&
-            DefinitionNumber.TryRead(JsonSerializer.SerializeToElement(config["min"]!), out var numberMin) &&
-            DefinitionNumber.TryRead(JsonSerializer.SerializeToElement(config["max"]!), out var numberMax) &&
+            config["min"] is JsonValue numberMinValue &&
+            config["max"] is JsonValue numberMaxValue &&
+            numberMinValue.TryGetValue<JsonElement>(out var minElement) &&
+            numberMaxValue.TryGetValue<JsonElement>(out var maxElement) &&
+            DefinitionNumber.TryRead(minElement, out var numberMin) &&
+            DefinitionNumber.TryRead(maxElement, out var numberMax) &&
             numberMin.CompareTo(numberMax) > 0)
         {
             errors.Add(new ApiErrorDetail(path, "INVALID_QUESTION_CONFIG", "min must not exceed max."));
