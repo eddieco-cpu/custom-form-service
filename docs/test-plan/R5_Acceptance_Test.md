@@ -390,3 +390,11 @@ FROM forms WHERE id IN ('$NestedFormId'::uuid, '$DeleteFormId'::uuid) ORDER BY i
 ## 本次刻意不擴充的邊界
 
 本計畫聚焦 R5 主行為、Owner／Draft 隱藏、DB 寫入與代表性錯誤。所有 Question config 變體、Unicode code-point 極限、PATCH Delta、Publish／Close、Submission 與 Statistics 仍各自依正式規格在 R6～R10 驗收；這些項目未因本計畫精簡而放寬。
+
+## 驗收結果與 Round 狀態
+
+**AI 執行結果（核對日期：2026-10-03）：**本文件第 1～7 項的既有實際結果均為「未執行（等待 Owner review）」，repository 內沒有可對應本計畫案例的 HTTP、DB 或自動化執行輸出；因此全部維持 `未執行`，沒有補記為 PASS。`R5_Manual_Tests.http` 的兩個 token 變數均為 placeholder，未發現已保存的 JWT。`FormEndpointsTests.cs` 是 R5 開發期整合測試原始碼，但不是本計畫案例的已執行證據，不能替代上述 AI 結果。
+
+**人工驗收結果：**PASS（2026-10-03；Owner 在本次指示中明確確認 R5 已人工驗收通過）。此確認僅記錄人工驗收，不回填或推論 AI 執行結果。
+
+**Round 狀態：**accepted（2026-10-03；以 Owner 人工驗收確認為依據）。後續若需補齊 AI 驗收紀錄，應先取得執行授權，再依本成對計畫實跑並新增獨立、可追溯的結果；不可將此人工確認倒推為 AI PASS。

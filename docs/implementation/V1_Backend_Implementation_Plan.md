@@ -77,7 +77,7 @@ Next round: prerequisite only; not started
 | R2 | Compose PostgreSQL 與連線 | DB 存活、資料持久、API 可連線 | 驗收紀錄未存於 repo；不補造狀態 |
 | R3 | EF Core 與 7 表 Migration | 可從空庫重建正式 Schema | 驗收紀錄未存於 repo；不補造狀態 |
 | R4 | Email Auth 與 User | 註冊、登入、登出、本人資料／更新 | **accepted（2026-10-01，人工確認完成）**：[`R4_Acceptance_Test.md`](../test-plan/R4_Acceptance_Test.md)；[`R4_Manual_Tests.http`](../test-plan/R4_Manual_Tests.http) |
-| R5 | Form 基礎讀寫 | Create／List／Detail／Delete；安全邊界 | not started |
+| R5 | Form 基礎讀寫 | Create／List／Detail／Delete；安全邊界 | **accepted（2026-10-03，Owner 人工驗收確認通過；AI case 執行紀錄仍有缺口）**：[`R5_Acceptance_Test.md`](../test-plan/R5_Acceptance_Test.md)；[`R5_Manual_Tests.http`](../test-plan/R5_Manual_Tests.http) |
 | R6 | Draft Definition 與 Delta | 完整 Question／Option／Config 編輯與原子性 | not started |
 | R7 | Lifecycle 與 Result Policy | Publish／Close／Visibility、Freeze 與並行 | not started |
 | R8 | Submission | 全題型 Answer／Response、single／multiple、並行 | not started |
