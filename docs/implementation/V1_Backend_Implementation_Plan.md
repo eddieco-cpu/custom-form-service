@@ -78,7 +78,7 @@ Next round: prerequisite only; not started
 | R3 | EF Core 與 7 表 Migration | 可從空庫重建正式 Schema | 驗收紀錄未存於 repo；不補造狀態 |
 | R4 | Email Auth 與 User | 註冊、登入、登出、本人資料／更新 | **accepted（2026-10-01，人工確認完成）**：[`R4_Acceptance_Test.md`](../test-plan/R4_Acceptance_Test.md)；[`R4_Manual_Tests.http`](../test-plan/R4_Manual_Tests.http) |
 | R5 | Form 基礎讀寫 | Create／List／Detail／Delete；安全邊界 | **accepted（2026-10-03，Owner 人工驗收確認通過；AI case 執行紀錄仍有缺口）**：[`R5_Acceptance_Test.md`](../test-plan/R5_Acceptance_Test.md)；[`R5_Manual_Tests.http`](../test-plan/R5_Manual_Tests.http) |
-| R6 | Draft Definition 與 Delta | 完整 Question／Option／Config 編輯與原子性 | development verified（2026-10-03；先有 Owner 提供 focused integration suite 6/6 PASS 證據；本次 R6 修正後實跑同一 suite 擴充版 10/10 PASS，涵蓋 PATCH 競爭、Request path／top-level error、Option value transition 與 SQL UPDATE 截取）。尚未建立驗收成對文件，尚未 accepted。 |
+| R6 | Draft Definition 與 Delta | 完整 Question／Option／Config 編輯與原子性 | development verified（2026-10-03；歷史證據：Owner focused suite 6/6、第一輪修正實跑 10/10；本次 Option 正規化修正後 focused suite 16/16、全套回歸 61/61 PASS，build 0 警告／0 錯誤，含三組混合 Delta 與第二次 SaveChanges 失敗的完整交易回滾）。開發證據及有限重構評估：[`R6_Option_Persistence_Review_Report.md`](R6_Option_Persistence_Review_Report.md)。尚未建立驗收成對文件，尚未 accepted。 |
 | R7 | Lifecycle 與 Result Policy | Publish／Close／Visibility、Freeze 與並行 | not started |
 | R8 | Submission | 全題型 Answer／Response、single／multiple、並行 | not started |
 | R9 | Latest 與 Respondent Count | 最新整份回覆與有效人數 | not started |
@@ -131,6 +131,8 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 **輸入**：01 FORM-01／04～06、QST、02 §8～9、03b §7.2、04／05。**工作**：完成 10 號 `PATCH /forms/{formId}`；依正式規格處理未指定欄位保留、nullable replacement、Question／Option Delta、id-only 刪除、type change、config／排序與完整 Candidate Definition 驗證。沒有獨立 Question／Option API；不得自己增加。只在 Draft 可修改 Definition。
 
 **驗收／證據**：對所有正式 Question type／config 矩陣與 nesting 測新增、更新、刪除、空陣列 no-op、未提及保留、重複 ID、跨 Form／Question ID、非法順序與 Value；Choice→非 Choice 清理 Options，且失敗時原狀保留；未授權與已刪除情形的 status／code／優先序正確。以真 DB 驗證整份 Aggregate 的原子性。**提交**：如 `feat(forms): implement draft definition delta patch`。**停止**：交付可重現的 Delta 案例。
+
+**最新開發驗證（2026-10-03）**：已修正 PATCH 新增 Option 的一般文字 trim；新 Option 與既有 value 修改的同 ID replacement 均在完整 Candidate 驗證後、舊 key 刪除保存後才追蹤／插入。新增 6 個測試案例（2 個正規化、3 個 Owner 指定的混合操作、1 個第二次保存故障回滾），另保留原有競爭、value 交換／重用、錯誤 path 與 SQL 回歸測試。正式驗收尚未準備或執行；開發測試 PASS 不代表驗收 PASS。Candidate／ChangeSet 有限重構僅完成評估，等待 Owner 另行授權；R7／G1 未開始。格式檢查另發現 Controller 既有 switch expression 縮排問題，未擴大修正，見開發報告。
 
 ### R7 — Publish／Close／Result Visibility
 

@@ -276,7 +276,7 @@ public sealed class FormsController(
 
         var now = timeProvider.GetUtcNow();
         var snapshot = DraftDefinitionDelta.Capture(form);
-        IReadOnlyList<Option> deferredOptionReplacements = [];
+        IReadOnlyList<Option> deferredOptions = [];
         if (!TryApplyFormPatch(properties, form, out var fieldErrors))
         {
             return ApiErrors.Validation(fieldErrors);
@@ -288,7 +288,7 @@ public sealed class FormsController(
                 form,
                 questionsElement,
                 now,
-                out deferredOptionReplacements,
+                out deferredOptions,
                 out var definitionErrors))
         {
             return ApiErrors.Result(
@@ -310,7 +310,7 @@ public sealed class FormsController(
             form.UpdatedAt = now;
             database.Entry(form).State = EntityState.Modified;
             snapshot.UpdateChangedTimestamps(database, form, now);
-            await OptionValueTransitionWriter.SaveAsync(database, deferredOptionReplacements, cancellationToken);
+            await OptionValueTransitionWriter.SaveAsync(database, deferredOptions, cancellationToken);
         }
         finally
         {

@@ -13,7 +13,7 @@ using Npgsql;
 namespace CustomFormService.IntegrationTests;
 
 [TestClass]
-public sealed class FormEndpointsTests
+public sealed partial class FormEndpointsTests
 {
     private CustomFormServiceApiFactory _factory = null!;
     private HttpClient _client = null!;
@@ -384,6 +384,35 @@ public sealed class FormEndpointsTests
                 }
             }));
         await AssertErrorAsync(duplicate, HttpStatusCode.BadRequest, "FORM_DEFINITION_INVALID");
+        using (var error = await ReadJsonAsync(duplicate))
+        {
+            Assert.AreEqual("questions[1].id", error.RootElement.GetProperty("error").GetProperty("details")[0].GetProperty("path").GetString());
+        }
+
+        var duplicateOption = await SendWithCookieAsync(
+            HttpMethod.Patch,
+            $"/api/v1/forms/{formId}",
+            owner.Cookie,
+            JsonContent.Create(new
+            {
+                questions = new[]
+                {
+                    new
+                    {
+                        id = question.GetProperty("id").GetGuid(),
+                        options = new object[]
+                        {
+                            new { id = option.GetProperty("id").GetGuid(), label = "Update" },
+                            new { id = option.GetProperty("id").GetGuid() }
+                        }
+                    }
+                }
+            }));
+        await AssertErrorAsync(duplicateOption, HttpStatusCode.BadRequest, "FORM_DEFINITION_INVALID");
+        using (var error = await ReadJsonAsync(duplicateOption))
+        {
+            Assert.AreEqual("questions[0].options[1].id", error.RootElement.GetProperty("error").GetProperty("details")[0].GetProperty("path").GetString());
+        }
 
         var after = await SendWithCookieAsync(HttpMethod.Get, $"/api/v1/forms/{formId}", owner.Cookie);
         Assert.AreEqual(HttpStatusCode.OK, after.StatusCode);

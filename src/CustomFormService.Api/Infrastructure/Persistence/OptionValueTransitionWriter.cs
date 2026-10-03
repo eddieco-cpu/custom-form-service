@@ -12,7 +12,7 @@ public static class OptionValueTransitionWriter
 {
     public static async Task SaveAsync(
         ApplicationDbContext database,
-        IReadOnlyList<Option> deferredOptionReplacements,
+        IReadOnlyList<Option> deferredOptions,
         CancellationToken cancellationToken)
     {
         var autoDetectChanges = database.ChangeTracker.AutoDetectChangesEnabled;
@@ -26,7 +26,7 @@ public static class OptionValueTransitionWriter
             var hasDeletedOptions = database.ChangeTracker.Entries<Option>()
                 .Any(entry => entry.State == EntityState.Deleted);
 
-            if (deferredOptionReplacements.Count == 0 && (addedOptions.Length == 0 || !hasDeletedOptions))
+            if (deferredOptions.Count == 0 && (addedOptions.Length == 0 || !hasDeletedOptions))
             {
                 await database.SaveChangesAsync(cancellationToken);
                 return;
@@ -36,9 +36,11 @@ public static class OptionValueTransitionWriter
             // a tracked Option is forbidden even before the database unique constraint
             // can be evaluated. Delta application therefore deletes the old row and
             // keeps its same-ID replacement detached until that delete is persisted.
-            foreach (var replacement in deferredOptionReplacements)
+            // New Options also stay detached until their normalized candidate is valid
+            // and outgoing alternate keys have been removed.
+            foreach (var option in deferredOptions)
             {
-                replacement.Question.Options.Remove(replacement);
+                option.Question.Options.Remove(option);
             }
 
             // A new value can reuse the value of a deleted option in this same PATCH.
@@ -52,10 +54,10 @@ public static class OptionValueTransitionWriter
 
             await database.SaveChangesAsync(cancellationToken);
 
-            foreach (var replacement in deferredOptionReplacements)
+            foreach (var option in deferredOptions)
             {
-                replacement.Question.Options.Add(replacement);
-                database.Options.Add(replacement);
+                option.Question.Options.Add(option);
+                database.Options.Add(option);
             }
 
             foreach (var option in addedOptions)

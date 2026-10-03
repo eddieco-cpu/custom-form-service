@@ -21,12 +21,12 @@ public static class DraftDefinitionDelta
         Form form,
         JsonElement questionsElement,
         DateTimeOffset now,
-        out IReadOnlyList<Option> deferredOptionReplacements,
+        out IReadOnlyList<Option> deferredOptionWrites,
         out IReadOnlyList<ApiErrorDetail> errors)
     {
         if (questionsElement.ValueKind != JsonValueKind.Array)
         {
-            deferredOptionReplacements = [];
+            deferredOptionWrites = [];
             errors = [Invalid("questions", "Questions must be an array.")];
             return false;
         }
@@ -36,23 +36,23 @@ public static class DraftDefinitionDelta
             !TryValidateOwnership(form, deltas, validationErrors) ||
             !TryValidateDuplicates(deltas, validationErrors))
         {
-            deferredOptionReplacements = [];
+            deferredOptionWrites = [];
             errors = validationErrors;
             return false;
         }
 
         var questionRequestPaths = new Dictionary<Guid, string>();
         var optionRequestPaths = new Dictionary<Guid, string>();
-        var replacements = new List<Option>();
+        var deferredOptions = new List<Option>();
         foreach (var delta in deltas)
         {
             var properties = delta.Properties;
             var path = delta.Path;
             if (!properties.TryGetValue("id", out var idElement))
             {
-                if (!TryCreateQuestion(database, form, properties, path, now, optionRequestPaths, replacements, validationErrors, out var question))
+                if (!TryCreateQuestion(database, form, properties, path, now, optionRequestPaths, deferredOptions, validationErrors, out var question))
                 {
-                    deferredOptionReplacements = [];
+                    deferredOptionWrites = [];
                     errors = validationErrors;
                     return false;
                 }
@@ -68,9 +68,9 @@ public static class DraftDefinitionDelta
                     database.Remove(question);
                     form.Questions.Remove(question);
                 }
-                else if (!TryUpdateQuestion(database, question, properties, path, now, optionRequestPaths, replacements, validationErrors))
+                else if (!TryUpdateQuestion(database, question, properties, path, now, optionRequestPaths, deferredOptions, validationErrors))
                 {
-                    deferredOptionReplacements = [];
+                    deferredOptionWrites = [];
                     errors = validationErrors;
                     return false;
                 }
@@ -95,7 +95,7 @@ public static class DraftDefinitionDelta
         })));
         if (!FormDefinitionValidator.TryCreateQuestions(candidateDocument.RootElement, out var definitions, out var definitionErrors))
         {
-            deferredOptionReplacements = [];
+            deferredOptionWrites = [];
             errors = MapCandidateErrors(definitionErrors, currentQuestions, questionRequestPaths, optionRequestPaths);
             return false;
         }
@@ -118,7 +118,7 @@ public static class DraftDefinitionDelta
                 var option = currentOptions[optionIndex];
                 var optionDefinition = definition.Options[optionIndex];
                 option.Label = optionDefinition.Label;
-                if (replacements.Contains(option))
+                if (deferredOptions.Contains(option))
                 {
                     option.Value = optionDefinition.Value;
                 }
@@ -126,7 +126,7 @@ public static class DraftDefinitionDelta
             }
         }
 
-        deferredOptionReplacements = replacements;
+        deferredOptionWrites = deferredOptions;
         errors = [];
         return true;
     }
@@ -427,7 +427,7 @@ public static class DraftDefinitionDelta
         string path,
         DateTimeOffset now,
         Dictionary<Guid, string> optionRequestPaths,
-        List<Option> replacements,
+        List<Option> deferredOptions,
         List<ApiErrorDetail> errors,
         out Question question)
     {
@@ -462,7 +462,7 @@ public static class DraftDefinitionDelta
             $"{path}.options",
             now,
             optionRequestPaths,
-            replacements,
+            deferredOptions,
             errors);
     }
 
@@ -473,7 +473,7 @@ public static class DraftDefinitionDelta
         string path,
         DateTimeOffset now,
         Dictionary<Guid, string> optionRequestPaths,
-        List<Option> replacements,
+        List<Option> deferredOptions,
         List<ApiErrorDetail> errors)
     {
         if (!TryReadQuestionValues(properties, path, errors, out var values, question))
@@ -528,7 +528,7 @@ public static class DraftDefinitionDelta
                 $"{path}.options",
                 now,
                 optionRequestPaths,
-                replacements,
+                deferredOptions,
                 errors);
     }
 
@@ -639,7 +639,7 @@ public static class DraftDefinitionDelta
         string path,
         DateTimeOffset now,
         Dictionary<Guid, string> optionRequestPaths,
-        List<Option> replacements,
+        List<Option> deferredOptions,
         List<ApiErrorDetail> errors)
     {
         var seenOptionIds = new HashSet<Guid>();
@@ -670,10 +670,14 @@ public static class DraftDefinitionDelta
                     Value = values.Value,
                     SortOrder = values.SortOrder,
                     CreatedAt = now,
-                    UpdatedAt = now
+                    UpdatedAt = now,
+                    Question = question
                 };
                 question.Options.Add(option);
-                database.Add(option);
+                // Track only after the complete normalized candidate is valid and old
+                // values are deleted. Immediate tracking can conflict with an outgoing
+                // alternate key even when the final delta is legal.
+                deferredOptions.Add(option);
                 optionRequestPaths.Add(option.Id, itemPath);
             }
             else if (!TryReadId(idElement, $"{itemPath}.id", errors, out var optionId))
@@ -723,7 +727,7 @@ public static class DraftDefinitionDelta
                     database.Remove(option);
                     question.Options.Remove(option);
                     question.Options.Add(replacement);
-                    replacements.Add(replacement);
+                    deferredOptions.Add(replacement);
                     optionRequestPaths[replacement.Id] = itemPath;
                 }
             }
@@ -763,7 +767,9 @@ public static class DraftDefinitionDelta
             }
             else
             {
-                value = valueElement.GetString()!;
+                // Establish the normalized alternate key before tracking a new Option
+                // or deciding whether an existing key needs a same-ID replacement.
+                value = TextRules.Trim(valueElement.GetString()!);
             }
         }
         if (properties.TryGetValue("sortOrder", out var sortOrderElement) &&
