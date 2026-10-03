@@ -78,7 +78,7 @@ Next round: prerequisite only; not started
 | R3 | EF Core 與 7 表 Migration | 可從空庫重建正式 Schema | 驗收紀錄未存於 repo；不補造狀態 |
 | R4 | Email Auth 與 User | 註冊、登入、登出、本人資料／更新 | **accepted（2026-10-01，人工確認完成）**：[`R4_Acceptance_Test.md`](../test-plan/R4_Acceptance_Test.md)；[`R4_Manual_Tests.http`](../test-plan/R4_Manual_Tests.http) |
 | R5 | Form 基礎讀寫 | Create／List／Detail／Delete；安全邊界 | **accepted（2026-10-03，Owner 人工驗收確認通過；AI case 執行紀錄仍有缺口）**：[`R5_Acceptance_Test.md`](../test-plan/R5_Acceptance_Test.md)；[`R5_Manual_Tests.http`](../test-plan/R5_Manual_Tests.http) |
-| R6 | Draft Definition 與 Delta | 完整 Question／Option／Config 編輯與原子性 | development verified（2026-10-03；歷史證據：Owner focused suite 6/6、第一輪修正實跑 10/10；本次 Option 正規化修正後 focused suite 16/16、全套回歸 61/61 PASS，build 0 警告／0 錯誤，含三組混合 Delta 與第二次 SaveChanges 失敗的完整交易回滾）。開發證據及有限重構評估：[`R6_Option_Persistence_Review_Report.md`](R6_Option_Persistence_Review_Report.md)。尚未建立驗收成對文件，尚未 accepted。 |
+| R6 | Draft Definition 與 Delta | 完整 Question／Option／Config 編輯與原子性 | 有限 Candidate 重構已獲 Owner 授權，in progress（2026-10-03）。測試基準／必要修正階段：原 Form 16/16、全套 61/61 PASS；新增案例在 Windows 被封鎖後，依 Owner 授權使用官方 SDK Docker Linux 環境，重現並修正 Number 精確比較、Config 語意 no-op、欄位來源 path；focused 47/47、擴充全套 97/97 PASS，build 0 警告／0 錯誤。有限重構仍待完成。最新紀錄：[`R6_Candidate_Refactor_Development_Report.md`](R6_Candidate_Refactor_Development_Report.md)。尚未建立驗收成對文件，尚未 accepted。 |
 | R7 | Lifecycle 與 Result Policy | Publish／Close／Visibility、Freeze 與並行 | not started |
 | R8 | Submission | 全題型 Answer／Response、single／multiple、並行 | not started |
 | R9 | Latest 與 Respondent Count | 最新整份回覆與有效人數 | not started |
@@ -132,7 +132,9 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 
 **驗收／證據**：對所有正式 Question type／config 矩陣與 nesting 測新增、更新、刪除、空陣列 no-op、未提及保留、重複 ID、跨 Form／Question ID、非法順序與 Value；Choice→非 Choice 清理 Options，且失敗時原狀保留；未授權與已刪除情形的 status／code／優先序正確。以真 DB 驗證整份 Aggregate 的原子性。**提交**：如 `feat(forms): implement draft definition delta patch`。**停止**：交付可重現的 Delta 案例。
 
-**最新開發驗證（2026-10-03）**：已修正 PATCH 新增 Option 的一般文字 trim；新 Option 與既有 value 修改的同 ID replacement 均在完整 Candidate 驗證後、舊 key 刪除保存後才追蹤／插入。新增 6 個測試案例（2 個正規化、3 個 Owner 指定的混合操作、1 個第二次保存故障回滾），另保留原有競爭、value 交換／重用、錯誤 path 與 SQL 回歸測試。正式驗收尚未準備或執行；開發測試 PASS 不代表驗收 PASS。Candidate／ChangeSet 有限重構僅完成評估，等待 Owner 另行授權；R7／G1 未開始。格式檢查另發現 Controller 既有 switch expression 縮排問題，未擴大修正，見開發報告。
+**前次開發驗證（2026-10-03）**：已修正 PATCH 新增 Option 的一般文字 trim；新 Option 與既有 value 修改的同 ID replacement 均在完整 Candidate 驗證後、舊 key 刪除保存後才追蹤／插入。新增 6 個測試案例（2 個正規化、3 個 Owner 指定的混合操作、1 個第二次保存故障回滾），另保留原有競爭、value 交換／重用、錯誤 path 與 SQL 回歸測試。正式驗收尚未準備或執行；開發測試 PASS 不代表驗收 PASS。格式檢查另發現 Controller 既有 switch expression 縮排問題，未擴大修正，見前次開發報告。
+
+**最新開發進度（2026-10-03，有限 Candidate 重構）**：Owner 已授權有限重構及 Docker 隔離測試。先重新執行既有 Windows Form 測試 16/16 與全套回歸 61/61，均 PASS；新增 DLL 隨後被 Smart App Control 封鎖，Owner 手動執行亦總計 0。已在官方 .NET SDK 10.0.400 Linux 容器恢復同套測試，未更動 Windows 安全設定；先重現 8 個契約案例失敗，再修正 Number Config 的 decimal 範圍／捨入誤判、Config 等值 no-op 與 sortOrder 錯誤的欄位來源 path。新增契約案例總計 36（包含 DB 安全範圍與精確數值補強），focused 47/47 後擴充全套 97/97 PASS；build 0 警告／0 錯誤。測試與必要修正先獨立提交；Candidate／ChangeSet 有限重構為下一個同 Round 開發步驟，尚未完成。Linux 結果不冒稱 Windows 原生執行結果，開發 PASS 不代表正式驗收 PASS。R7／G1、驗收準備與執行均未開始。
 
 ### R7 — Publish／Close／Result Visibility
 

@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using CustomFormService.Api.Contracts.Errors;
@@ -283,7 +282,7 @@ public static class FormDefinitionValidator
                             result[property.Name] = ratingBound;
                         }
                     }
-                    else if (!TryReadFiniteNumber(property.Value, out var number))
+                    else if (!DefinitionNumber.TryRead(property.Value, out _))
                     {
                         errors.Add(new ApiErrorDetail(propertyPath, "INVALID_QUESTION_CONFIG", "Number bounds must be finite JSON numbers."));
                     }
@@ -325,9 +324,9 @@ public static class FormDefinitionValidator
         if (type == QuestionType.Number &&
             config["min"] is not null &&
             config["max"] is not null &&
-            TryReadDecimal(config["min"]!, out var numberMin) &&
-            TryReadDecimal(config["max"]!, out var numberMax) &&
-            numberMin > numberMax)
+            DefinitionNumber.TryRead(JsonSerializer.SerializeToElement(config["min"]!), out var numberMin) &&
+            DefinitionNumber.TryRead(JsonSerializer.SerializeToElement(config["max"]!), out var numberMax) &&
+            numberMin.CompareTo(numberMax) > 0)
         {
             errors.Add(new ApiErrorDetail(path, "INVALID_QUESTION_CONFIG", "min must not exceed max."));
         }
@@ -537,15 +536,6 @@ public static class FormDefinitionValidator
 
     private static bool TryReadRatingBound(JsonElement element, out int value) =>
         TryReadNonnegativeInteger(element, out value) && value <= 100;
-
-    private static bool TryReadFiniteNumber(JsonElement element, out decimal value)
-    {
-        value = default;
-        return element.ValueKind == JsonValueKind.Number && element.TryGetDecimal(out value);
-    }
-
-    private static bool TryReadDecimal(JsonNode value, out decimal number) =>
-        decimal.TryParse(value.ToJsonString(), NumberStyles.Number | NumberStyles.AllowExponent, CultureInfo.InvariantCulture, out number);
 
     private static ApiErrorDetail Invalid(string path, string message) =>
         new(path, "INVALID_VALUE", message);

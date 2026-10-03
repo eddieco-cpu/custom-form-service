@@ -42,7 +42,10 @@ public static class DraftDefinitionDelta
         }
 
         var questionRequestPaths = new Dictionary<Guid, string>();
+        var originalConfigs = form.Questions.ToDictionary(question => question.Id, question => question.Config);
         var optionRequestPaths = new Dictionary<Guid, string>();
+        var questionFields = new Dictionary<Guid, IReadOnlySet<string>>();
+        var optionFields = new Dictionary<Guid, IReadOnlySet<string>>();
         var deferredOptions = new List<Option>();
         foreach (var delta in deltas)
         {
@@ -58,6 +61,7 @@ public static class DraftDefinitionDelta
                 }
 
                 questionRequestPaths.Add(question.Id, path);
+                questionFields[question.Id] = properties.Keys.ToHashSet(StringComparer.Ordinal);
             }
             else
             {
@@ -76,6 +80,18 @@ public static class DraftDefinitionDelta
                 }
 
                 questionRequestPaths[question.Id] = path;
+                questionFields[question.Id] = properties.Keys.ToHashSet(StringComparer.Ordinal);
+            }
+        }
+
+        foreach (var delta in deltas.Where(delta => delta.Properties.ContainsKey("options")))
+        {
+            var question = form.Questions.SingleOrDefault(question => questionRequestPaths.GetValueOrDefault(question.Id) == delta.Path);
+            if (question is null) continue;
+            foreach (var option in delta.Properties["options"].EnumerateArray().Select((item, index) => (item, index)))
+            {
+                var id = question.Options.SingleOrDefault(optionEntity => optionRequestPaths.GetValueOrDefault(optionEntity.Id) == $"{delta.Path}.options[{option.index}]")?.Id;
+                if (id is not null) optionFields[id.Value] = option.item.EnumerateObject().Select(property => property.Name).ToHashSet(StringComparer.Ordinal);
             }
         }
 
@@ -96,7 +112,7 @@ public static class DraftDefinitionDelta
         if (!FormDefinitionValidator.TryCreateQuestions(candidateDocument.RootElement, out var definitions, out var definitionErrors))
         {
             deferredOptionWrites = [];
-            errors = MapCandidateErrors(definitionErrors, currentQuestions, questionRequestPaths, optionRequestPaths);
+            errors = MapCandidateErrors(definitionErrors, currentQuestions, questionRequestPaths, optionRequestPaths, questionFields, optionFields);
             return false;
         }
 
@@ -109,7 +125,8 @@ public static class DraftDefinitionDelta
             question.Description = definition.Description;
             question.Required = definition.Required;
             question.SortOrder = definition.SortOrder;
-            question.Config = definition.Config;
+            question.Config = originalConfigs.TryGetValue(question.Id, out var originalConfig) && JsonElement.DeepEquals(originalConfig, definition.Config)
+                ? originalConfig : definition.Config;
 
             var currentOptions = question.Options
                 .ToArray();
@@ -333,11 +350,13 @@ public static class DraftDefinitionDelta
         IReadOnlyList<ApiErrorDetail> candidateErrors,
         IReadOnlyList<Question> currentQuestions,
         IReadOnlyDictionary<Guid, string> questionRequestPaths,
-        IReadOnlyDictionary<Guid, string> optionRequestPaths) =>
+        IReadOnlyDictionary<Guid, string> optionRequestPaths,
+        IReadOnlyDictionary<Guid, IReadOnlySet<string>> questionFields,
+        IReadOnlyDictionary<Guid, IReadOnlySet<string>> optionFields) =>
         candidateErrors
             .Select(error => error with
             {
-                Path = MapCandidatePath(error, currentQuestions, questionRequestPaths, optionRequestPaths)
+                Path = MapCandidatePath(error, currentQuestions, questionRequestPaths, optionRequestPaths, questionFields, optionFields)
             })
             .ToArray();
 
@@ -345,7 +364,9 @@ public static class DraftDefinitionDelta
         ApiErrorDetail error,
         IReadOnlyList<Question> currentQuestions,
         IReadOnlyDictionary<Guid, string> questionRequestPaths,
-        IReadOnlyDictionary<Guid, string> optionRequestPaths)
+        IReadOnlyDictionary<Guid, string> optionRequestPaths,
+        IReadOnlyDictionary<Guid, IReadOnlySet<string>> questionFields,
+        IReadOnlyDictionary<Guid, IReadOnlySet<string>> optionFields)
     {
         if (!TryTakeIndexedPath(error.Path, "questions[", out var questionIndex, out var questionTail) ||
             questionIndex >= currentQuestions.Count)
@@ -364,16 +385,17 @@ public static class DraftDefinitionDelta
             }
 
             var option = currentOptions[optionIndex];
-            if (optionRequestPaths.TryGetValue(option.Id, out var optionPath))
+            var field = optionTail.TrimStart('.');
+            if (optionFields.GetValueOrDefault(option.Id)?.Contains(field) == true && optionRequestPaths.TryGetValue(option.Id, out var directOptionPath))
             {
-                return optionPath + optionTail;
+                return directOptionPath + optionTail;
             }
 
             var matchingOption = currentOptions.FirstOrDefault(currentOption =>
-                optionRequestPaths.ContainsKey(currentOption.Id) &&
+                optionFields.GetValueOrDefault(currentOption.Id)?.Contains(field) == true &&
                 (error.Code == "DUPLICATE_SORT_ORDER" && currentOption.SortOrder == option.SortOrder ||
                  error.Code == "INVALID_OPTION" && string.Equals(currentOption.Value, option.Value, StringComparison.Ordinal)));
-            if (matchingOption is not null && optionRequestPaths.TryGetValue(matchingOption.Id, out optionPath))
+            if (matchingOption is not null && optionRequestPaths.TryGetValue(matchingOption.Id, out var optionPath))
             {
                 return optionPath + optionTail;
             }
@@ -383,7 +405,8 @@ public static class DraftDefinitionDelta
                 : error.Path;
         }
 
-        if (questionRequestPaths.TryGetValue(question.Id, out var requestPath))
+        if ((error.Code != "DUPLICATE_SORT_ORDER" || questionFields.GetValueOrDefault(question.Id)?.Contains("sortOrder") == true) &&
+            questionRequestPaths.TryGetValue(question.Id, out var requestPath))
         {
             return requestPath + questionTail;
         }
@@ -391,10 +414,10 @@ public static class DraftDefinitionDelta
         if (error.Code == "DUPLICATE_SORT_ORDER")
         {
             var matchingQuestion = currentQuestions.FirstOrDefault(currentQuestion =>
-                questionRequestPaths.ContainsKey(currentQuestion.Id) && currentQuestion.SortOrder == question.SortOrder);
-            if (matchingQuestion is not null && questionRequestPaths.TryGetValue(matchingQuestion.Id, out requestPath))
+                questionFields.GetValueOrDefault(currentQuestion.Id)?.Contains("sortOrder") == true && currentQuestion.SortOrder == question.SortOrder);
+            if (matchingQuestion is not null && questionRequestPaths.TryGetValue(matchingQuestion.Id, out var matchingPath))
             {
-                return requestPath + questionTail;
+                return matchingPath + questionTail;
             }
         }
 
@@ -607,7 +630,7 @@ public static class DraftDefinitionDelta
             }
             else
             {
-                config = configElement.Clone();
+                if (!JsonElement.DeepEquals(config, configElement)) config = configElement.Clone();
             }
         }
         if (properties.TryGetValue("options", out var optionsElement))
