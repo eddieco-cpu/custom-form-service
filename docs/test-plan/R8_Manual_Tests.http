@@ -1,11 +1,12 @@
-# R8 — paired acceptance plan；2026-10-04 Prepare 修訂，R8 修訂驗收計畫待 review
+# R8 — paired acceptance results；2026-10-04 Execute，R8 驗收結果待 Owner review
 # Companion: R8_Acceptance_Test.md；cleanup candidate d3f75b37623f5f774d8dabe5817c4488a96eb368
-# 本次未執行；正式驗收需目前成對計畫核准及 Execute 授權；不改填 accepted。
+# Owner 已核准 8680ccc 並授權 Execute；01a PASS／01b 首次 503 FAIL，其餘 52 requests BLOCKED 未送；預期／requests 不變，未 accepted。
+# 本次 RunId r8-acceptance-20261004-01；逐案證據 artifacts/r8-acceptance/r8-acceptance-20261004-01/results.json；人工全部未執行。
 # 所有 credential/token/server IDs 必須本機取得；每次獨立 run 換唯一 RunId。
 # Clear All Cookies；各 request @no-cookie-jar；有身份時僅用明確 Cookie。
 # 非 HTTP 01：按 Markdown 01 restore/build、Windows native startup、baseline／碰撞檢查；未完成不得繼續。
 # 原始 .http 共 54 requests（含 05b）；保留原 Body／JSON 跳脫／精確 number token，不包 Markdown code fence。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：FAIL：restore/build/native startup 成功；01b 首次 503，readiness gate 未通過
 # 人工實際：未執行（等待 Owner review）
 
 @apiBase = http://localhost:5000
@@ -46,7 +47,7 @@
 # 前置：Markdown 01；此前依賴成功；按檔案順序。
 # 預期：200；status=healthy
 # 核對正式 envelope／DB 與此案前 snapshot，詳見 companion。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：PASS：首次 200；status=healthy；見本次 01a.json
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 GET {{apiBase}}/health
@@ -55,21 +56,21 @@ GET {{apiBase}}/health
 # 前置：Markdown 01；此前依賴成功；按檔案順序。
 # 預期：200；Healthy
 # 核對正式 envelope／DB 與此案前 snapshot，詳見 companion。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：FAIL：首次 503／Unhealthy（預期仍 200／Healthy）；見本次 01b.json
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 GET {{apiBase}}/health/ready
 
 ### 02 — 非 HTTP full／Clock／SQL faults／cleanup／baseline 比較
 # 執行 Markdown 02 的同版全套命令、核對 TRX；預計 280，以實際為準；不得沿用開發 PASS。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 失敗；full／Clock／故障／EF tests 未執行
 # 人工實際：未執行（等待 Owner review）
 
 ### 03a — 登入現有 Active Owner A
 # 前置：Markdown 03；此前依賴成功；按檔案順序。
 # 預期：200 User＋Cookie
 # 將 id 記為 memberAId，只抄 access_token 的 value 到 memberAToken；不記錄可用 JWT。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/auth/login
@@ -81,7 +82,7 @@ Content-Type: application/json
 # 前置：Markdown 03；此前依賴成功；按檔案順序。
 # 預期：200 User＋Cookie
 # 將 id 記為 memberBId（須不同於 A），只抄 token value 到 memberBToken。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/auth/login
@@ -93,7 +94,7 @@ Content-Type: application/json
 # 前置：Markdown 04；此前依賴成功；按檔案順序。
 # 預期：201 Draft FormDetail；5 Questions／3 Options
 # 保存 mainFormId；以 type／sortOrder 配對 qMainText／Number／Single／Multiple／Rating、oMainSingle、oMainMultipleOne／Two；記完整 Definition snapshot。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms
@@ -169,7 +170,7 @@ Content-Type: application/json
 # 前置：Markdown 04；此前依賴成功；按檔案順序。
 # 預期：200；Published
 # 無 Body／Content-Type；取新的 main-before-submit snapshot（包含 Publish 的 timestamps）。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/publish
@@ -179,7 +180,7 @@ Cookie: access_token={{memberAToken}}
 # 前置：Markdown 04；此前依賴成功；按檔案順序。
 # 預期：201 Draft；1 真實 Question
 # 保存 foreignFormId／qForeign；DB 確認 qForeign.form_id=foreignFormId 且不等於 mainFormId；不得改用隨機不存在 UUID。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms
@@ -201,7 +202,7 @@ Content-Type: application/json
 # 前置：Markdown 04；此前依賴成功；按檔案順序。
 # 預期：201 Draft；2 Optional Questions
 # 保存 multipleFormId／qMultipleText／qMultipleNumber。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms
@@ -230,7 +231,7 @@ Content-Type: application/json
 # 前置：Markdown 04；此前依賴成功；按檔案順序。
 # 預期：200；Published
 # 核對正式 envelope／DB 與此案前 snapshot，詳見 companion。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{multipleFormId}}/publish
@@ -240,7 +241,7 @@ Cookie: access_token={{memberAToken}}
 # 前置：Markdown 04；此前依賴成功；按檔案順序。
 # 預期：201 Draft；futureDeadline 為未來 UTC Z
 # 保存 deadlineFormId；03、04 的 fixtures 為本次 RunId，不操作舊 Form。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms
@@ -257,7 +258,7 @@ Content-Type: application/json
 # 前置：Markdown 04；此前依賴成功；按檔案順序。
 # 預期：200；Published
 # 核對正式 envelope／DB 與此案前 snapshot，詳見 companion。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{deadlineFormId}}/publish
@@ -267,7 +268,7 @@ Cookie: access_token={{memberAToken}}
 # 前置：Markdown 04；此前依賴成功；按檔案順序。
 # 預期：201 Draft；1 Optional Question
 # 保存 singleRaceFormId／qSingleRaceText。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms
@@ -289,7 +290,7 @@ Content-Type: application/json
 # 前置：Markdown 04；此前依賴成功；按檔案順序。
 # 預期：200；Published
 # 完成後新 fixtures 共 5 Forms／10 Questions／3 Options；全部 Response／Answer 為 0。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{singleRaceFormId}}/publish
@@ -299,7 +300,7 @@ Cookie: access_token={{memberAToken}}
 # 前置：Markdown 05；此前依賴成功；按檔案順序。
 # 預期：401 AUTH_REQUIRED；Auth 優先
 # main 與所有新 Forms 的 Response／Answers 零新增。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -311,7 +312,7 @@ Content-Type: application/json
 # 前置：Markdown 05；此前依賴成功；按檔案順序。
 # 預期：400 VALIDATION_ERROR；formId INVALID_VALUE
 # 核對正式 envelope／DB 與此案前 snapshot，詳見 companion。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/not-a-uuid/responses
@@ -324,7 +325,7 @@ Content-Type: application/json
 # 前置：Markdown 05；此前依賴成功；按檔案順序。
 # 預期：400 VALIDATION_ERROR；userId INVALID_VALUE
 # 先確認 missingFormId 在 DB 不存在；parse／Envelope 優先於 404。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{missingFormId}}/responses
@@ -337,7 +338,7 @@ Content-Type: application/json
 # 前置：Markdown 05；此前依賴成功；按檔案順序。
 # 預期：404 FORM_NOT_FOUND
 # 核對正式 envelope／DB 與此案前 snapshot，詳見 companion。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{missingFormId}}/responses
@@ -350,7 +351,7 @@ Content-Type: application/json
 # 前置：Markdown 05；此前依賴成功；按檔案順序。
 # 預期：400 VALIDATION_ERROR；body INVALID_VALUE
 # Body 必須 0 bytes；不可代成 {}、null 或只輸入缺少 Content-Type。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -363,7 +364,7 @@ Content-Length: 0
 # 前置：Markdown 05；此前依賴成功；按檔案順序。
 # 預期：400 VALIDATION_ERROR；body INVALID_VALUE
 # 核對正式 envelope／DB 與此案前 snapshot，詳見 companion。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -376,7 +377,7 @@ Content-Type: text/plain
 # 前置：Markdown 06；此前依賴成功；按檔案順序。
 # 預期：409 FORM_NOT_SUBMITTABLE
 # 必須 Active B≠Owner A；foreign 與 main Response／Answers 仍全 0。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{foreignFormId}}/responses
@@ -389,7 +390,7 @@ Content-Type: application/json
 # 前置：Markdown 06；此前依賴成功；按檔案順序。
 # 預期：404 FORM_NOT_FOUND
 # 與 06a 區分：Detail 有 Draft 隱藏，Submit 正式 Published gate 回 409。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{foreignFormId}}
@@ -399,7 +400,7 @@ Cookie: access_token={{memberBToken}}
 # 前置：Markdown 06；此前依賴成功；按檔案順序。
 # 預期：400 VALIDATION_ERROR；answers[0].questionId QUESTION_NOT_FOUND
 # 使用 04c 真實 qForeign；Question 歸屬優先於 main 的 Required 缺題。DB main／foreign Response／Answers 均 0。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -412,7 +413,7 @@ Content-Type: application/json
 # 前置：Markdown 07；此前依賴成功；按檔案順序。
 # 預期：400 VALIDATION_ERROR；answers REQUIRED_FIELD
 # 核對正式 envelope／DB 與此案前 snapshot，詳見 companion。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -425,7 +426,7 @@ Content-Type: application/json
 # 前置：Markdown 07；此前依賴成功；按檔案順序。
 # 預期：400 VALIDATION_ERROR；questions.<qMainText> REQUIRED_FIELD
 # 核對正式 envelope／DB 與此案前 snapshot，詳見 companion。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -438,7 +439,7 @@ Content-Type: application/json
 # 前置：Markdown 07；此前依賴成功；按檔案順序。
 # 預期：400 VALIDATION_ERROR；answers[0].value REQUIRED_FIELD
 # 核對正式 envelope／DB 與此案前 snapshot，詳見 companion。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -451,7 +452,7 @@ Content-Type: application/json
 # 前置：Markdown 07；此前依賴成功；按檔案順序。
 # 預期：400 VALIDATION_ERROR；answers[0].value INVALID_VALUE
 # 核對正式 envelope／DB 與此案前 snapshot，詳見 companion。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -464,7 +465,7 @@ Content-Type: application/json
 # 前置：Markdown 07；此前依賴成功；按檔案順序。
 # 預期：400 VALIDATION_ERROR；answers[0].value INVALID_VALUE
 # trim 後 1 Code Point、不是 omission。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -477,7 +478,7 @@ Content-Type: application/json
 # 前置：Markdown 07；此前依賴成功；按檔案順序。
 # 預期：400 VALIDATION_ERROR；answers[1].value INVALID_VALUE
 # 核對正式 envelope／DB 與此案前 snapshot，詳見 companion。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -490,7 +491,7 @@ Content-Type: application/json
 # 前置：Markdown 07；此前依賴成功；按檔案順序。
 # 預期：400 VALIDATION_ERROR；answers[1].value INVALID_VALUE
 # 保留 raw 5.0 token；08a 的 5 正常接受，5e0／超大值由 02 同版自動測試涵蓋。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -503,7 +504,7 @@ Content-Type: application/json
 # 前置：Markdown 07；此前依賴成功；按檔案順序。
 # 預期：400 VALIDATION_ERROR；answers[1].value OPTION_NOT_FOUND
 # 核對正式 envelope／DB 與此案前 snapshot，詳見 companion。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -516,7 +517,7 @@ Content-Type: application/json
 # 前置：Markdown 07；此前依賴成功；按檔案順序。
 # 預期：400 VALIDATION_ERROR；answers[1].value[1] INVALID_VALUE
 # 核對正式 envelope／DB 與此案前 snapshot，詳見 companion。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -529,7 +530,7 @@ Content-Type: application/json
 # 前置：Markdown 07；此前依賴成功；按檔案順序。
 # 預期：400 VALIDATION_ERROR；answers[0].value INVALID_VALUE
 # 不接受 500、不刪除或替換字元；孤立 surrogate／合法 pair 完整細部由 02 同版 tests，08a 合法 pair 實際保存。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -542,7 +543,7 @@ Content-Type: application/json
 # 前置：Markdown 08；此前依賴成功；按檔案順序。
 # 預期：201 ResponseReceipt；排序 Text／Number／Single／Multiple／Rating
 # 保存 mainResponseAId。Root 僅 id／formId／submittedAt／answers；Answer 僅 questionId／value。DB 1 Response／5 Answers；user_id=A；Definition／timestamps 不變；比對保存數值及 timestamp。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -563,7 +564,7 @@ Content-Type: application/json
 # 前置：Markdown 08；此前依賴成功；按檔案順序。
 # 預期：409 RESPONSE_ALREADY_SUBMITTED
 # Response 限制先於 answers；DB 仍 1／5。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -576,7 +577,7 @@ Content-Type: application/json
 # 前置：Markdown 08；此前依賴成功；按檔案順序。
 # 預期：201；Receipt 只有 qMainText="B answer"
 # 保存 mainResponseBId；不補 null。DB main 2 Responses／6 Answers，內部 user_id=B（anonymous 仍登入）。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -589,7 +590,7 @@ Content-Type: application/json
 # 前置：Markdown 09；此前依賴成功；按檔案順序。
 # 預期：201；2 Answers 按 Question 排序
 # 保存 multipleResponse1Id；Receipt 不含 userId／Answer ID，即使 identified；數值等值與 DB 實際表示為準，不承諾 1e0 原 token。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{multipleFormId}}/responses
@@ -602,7 +603,7 @@ Content-Type: application/json
 # 前置：Markdown 09；此前依賴成功；按檔案順序。
 # 預期：201；新的 ID、answers=[]
 # 保存 multipleResponse2Id；DB 2 Responses／2 Answers；舊 09a 的 2 Answers 保留，新 Response 0 Answers，不從舊 Response 補答案；不用 R9 Latest。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{multipleFormId}}/responses
@@ -615,7 +616,7 @@ Content-Type: application/json
 # 前置：Markdown 10；此前依賴成功；按檔案順序。
 # 預期：201；answers=[]
 # 保存 deadlineResponseAId；DB deadline 1 Response／0 Answers；先完成此案才進行 10 SQL probe。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{deadlineFormId}}/responses
@@ -629,7 +630,7 @@ Content-Type: application/json
 # 前置：Markdown 10；此前依賴成功；按檔案順序。
 # 預期：409 SUBMISSION_DEADLINE_EXCEEDED
 # 必須先依 Markdown 10 將這張新 Form deadline 暫改為過去；零新增，舊 Response 保留。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{deadlineFormId}}/responses
@@ -642,7 +643,7 @@ Content-Type: application/json
 # 前置：Markdown 10；此前依賴成功；按檔案順序。
 # 預期：200 FormDetail；status=published
 # 取證後 finally 復原 deadline，完整 Definition 回 probe 前；13e／13f 要用復原後未截止 Published Form。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{deadlineFormId}}
@@ -653,7 +654,7 @@ Cookie: access_token={{memberBToken}}
 # 前置：Markdown 11；此前依賴成功；按檔案順序。
 # 預期：200；Closed；兩個 Responses／6 Answers 保留
 # 只有 status／updated_at 可變，Definition 子列不變。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/close
@@ -663,7 +664,7 @@ Cookie: access_token={{memberAToken}}
 # 前置：Markdown 11；此前依賴成功；按檔案順序。
 # 預期：409 FORM_NOT_SUBMITTABLE
 # 即使 B 已成功 single，Published gate 仍先於 single／answers；零新增。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -676,7 +677,7 @@ Content-Type: application/json
 # 前置：Markdown 12；此前依賴成功；按檔案順序。
 # 預期：403 FORM_ACCESS_DENIED
 # 完整資料不變。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 DELETE {{apiBase}}/api/v1/forms/{{mainFormId}}
@@ -686,7 +687,7 @@ Cookie: access_token={{memberBToken}}
 # 前置：Markdown 12；此前依賴成功；按檔案順序。
 # 預期：204；Form／Questions／Options／Responses／Answers 保留
 # 只變 deleted_at／updated_at，status 仍 closed，Response=2／Answers=6。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 DELETE {{apiBase}}/api/v1/forms/{{mainFormId}}
@@ -696,7 +697,7 @@ Cookie: access_token={{memberAToken}}
 # 前置：Markdown 12；此前依賴成功；按檔案順序。
 # 預期：404 FORM_NOT_FOUND
 # 零變更。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 DELETE {{apiBase}}/api/v1/forms/{{mainFormId}}
@@ -706,7 +707,7 @@ Cookie: access_token={{memberAToken}}
 # 前置：Markdown 12；此前依賴成功；按檔案順序。
 # 預期：404 FORM_NOT_FOUND
 # 保留 2 Responses／6 Answers，無新增。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
@@ -721,7 +722,7 @@ Content-Type: application/json
 # 前置：Markdown 13；此前依賴成功；只可與配對 worker 按 13 barrier harness 並行，不以順序單送求 PASS。
 # 預期：與 13b 合併：恰一個 201／一個 409 RESPONSE_ALREADY_SUBMITTED
 # 只可依 Markdown 13 barrier harness 與 13b 同時執行；確認兩個實際 DB waiters 後釋放，不能按 REST Client 順序單送求並行 PASS。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{singleRaceFormId}}/responses
@@ -734,7 +735,7 @@ Content-Type: application/json
 # 前置：Markdown 13；此前依賴成功；只可與配對 worker 按 13 barrier harness 並行，不以順序單送求 PASS。
 # 預期：與 13a 合併：總 1 Response／1 Answer
 # 兩個 worker 相同 A；成功 Receipt value 必須對應 winner 的 Request，Definition 不变。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{singleRaceFormId}}/responses
@@ -748,7 +749,7 @@ Content-Type: application/json
 # 前置：Markdown 13；此前依賴成功；只可與配對 worker 按 13 barrier harness 並行，不以順序單送求 PASS。
 # 預期：與 13d：兩個 201；delta 2 Responses／1 Answer
 # 前置 09 已成功且保留 2 Responses／2 Answers；仍用 Published multiple，兩 waiter 已確認後才釋放 barrier。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{multipleFormId}}/responses
@@ -761,7 +762,7 @@ Content-Type: application/json
 # 前置：Markdown 13；此前依賴成功；只可與配對 worker 按 13 barrier harness 並行，不以順序單送求 PASS。
 # 預期：201；answers=[]；13c/d 後總 4 Responses／3 Answers
 # 未回答項目不補回 09a 或 13c 值。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{multipleFormId}}/responses
@@ -775,7 +776,7 @@ Content-Type: application/json
 # 前置：Markdown 13；此前依賴成功；只可與配對 worker 按 13 barrier harness 並行，不以順序單送求 PASS。
 # 預期：201 或 409 FORM_NOT_SUBMITTABLE（與 13f 配對）
 # 前置 deadline 已復原、B 尚無此 Form Response；先前 10a 是 A。Submit 先 commit 時保留新增 B Response；Close 先 commit 時不新增。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{deadlineFormId}}/responses
@@ -788,7 +789,7 @@ Content-Type: application/json
 # 前置：Markdown 13；此前依賴成功；只可與配對 worker 按 13 barrier harness 並行，不以順序單送求 PASS。
 # 預期：200；Closed；paired DB delta=1 或 0 Response／0 Answers
 # 與 13e 同時且兩 waiter 證據；一定保留 10a 的 A Response，只有 status／updated_at 變更。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{deadlineFormId}}/close
@@ -799,7 +800,7 @@ Cookie: access_token={{memberAToken}}
 # 前置：Markdown 13；此前依賴成功；只可與配對 worker 按 13 barrier harness 並行，不以順序單送求 PASS。
 # 預期：201 或 404 FORM_NOT_FOUND（與 13h 配對）
 # 前置 13c/d 通過，總 4 Responses／3 Answers；multiple 不受已提交次數限制。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{multipleFormId}}/responses
@@ -812,7 +813,7 @@ Content-Type: application/json
 # 前置：Markdown 13；此前依賴成功；只可與配對 worker 按 13 barrier harness 並行，不以順序單送求 PASS。
 # 預期：204；paired DB delta=1 或 0 Response／0 Answers
 # 與 13g 同時且兩 waiter 證據；保留原 4 Responses／3 Answers，只有 deleted_at／updated_at 變更，status 仍 published。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b readiness 503；未送 request／未寫 DB
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
 DELETE {{apiBase}}/api/v1/forms/{{multipleFormId}}
@@ -821,11 +822,11 @@ Cookie: access_token={{memberAToken}}
 ### 13 — 非 HTTP waiter／barrier／worker 回收／pair DB 核對
 # 詳見 Markdown 13；四組各須兩個實際 waiter、有限等待與 finally；清理失敗彙整，不可吞掉求 PASS。
 # 每組觀察／輪詢共用單一 monotonic 10 秒上限，含監控 SQL／blocking-chain／delay；使用剩餘預算／取消訊號，替既有 DB command timeout 留餘裕。不得每個 waiter／查詢重設 10 秒。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：01b／04 前置未通過；barrier／workers／waiters 未執行
 # 人工實際：未執行（等待 Owner review）
 
 ### 14 — 非 HTTP fixture 保留／復原／秘密清理／舊列比對／Git
 # 執行 Markdown 14；保留 5 新 Forms／合法歷史與所有舊資料，不刪 regular volume／fixtures。
 # deadline 復原／barrier與worker清理／placeholder復原；AI 與人工分開，不由 AI 推人工 PASS。
-# AI 實際：未執行（等待 Owner review）
+# AI 實際：BLOCKED：五 fixture 驗證未執行；唯讀保留 snapshot 相等，0 新 fixtures／probe／worker／secret
 # 人工實際：未執行（等待 Owner review）

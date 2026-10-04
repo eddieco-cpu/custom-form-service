@@ -1,6 +1,6 @@
 # R8 驗收測試：Submit／Response／Answer
 
-2026-10-04；**Prepare 修訂：R8 修訂驗收計畫待 review**。依 Owner 回饋局部調整 13 waiter 觀察預算並核對原始 companion。本次只調整文件與靜態檢查，未執行任何本計畫的 HTTP、DB probe、並行 harness 或正式回歸；AI／人工欄全部為「未執行（等待 Owner review）」，不改填 accepted。需 Owner 核准目前成對文件並明確授權 Execute 後才執行。
+2026-10-04；**Execute：R8 驗收結果待 Owner review**。Owner 已核准 `8680cccd17e98646a6f257757dfa65654c039153` 並明確授權本次 AI 執行。RunId `r8-acceptance-20261004-01`：restore/build/native startup 成功；01a PASS、01b 首次 503 Unhealthy／FAIL，HTTP 1 PASS／1 FAIL／52 BLOCKED。02 full 與後續 HTTP／DB probe／並行未執行，人工全部未執行；未 accepted。詳見 [執行報告](../implementation/R8_Acceptance_Execution_Report.md)與 [逐案證據](../../artifacts/r8-acceptance/r8-acceptance-20261004-01/results.json)。下方預期／請求維持核准版，Prepare 說明保留歷史；沒有跳過 readiness gate 或修改產品。
 
 Companion：[R8_Manual_Tests.http](R8_Manual_Tests.http)。業務版本 `14aac3036c25f5fefa756f2e4133009680369f25`；開發候選／cleanup 修正基準 `d3f75b37623f5f774d8dabe5817c4488a96eb368`。Owner 已確認 A／B code review 通過，並授權 cleanup 局部收尾及 Prepare；本次開發自測 build 0 warnings/errors、R8 affected 34/34 是背景，不能代填驗收。本版若再修業務／測試語意，受影響計畫需重新 review。
 
@@ -8,7 +8,7 @@ Companion：[R8_Manual_Tests.http](R8_Manual_Tests.http)。業務版本 `14aac30
 
 ## 變數、順序與保留資料
 
-在兩檔設定相同新 RunId，例如 `r8-acceptance-20261004-01`（預設只是計畫值，尚未執行）。獨立 AI／人工 run 必須另取唯一 RunId。使用既有兩位 Active 合成會員：A 是新 Form Owner，B 是另一會員；從本機取得其 email／合成 password，不能照抄舊執行 JWT、Cookie、已建立的 Form／Question IDs 或舊結果。不要註冊新會員／改舊會員 Profile／status。
+本次 AI 使用兩檔相同 RunId `r8-acceptance-20261004-01`；01b readiness 失敗後沒有建立任何新 fixtures。獨立 AI／人工 run 必須另取唯一 RunId。使用既有兩位 Active 合成會員：A 是新 Form Owner，B 是另一會員；從本機取得其 email／合成 password，不能照抄舊執行 JWT、Cookie、已建立的 Form／Question IDs 或舊結果。不要註冊新會員／改舊會員 Profile／status。
 
 ```powershell
 $RunId = 'r8-acceptance-20261004-01'
@@ -77,15 +77,15 @@ SELECT COUNT(*) FROM forms WHERE id=:'missingFormId'::uuid;
 
 | 非 HTTP 檢查 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| 01 build／原生啟動／baseline | restore/build exit 0，0 errors；此版本 Windows native API；DB healthy；保留原有 IDs／完整列 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 01 build／原生啟動／baseline | restore/build exit 0，0 errors；此版本 Windows native API；DB healthy；保留原有 IDs／完整列 | FAIL：restore/build/native startup 成功；01b 首次 503，readiness gate 未通過 | 未執行（等待 Owner review） |
 
 
 ### 01 HTTP readiness
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 01a — 本次原生 API health | `GET /health` | 無 Cookie | 200；status=healthy | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 01b — 本次原生 API readiness | `GET /health/ready` | 無 Cookie | 200；Healthy | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 01a — 本次原生 API health | `GET /health` | 無 Cookie | 200；status=healthy | PASS：首次 200；status=healthy；見本次 01a.json | 未執行（等待 Owner review） |
+| 01b — 本次原生 API readiness | `GET /health/ready` | 無 Cookie | 200；Healthy | FAIL：首次 503／Unhealthy（預期仍 200／Healthy）；見本次 01b.json | 未執行（等待 Owner review） |
 
 
 ## 02 — 同版完整回歸、Clock／原子性／cleanup 證據（非 HTTP）
@@ -113,7 +113,7 @@ dotnet test CustomFormService.sln --no-build --no-restore --configuration Debug 
 
 | 非 HTTP 檢查 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| 02 full／名稱核對／當次故障與 Clock／資料比較 | 當前全套（預計 280）全部 PASS、0 skipped；每項對应 TRX；原有資料不變 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 02 full／名稱核對／當次故障與 Clock／資料比較 | 當前全套（預計 280）全部 PASS、0 skipped；每項對应 TRX；原有資料不變 | BLOCKED：01b readiness 失敗；full／Clock／故障／EF tests 未執行 | 未執行（等待 Owner review） |
 
 ## DB 與 Receipt 核對方法（04～14）
 
@@ -163,8 +163,8 @@ Receipt root 僅 id／formId／submittedAt／answers；每 Answer 僅 questionId
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 03a — 登入現有 Active Owner A | `POST /api/v1/auth/login` | 無 Cookie | 200 User＋Cookie | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 03b — 登入另一位 Active User B | `POST /api/v1/auth/login` | 無 Cookie | 200 User＋Cookie | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 03a — 登入現有 Active Owner A | `POST /api/v1/auth/login` | 無 Cookie | 200 User＋Cookie | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 03b — 登入另一位 Active User B | `POST /api/v1/auth/login` | 無 Cookie | 200 User＋Cookie | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
 
 - **03a**：將 id 記為 memberAId，只抄 access_token 的 value 到 memberAToken；不記錄可用 JWT。
 - **03b**：將 id 記為 memberBId（須不同於 A），只抄 token value 到 memberBToken。
@@ -177,15 +177,15 @@ Receipt root 僅 id／formId／submittedAt／answers；每 Answer 僅 questionId
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 04a — 建立 main single／五題型 | `POST /api/v1/forms` | A | 201 Draft FormDetail；5 Questions／3 Options | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 04b — Publish main | `POST /api/v1/forms/{{mainFormId}}/publish` | A | 200；Published | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 04c — 建立另一張 foreign Draft（保持 Draft） | `POST /api/v1/forms` | A | 201 Draft；1 真實 Question | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 04d — 建立 multiple／identified | `POST /api/v1/forms` | A | 201 Draft；2 Optional Questions | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 04e — Publish multiple | `POST /api/v1/forms/{{multipleFormId}}/publish` | A | 200；Published | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 04f — 建立 deadline single | `POST /api/v1/forms` | A | 201 Draft；futureDeadline 為未來 UTC Z | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 04g — Publish deadline | `POST /api/v1/forms/{{deadlineFormId}}/publish` | A | 200；Published | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 04h — 建立 single race | `POST /api/v1/forms` | A | 201 Draft；1 Optional Question | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 04i — Publish single race | `POST /api/v1/forms/{{singleRaceFormId}}/publish` | A | 200；Published | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 04a — 建立 main single／五題型 | `POST /api/v1/forms` | A | 201 Draft FormDetail；5 Questions／3 Options | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 04b — Publish main | `POST /api/v1/forms/{{mainFormId}}/publish` | A | 200；Published | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 04c — 建立另一張 foreign Draft（保持 Draft） | `POST /api/v1/forms` | A | 201 Draft；1 真實 Question | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 04d — 建立 multiple／identified | `POST /api/v1/forms` | A | 201 Draft；2 Optional Questions | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 04e — Publish multiple | `POST /api/v1/forms/{{multipleFormId}}/publish` | A | 200；Published | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 04f — 建立 deadline single | `POST /api/v1/forms` | A | 201 Draft；futureDeadline 為未來 UTC Z | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 04g — Publish deadline | `POST /api/v1/forms/{{deadlineFormId}}/publish` | A | 200；Published | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 04h — 建立 single race | `POST /api/v1/forms` | A | 201 Draft；1 Optional Question | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 04i — Publish single race | `POST /api/v1/forms/{{singleRaceFormId}}/publish` | A | 200；Published | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
 
 - **04a**：保存 mainFormId；以 type／sortOrder 配對 qMainText／Number／Single／Multiple／Rating、oMainSingle、oMainMultipleOne／Two；記完整 Definition snapshot。
 - **04b**：無 Body／Content-Type；取新的 main-before-submit snapshot（包含 Publish 的 timestamps）。
@@ -203,12 +203,12 @@ Receipt root 僅 id／formId／submittedAt／answers；每 Answer 僅 questionId
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 05a — 未登入＋壞 JSON | `POST /api/v1/forms/{{mainFormId}}/responses` | 無 Cookie | 401 AUTH_REQUIRED；Auth 優先 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 05b — 無效 formId | `POST /api/v1/forms/not-a-uuid/responses` | B | 400 VALIDATION_ERROR；formId INVALID_VALUE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 05c — 不存在 Form＋未知／唯讀欄位 | `POST /api/v1/forms/{{missingFormId}}/responses` | B | 400 VALIDATION_ERROR；userId INVALID_VALUE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 05d — 不存在 Form＋合法 Envelope | `POST /api/v1/forms/{{missingFormId}}/responses` | B | 404 FORM_NOT_FOUND | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 05e — application/json＋空 Body | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 400 VALIDATION_ERROR；body INVALID_VALUE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 05f — 錯誤 Content-Type | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 400 VALIDATION_ERROR；body INVALID_VALUE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 05a — 未登入＋壞 JSON | `POST /api/v1/forms/{{mainFormId}}/responses` | 無 Cookie | 401 AUTH_REQUIRED；Auth 優先 | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 05b — 無效 formId | `POST /api/v1/forms/not-a-uuid/responses` | B | 400 VALIDATION_ERROR；formId INVALID_VALUE | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 05c — 不存在 Form＋未知／唯讀欄位 | `POST /api/v1/forms/{{missingFormId}}/responses` | B | 400 VALIDATION_ERROR；userId INVALID_VALUE | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 05d — 不存在 Form＋合法 Envelope | `POST /api/v1/forms/{{missingFormId}}/responses` | B | 404 FORM_NOT_FOUND | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 05e — application/json＋空 Body | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 400 VALIDATION_ERROR；body INVALID_VALUE | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 05f — 錯誤 Content-Type | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 400 VALIDATION_ERROR；body INVALID_VALUE | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
 
 - **05a**：main 與所有新 Forms 的 Response／Answers 零新增。
 - **05c**：先確認 missingFormId 在 DB 不存在；parse／Envelope 優先於 404。
@@ -222,9 +222,9 @@ Owner 指定的三個重點之一：Active 非 Owner B Submit 他人 Draft 是 4
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 06a — 非 Owner Submit 他人 Draft＋缺 answers | `POST /api/v1/forms/{{foreignFormId}}/responses` | B | 409 FORM_NOT_SUBMITTABLE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 06b — 相同 B 讀他人 Draft Detail | `GET /api/v1/forms/{{foreignFormId}}` | B | 404 FORM_NOT_FOUND | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 06c — Main 使用另一張 Form 的真實 Question ID | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].questionId QUESTION_NOT_FOUND | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 06a — 非 Owner Submit 他人 Draft＋缺 answers | `POST /api/v1/forms/{{foreignFormId}}/responses` | B | 409 FORM_NOT_SUBMITTABLE | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 06b — 相同 B 讀他人 Draft Detail | `GET /api/v1/forms/{{foreignFormId}}` | B | 404 FORM_NOT_FOUND | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 06c — Main 使用另一張 Form 的真實 Question ID | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].questionId QUESTION_NOT_FOUND | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
 
 - **06a**：必須 Active B≠Owner A；foreign 與 main Response／Answers 仍全 0。
 - **06b**：與 06a 區分：Detail 有 Draft 隱藏，Submit 正式 Published gate 回 409。
@@ -238,16 +238,16 @@ Owner 指定的三個重點之一：Active 非 Owner B Submit 他人 Draft 是 4
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 07a — Published 缺 answers | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers REQUIRED_FIELD | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07b — Required 完全缺題 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；questions.&lt;qMainText&gt; REQUIRED_FIELD | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07c — Required 合法空文字 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].value REQUIRED_FIELD | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07d — 明確 value:null | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].value INVALID_VALUE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07e — 非空 Text 短於 minLength | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].value INVALID_VALUE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07f — Number String 拒絕 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[1].value INVALID_VALUE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07g — Rating 5.0 沿用 Integer 判定 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[1].value INVALID_VALUE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07h — Option 屬於另一個 Question | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[1].value OPTION_NOT_FOUND | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07i — Multiple Choice 重複 ID | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[1].value[1] INVALID_VALUE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07j — NUL 受控拒絕 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].value INVALID_VALUE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 07a — Published 缺 answers | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers REQUIRED_FIELD | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 07b — Required 完全缺題 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；questions.&lt;qMainText&gt; REQUIRED_FIELD | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 07c — Required 合法空文字 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].value REQUIRED_FIELD | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 07d — 明確 value:null | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].value INVALID_VALUE | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 07e — 非空 Text 短於 minLength | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].value INVALID_VALUE | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 07f — Number String 拒絕 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[1].value INVALID_VALUE | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 07g — Rating 5.0 沿用 Integer 判定 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[1].value INVALID_VALUE | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 07h — Option 屬於另一個 Question | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[1].value OPTION_NOT_FOUND | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 07i — Multiple Choice 重複 ID | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[1].value[1] INVALID_VALUE | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 07j — NUL 受控拒絕 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].value INVALID_VALUE | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
 
 - **07e**：trim 後 1 Code Point、不是 omission。
 - **07g**：保留 raw 5.0 token；08a 的 5 正常接受，5e0／超大值由 02 同版自動測試涵蓋。
@@ -261,9 +261,9 @@ Owner 指定的三個重點之一：Active 非 Owner B Submit 他人 Draft 是 4
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 08a — Owner 全題型反序 Submit | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 201 ResponseReceipt；排序 Text／Number／Single／Multiple／Rating | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 08b — single 重送＋缺 answers | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 409 RESPONSE_ALREADY_SUBMITTED | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 08c — 非 Owner B 同一 single Form 可一次；Optional omission | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 201；Receipt 只有 qMainText="B answer" | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 08a — Owner 全題型反序 Submit | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 201 ResponseReceipt；排序 Text／Number／Single／Multiple／Rating | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 08b — single 重送＋缺 answers | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 409 RESPONSE_ALREADY_SUBMITTED | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 08c — 非 Owner B 同一 single Form 可一次；Optional omission | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 201；Receipt 只有 qMainText="B answer" | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
 
 - **08a**：保存 mainResponseAId。Root 僅 id／formId／submittedAt／answers；Answer 僅 questionId／value。DB 1 Response／5 Answers；user_id=A；Definition／timestamps 不變；比對保存數值及 timestamp。
 - **08b**：Response 限制先於 answers；DB 仍 1／5。
@@ -279,8 +279,8 @@ Owner 指定的三個重點之一：Active 非 Owner B Submit 他人 Draft 是 4
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 09a — multiple 第一次 identified Submit | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 201；2 Answers 按 Question 排序 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 09b — multiple 新完整 Response 略過全部 Optional | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 201；新的 ID、answers=[] | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 09a — multiple 第一次 identified Submit | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 201；2 Answers 按 Question 排序 | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 09b — multiple 新完整 Response 略過全部 Optional | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 201；新的 ID、answers=[] | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
 
 - **09a**：保存 multipleResponse1Id；Receipt 不含 userId／Answer ID，即使 identified；數值等值與 DB 實際表示為準，不承諾 1e0 原 token。
 - **09b**：保存 multipleResponse2Id；DB 2 Responses／2 Answers；舊 09a 的 2 Answers 保留，新 Response 0 Answers，不從舊 Response 補答案；不用 R9 Latest。
@@ -293,9 +293,9 @@ Owner 指定的三個重點之一：Active 非 Owner B Submit 他人 Draft 是 4
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 10a — deadline 前 Owner Submit | `POST /api/v1/forms/{{deadlineFormId}}/responses` | A | 201；answers=[] | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 10b — 過期 deadline 優先於 single／缺 answers | `POST /api/v1/forms/{{deadlineFormId}}/responses` | A | 409 SUBMISSION_DEADLINE_EXCEEDED | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 10c — deadline 不自動 Close | `GET /api/v1/forms/{{deadlineFormId}}` | B | 200 FormDetail；status=published | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 10a — deadline 前 Owner Submit | `POST /api/v1/forms/{{deadlineFormId}}/responses` | A | 201；answers=[] | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 10b — 過期 deadline 優先於 single／缺 answers | `POST /api/v1/forms/{{deadlineFormId}}/responses` | A | 409 SUBMISSION_DEADLINE_EXCEEDED | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 10c — deadline 不自動 Close | `GET /api/v1/forms/{{deadlineFormId}}` | B | 200 FormDetail；status=published | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
 
 - **10a**：保存 deadlineResponseAId；DB deadline 1 Response／0 Answers；先完成此案才進行 10 SQL probe。
 - **10b**：必須先依 Markdown 10 將這張新 Form deadline 暫改為過去；零新增，舊 Response 保留。
@@ -329,8 +329,8 @@ finally 復原後完整 snapshot 須等於 10a 後／probe 前：1 Response／0 
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 11a — Close 已提交 main | `POST /api/v1/forms/{{mainFormId}}/close` | A | 200；Closed；兩個 Responses／6 Answers 保留 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 11b — Closed＋缺 answers | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 409 FORM_NOT_SUBMITTABLE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 11a — Close 已提交 main | `POST /api/v1/forms/{{mainFormId}}/close` | A | 200；Closed；兩個 Responses／6 Answers 保留 | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 11b — Closed＋缺 answers | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 409 FORM_NOT_SUBMITTABLE | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
 
 - **11a**：只有 status／updated_at 可變，Definition 子列不變。
 - **11b**：即使 B 已成功 single，Published gate 仍先於 single／answers；零新增。
@@ -343,10 +343,10 @@ finally 復原後完整 snapshot 須等於 10a 後／probe 前：1 Response／0 
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 12a — 非 Owner Delete main | `DELETE /api/v1/forms/{{mainFormId}}` | B | 403 FORM_ACCESS_DENIED | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 12b — Owner Soft Delete main | `DELETE /api/v1/forms/{{mainFormId}}` | A | 204；Form／Questions／Options／Responses／Answers 保留 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 12c — Owner Delete 重試 | `DELETE /api/v1/forms/{{mainFormId}}` | A | 404 FORM_NOT_FOUND | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 12d — 已刪除 Submit | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 404 FORM_NOT_FOUND | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 12a — 非 Owner Delete main | `DELETE /api/v1/forms/{{mainFormId}}` | B | 403 FORM_ACCESS_DENIED | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 12b — Owner Soft Delete main | `DELETE /api/v1/forms/{{mainFormId}}` | A | 204；Form／Questions／Options／Responses／Answers 保留 | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 12c — Owner Delete 重試 | `DELETE /api/v1/forms/{{mainFormId}}` | A | 404 FORM_NOT_FOUND | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 12d — 已刪除 Submit | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 404 FORM_NOT_FOUND | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
 
 - **12a**：完整資料不變。
 - **12b**：只變 deleted_at／updated_at，status 仍 closed，Response=2／Answers=6。
@@ -361,14 +361,14 @@ finally 復原後完整 snapshot 須等於 10a 後／probe 前：1 Response／0 
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 13a — single race worker 1 | `POST /api/v1/forms/{{singleRaceFormId}}/responses` | A | 與 13b 合併：恰一個 201／一個 409 RESPONSE_ALREADY_SUBMITTED | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 13b — single race worker 2 | `POST /api/v1/forms/{{singleRaceFormId}}/responses` | A | 與 13a 合併：總 1 Response／1 Answer | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 13c — multiple race worker 1 | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 與 13d：兩個 201；delta 2 Responses／1 Answer | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 13d — multiple race worker 2 | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 201；answers=[]；13c/d 後總 4 Responses／3 Answers | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 13e — Submit／Close race 的 Submit | `POST /api/v1/forms/{{deadlineFormId}}/responses` | B | 201 或 409 FORM_NOT_SUBMITTABLE（與 13f 配對） | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 13f — Submit／Close race 的 Close | `POST /api/v1/forms/{{deadlineFormId}}/close` | A | 200；Closed；paired DB delta=1 或 0 Response／0 Answers | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 13g — Submit／Delete race 的 Submit | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 201 或 404 FORM_NOT_FOUND（與 13h 配對） | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 13h — Submit／Delete race 的 Delete | `DELETE /api/v1/forms/{{multipleFormId}}` | A | 204；paired DB delta=1 或 0 Response／0 Answers | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 13a — single race worker 1 | `POST /api/v1/forms/{{singleRaceFormId}}/responses` | A | 與 13b 合併：恰一個 201／一個 409 RESPONSE_ALREADY_SUBMITTED | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 13b — single race worker 2 | `POST /api/v1/forms/{{singleRaceFormId}}/responses` | A | 與 13a 合併：總 1 Response／1 Answer | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 13c — multiple race worker 1 | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 與 13d：兩個 201；delta 2 Responses／1 Answer | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 13d — multiple race worker 2 | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 201；answers=[]；13c/d 後總 4 Responses／3 Answers | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 13e — Submit／Close race 的 Submit | `POST /api/v1/forms/{{deadlineFormId}}/responses` | B | 201 或 409 FORM_NOT_SUBMITTABLE（與 13f 配對） | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 13f — Submit／Close race 的 Close | `POST /api/v1/forms/{{deadlineFormId}}/close` | A | 200；Closed；paired DB delta=1 或 0 Response／0 Answers | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 13g — Submit／Delete race 的 Submit | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 201 或 404 FORM_NOT_FOUND（與 13h 配對） | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
+| 13h — Submit／Delete race 的 Delete | `DELETE /api/v1/forms/{{multipleFormId}}` | A | 204；paired DB delta=1 或 0 Response／0 Answers | BLOCKED：01b readiness 503；未送 request／未寫 DB | 未執行（等待 Owner review） |
 
 - **13a**：只可依 Markdown 13 barrier harness 與 13b 同時執行；確認兩個實際 DB waiters 後釋放，不能按 REST Client 順序單送求並行 PASS。
 - **13b**：兩個 worker 相同 A；成功 Receipt value 必須對應 winner 的 Request，Definition 不变。
@@ -404,7 +404,7 @@ SELECT pid,application_name,wait_event_type,wait_event,pg_blocking_pids(pid),que
 
 | 非 HTTP 檢查 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| 13 每組 barrier／兩 waiter／finally／資料核對 | 四組均有本次實際重疊證據、合法配對與零殘留 cleanup；原有資料不變 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 13 每組 barrier／兩 waiter／finally／資料核對 | 四組均有本次實際重疊證據、合法配對與零殘留 cleanup；原有資料不變 | BLOCKED：01b／04 前置未通過；barrier／workers／waiters 未執行 | 未執行（等待 Owner review） |
 
 ## 14 — 保留資料、復原、秘密清理與交付（非 HTTP）
 
@@ -418,9 +418,9 @@ SELECT pid,application_name,wait_event_type,wait_event,pg_blocking_pids(pid),que
 
 | 非 HTTP 檢查 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| 14 舊資料比對／probe 復原／worker 清理／秘密／保留資料／Git | 全部實際完成並有證據；本次合法 fixtures 保留、舊列不變 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 14 舊資料比對／probe 復原／worker 清理／秘密／保留資料／Git | 全部實際完成並有證據；本次合法 fixtures 保留、舊列不變 | BLOCKED：五 fixture 驗證未執行；唯讀保留 snapshot 相等，0 新 fixtures／probe／worker／secret | 未執行（等待 Owner review） |
 
-## 覆蓋限制與準備狀態
+## 覆蓋限制與 Prepare 歷史
 
 本次局部修訂以 `63bd1a9` 原始文件為比對基準；只改 13 的 waiter 共用觀察預算及配對註解／review 狀態，不改 54 個 requests 的 Method、URL、headers、Body、身份、預期或 fixture。產品 timeout 設定不變；正式 HTTP／DB／並行語意仍依核准契約。
 
@@ -430,4 +430,10 @@ SELECT pid,application_name,wait_event_type,wait_event,pg_blocking_pids(pid),que
 
 UUID／Unicode／Number／Rating 細部矩陣由 02 既有 tests 限定證據，未新增業務矩陣／Definition Validation；共用 Auth expired/disabled 是回歸與 source 共用管線證據，不當成 Submit 專屬 native HTTP 全矩陣。精確等值 Clock 與 precommit faults 只由本次 02 受控測試驗證；不做 production Clock 注入／新 retry 框架。COMMIT 結果未知時零新增未驗證，不聲稱保證；multiple 不確定重送仍可能新增另一筆歷史。Number 依 01 §3.3 現有 JSONB 安全範圍，Receipt 不承諾原 token；R10 按精確數值等值分組的依賴保留，不執行 R10。
 
-準備階段只核對 repo 原始兩檔的 pairing、完整 54 requests（含 05b）、分隔符、URL、headers、variables、空 Body、刻意壞 JSON、合法 JSON 跳脫及精確 number token；不將 `.http` 轉成 Markdown，不加入 code fence／貼上標記。所有正式 case／回歸／DB 操作 **未執行**。交付原始兩檔及本次 diff 後停止於 **「R8 修訂驗收計畫待 review」**；尚需 Owner review 與另行明確執行授權，未 accepted，不自動開始 R9／R10／G1。
+Prepare 歷史：`8680ccc` 交付時只做原始文件靜態核對，曾停止於「R8 修訂驗收計畫待 review」，所有正式操作當時未執行。Owner 隨後核准並明確授權本次 Execute；歷史靜態檢查不代填本次驗收。
+
+## 本次 AI 執行結果與未完成項目
+
+01b 首次回傳 503／Unhealthy；Docker 容器內部 healthy，實際 `5432/tcp` binding 為空，API localhost:5432 無 listener。依核准 gate：02（含預計 280 full）與 03～13 未執行；原生並行無 waiter 證據，14 完整五 fixture 結果 BLOCKED。這是環境前置阻礙，尚無 Submit 產品缺陷結論。只有 01a／01b 實際送出；全部 AI 欄據此回填，人工欄未代填。
+
+失敗後的唯讀資料保留核對：4 users／9 forms／22 questions／12 options／0 responses／0 answers 兩次完整 snapshot 相同；此比較不是成功路徑的 01 baseline／完整 14 PASS。本次新 fixture=0；deadline probe／barrier／workers／可用 secrets 均=0；API／DB／volume 保留。首次 log／原始回應／snapshot 保留於本次 evidence，詳見[執行報告](../implementation/R8_Acceptance_Execution_Report.md)。恢復既有 PostgreSQL host binding 後的補驗需保留本次結果，依 Owner 下一步指示記另次執行，不改填本次 PASS。停止於 **「R8 驗收結果待 Owner review」**，未 accepted，未開始 R9。

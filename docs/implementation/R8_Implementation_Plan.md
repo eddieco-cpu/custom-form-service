@@ -1,6 +1,6 @@
 # R8 — Submit／Response／Answer 精簡實作計畫
 
-2026-10-04；**R8 修訂驗收計畫待 review**。A／B code review 已通過；Drain helper 局部收尾提交 `d3f75b3`，build 0 warnings/errors、受影響 34/34 PASS、12 個 waiter 證據見 [B 開發報告](R8_B_Development_Report.md)。依 Owner 授權已完成 [Markdown 驗收計畫](../test-plan/R8_Acceptance_Test.md)／[HTTP companion](../test-plan/R8_Manual_Tests.http) 的 Prepare；本次再局部修訂 13 為每組共用 10 秒 waiter 觀察／輪詢預算，產品 timeout 不变，兩 waiter 確認及 finally 全部回收規則保留。原始 54 requests（含 05b）與 `63bd1a9` 的 Method／URL／headers／Body 完全相同（忽略換行差異），靜態核對分隔符、變數、空 Body、壞 JSON／合法跳脫／精確 token 通過。業務契約／A／B 範圍不變；AI／人工欄全為未執行（等待 Owner review）。未執行正式回歸／HTTP／DB probe／並行 harness，Execute 待本次核對通過及另行授權，未 accepted，未進 R9／R10／G1。
+2026-10-04；**R8 驗收結果待 Owner review**。A／B code review 通過、cleanup `d3f75b3` 與開發結果保留歷史。Owner 已核准成對驗收計畫 `8680ccc` 並授權 Execute；本次 restore/build/native startup 成功，01a PASS／01b 首次 503 Unhealthy FAIL，因 PostgreSQL 實際 host binding 為空，HTTP 其餘 52 案與 02 full／DB probe／並行未執行、BLOCKED。零新 fixtures／probe／worker／secret，既有資料唯讀比較相同；人工全部未執行，未改產品／預期。詳見 [執行報告](R8_Acceptance_Execution_Report.md)及[成對結果](../test-plan/R8_Acceptance_Test.md)。停止於「R8 驗收結果待 Owner review」，環境恢復與補驗待下一步指示；未 accepted，未進 R9／R10／G1。
 
 依最新 [AGENTS.md](../../AGENTS.md)、[development skill](../../.agents/skills/v1-round-development/SKILL.md)、[Implementation Plan](V1_Backend_Implementation_Plan.md) §3／R8。正式規格對照：01 §3、QST、SUB-01～05、CON-01／02／04；02 §10～11／15；03a §2／5～6；03b §8.1／8.3；03c §3.1～3.2／4；04 §4／6.1／9；05 §7～12／13.1／14～15／20。
 
