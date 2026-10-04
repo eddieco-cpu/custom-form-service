@@ -1,6 +1,6 @@
 # R8 B — Submit／Receipt／原子保存與並行開發報告
 
-**目前狀態（2026-10-04）**：Owner 已確認 `14aac30` 的 B code review 通過，授權 Drain helper 局部收尾後直接準備驗收計畫；收尾實跑結果見末節。以下原 B 交付的 31／277 與未進入驗收準備描述保留為歷史紀錄，不代填本次驗收結果或 accepted。
+**目前狀態（2026-10-04）**：Owner 已確認 `14aac30` 的 B code review 通過；Drain helper 局部收尾已提交 `d3f75b3`，實跑結果見末節。依 Owner 授權另完成 [驗收 Markdown](../test-plan/R8_Acceptance_Test.md)／[HTTP companion](../test-plan/R8_Manual_Tests.http) Prepare，停止於「R8 驗收計畫待 review」。以下原 B 交付的 31／277 與未進入驗收準備描述保留為歷史紀錄，不代填本次驗收結果或 accepted。
 
 2026-10-04；**R8 開發完成、待驗收**。Owner 已確認 A code review 通過，明確授權依 [核准計畫](R8_Implementation_Plan.md) 完成 B。基準 HEAD `62f278422f14bdb6ce2b45d4ad53d2ebd3428775`，開始時 working tree 乾淨。A 初次開發與補件的歷史結果保留；本報告是 B 開發自測，不代表正式驗收或 Round accepted。
 
@@ -116,3 +116,9 @@ dotnet test CustomFormService.sln --no-build --no-restore --configuration Debug 
 - 測試前後非秘密完整資料 snapshot 逐字相等；[比較結果](../../artifacts/r8-closeout/verification-summary.json)。只清本次開發測資，沒有執行驗收 fixture 操作。既有未追蹤 `src/CustomFormService.Api.zip`、`tests/CustomFormService.IntegrationTests.zip` 保留，不加入提交。
 
 修正以單一目的 commit 交付，SHA 在 [repair 完整 diff](../../artifacts/r8-closeout/repair-full.diff) header／交付訊息。沒有舊 R8 驗收計畫／執行結果需作廢；原 B review 與開發證據保留，本次修正證據另列。依 Owner 多階段授權接續 Prepare，不執行正式驗收，最終停止於「R8 驗收計畫待 review」，不改填 accepted。
+
+## 驗收準備交付（與開發／正式執行分開）
+
+本次成對文件共 54 requests，納入 Owner 指定的空 JSON Body（05e）、真實跨 Form Question（06c）、非 Owner Submit Draft 409／Detail 404（06a/b）。環境／同版全套、Clock／precommit fault、EF 讀回、四組 native HTTP barrier／waiter／finally 與完整資料比較另列必要非 HTTP 步驟；新五張合成 fixtures 僅為計畫，尚未建立。所有 AI／人工驗收欄均為未執行（等待 Owner review），沒有正式驗收請求、probe、回歸或並行操作。
+
+實際僅執行 `& ./artifacts/r8-closeout/validate-plan.ps1` 文件靜態檢查及 Git diff 自查：54 唯一 ID／兩檔順序一致、request／expected／身份／Cookie／variables／Body token 相符、38 個 Body 語法正確（05a 刻意 malformed）、05e 為零位元組且 Content-Length=0、測試名稱與當前 source 相符。結果見 [static check](../../artifacts/r8-closeout/acceptance-plan-static-check.json)，script 保留；這些不算驗收 PASS。收尾修正與 Prepare 分成單一目的 commits，SHA 與剩餘 Git 狀態於交付訊息。

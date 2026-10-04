@@ -1,6 +1,6 @@
 # R8 — Submit／Response／Answer 精簡實作計畫
 
-2026-10-04；**A／B code review 通過；B 局部收尾完成；已授權接續驗收準備**。B `14aac30` 的歷史 31 focused／277 full 與本次 Drain helper 修正、34/34 受影響測試、12 個 waiter 證據見 [B 開發報告](R8_B_Development_Report.md)。業務契約／A／B 範圍不變；Owner 已明確授權收尾後直接 Prepare，成對計畫交付停止於「R8 驗收計畫待 review」，尚未授權正式驗收執行，未 accepted。
+2026-10-04；**R8 驗收計畫待 review**。A／B code review 已通過；Drain helper 局部收尾提交 `d3f75b3`，build 0 warnings/errors、受影響 34/34 PASS、12 個 waiter 證據見 [B 開發報告](R8_B_Development_Report.md)。依 Owner 授權已完成 [Markdown 驗收計畫](../test-plan/R8_Acceptance_Test.md)／[HTTP companion](../test-plan/R8_Manual_Tests.http) 的 Prepare：54 個 HTTP requests 與必要非 HTTP／DB／Clock／並行檢查，包含空 Body、真實跨 Form Question ID、非 Owner Submit Draft 409 與 Detail 404。業務契約／A／B 範圍不變；AI／人工欄全為未執行（等待 Owner review）。未執行正式驗收，未 accepted，未進 R9／R10／G1。
 
 依最新 [AGENTS.md](../../AGENTS.md)、[development skill](../../.agents/skills/v1-round-development/SKILL.md)、[Implementation Plan](V1_Backend_Implementation_Plan.md) §3／R8。正式規格對照：01 §3、QST、SUB-01～05、CON-01／02／04；02 §10～11／15；03a §2／5～6；03b §8.1／8.3；03c §3.1～3.2／4；04 §4／6.1／9；05 §7～12／13.1／14～15／20。
 
@@ -89,4 +89,4 @@ Optional 完全省略、text trim 後空字串、multiple 空 Array 均不建立
 
 未發現 R8 正式規格衝突。03c §4.3 的寫入前 deadline 重確認與 01 CON-04／05 §10 單一時間相容：重驗使用同一 submissionTime；02 §10.3 的 now() 是 Schema default，API 明確寫入該取樣值。Delete 缺鎖／交易是已登記的實作待補事項，非 Frozen Contract 衝突。
 
-初次計畫提交 1a0cf46 未改業務程式／執行測試。Owner 核准本計畫及六項局部補充後授權 A；A 交付與補件曾停止待 review，其實跑結果另記 R8_A_Development_Report.md。Owner 其後明確確認 A code review 通過並授權 B；B 依原核准範圍完成，實跑結果另記 R8_B_Development_Report.md。完整 R8 停止於開發完成、待驗收，不自動進入驗收準備／執行。
+初次計畫提交 1a0cf46 未改業務程式／執行測試。Owner 核准本計畫及六項局部補充後授權 A；A 交付與補件曾停止待 review，其實跑結果另記 R8_A_Development_Report.md。Owner 其後明確確認 A code review 通過並授權 B；B 依原核准範圍完成，實跑結果另記 R8_B_Development_Report.md。Owner 再確認 B code review 通過，明確授權 cleanup 修正與驗收 Prepare；已完成本次成對計畫，停止於「R8 驗收計畫待 review」。正式 Execute 仍待 Owner 核准本版成對計畫及執行授權，未改填 accepted。
