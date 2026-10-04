@@ -71,4 +71,6 @@ R7 必要開發驗證已完成；正式成對驗收計畫尚未準備／執行�
 
 詳見 [R7 Review 確認報告](R7_Review_Confirmation_Report.md)。本次僅在 Visibility 加入 `application/json`（可帶 charset）檢查，修正缺少／錯誤 Content-Type 仍 200 並更新資料的正式契約偏離；空 Body／損壞 JSON 仍使用正式 400 Envelope。新增 12 個針對性開發案例，未做 L2 重構／Capacity Policy，也未實作 R8。
 
-本次 Windows build 0 warnings／errors，R7 49/49、full 167/167 PASS；M2 修正前後單獨重跑各 1/1 PASS，全套也未重現，但根因未明。Linux 本次未重跑，前次 37/37／155/155 只作歷史結果，未覆盖新增檢查。R4／R5／R6 快照不變，Windows API 已恢復啟動。Owner 已授權確認後準備成對驗收計畫；開發結果不代填驗收結果，R7 未 accepted。
+本次 Windows build 0 warnings／errors，R7 49/49、full 167/167 PASS；M2 修正前後單獨重跑各 1/1 PASS，全套也未重現，但根因未明。Linux 本次未重跑，前次 37/37／155/155 只作歷史結果，未覆蓋新增檢查。R4／R5／R6 快照不變，Windows API 已恢復啟動。Owner 已授權確認後準備成對驗收計畫；開發結果不代填驗收結果，R7 未 accepted。
+
+其後依授權已完成 [R7 成對驗收計畫](../test-plan/R7_Acceptance_Test.md)／[.http](../test-plan/R7_Manual_Tests.http) 的 Prepare，所有實際欄位仍未執行，停止待 Owner 審核及明確執行授權。本報告前述「尚未準備」只描述原開發交付時間點；沒有執行正式驗收。

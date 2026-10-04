@@ -8,14 +8,14 @@
 | --- | --- |
 | M2 | **未重現、根因未明**。本次失敗案例單獨重跑前後各 1/1 PASS；Windows 全套 167/167 PASS。未定位原因，撤回「既有偶發」推論，不宣稱問題根除或已排除 R7 因果。未修改 Factory、TimeProvider、CORS 測試或產品設定。 |
 | L3 | 修正前缺少 Content-Type／`text/plain` 配合法 JSON，均 200 並更新 Visibility；偏離 03a §2.1。有效 Header 的空 Body／損壞 JSON 原已正確 400。只於 Visibility 加入媒體型別檢查：四種情境均 `400 VALIDATION_ERROR`，`details` 包含 `body / INVALID_VALUE`，正式 `error.code/message/details`，非 ProblemDetails／415，完整 DB 快照不變。 |
-| M1 | 本次三個受控 R7→Delete 競爭及 Owner 刪除後存取通過，未发现 R7 状態／Visibility 覆寫、復活或子列變更；不等於 Submit 安全。Delete 的鎖前讀取缺口確實存在，已記入 Implementation Plan R8 前置事項，沒有提前改 Delete。 |
+| M1 | 本次三個受控 R7→Delete 競爭及 Owner 刪除後存取通過，未發現 R7 狀態／Visibility 覆寫、復活或子列變更；不等於 Submit 安全。Delete 的鎖前讀取缺口確實存在，已記入 Implementation Plan R8 前置事項，沒有提前改 Delete。 |
 | 驗收準備 | 無已重現的 R7 阻擋事項；M2 未定位及本次 Linux 未重跑明列為限制。依授權進入 Prepare，新增計畫優先含非字串 Visibility、Owner 已刪除 Form；仍需 Owner review／執行授權。 |
 
 ## M2 堆疊與變更核對
 
 首次原始證據：`artifacts/r7-development/r7-development-20261004-01/windows-full.log`／`.trx`；155 案中 154 PASS、1 FAIL。失敗為 `ConfigurationTests.Noncanonical_Cors_origin_fails_startup`，預期 CORS 啟動驗證文字，實際收到 `ObjectDisposedException: IServiceProvider`。堆疊為 DI `GetRequiredService` → `DeferredHost.StartAsync` → `WebApplicationFactory.CreateHost / StartServer / CreateClient` → `ConfigurationTests.AssertStartupFails` line 163；沒有 R7 Controller／Validator／clock 呼叫。原失敗證據保留，不以後續成功覆蓋。
 
-`git diff 0f1f70a 0496041 -- tests/CustomFormService.IntegrationTests/EngineeringEndpointsTests.cs` 顯示唯一 Factory 行為增量是可選 `TimeProvider?` constructor argument、instance 欄位與非 null 才 `AddSingleton`。ConfigurationTests 仍用兩參數 constructor，clock 為 null，新增 DI 分支不執行。Program 的 `AddSingleton(TimeProvider.System)` 未改；唯一注入呼叫是 R7 deadline helper，每個 test 用自己的 factory／clock，没有 static clock 或全域時間更動。測試組使用 MethodLevel 平行、Windows 16 workers。
+`git diff 0f1f70a 0496041 -- tests/CustomFormService.IntegrationTests/EngineeringEndpointsTests.cs` 顯示唯一 Factory 行為增量是可選 `TimeProvider?` constructor argument、instance 欄位與非 null 才 `AddSingleton`。ConfigurationTests 仍用兩參數 constructor，clock 為 null，新增 DI 分支不執行。Program 的 `AddSingleton(TimeProvider.System)` 未改；唯一注入呼叫是 R7 deadline helper，每個 test 用自己的 factory／clock，沒有 static clock 或全域時間更動。測試組使用 MethodLevel 平行、Windows 16 workers。
 
 以上只縮小可見關聯，不能證明啟動／釋放時序無關。針對性與本次全套皆未重現，不作既有偶發或框架根因判定；未修改測試預期、不做 L2 重構。
 
