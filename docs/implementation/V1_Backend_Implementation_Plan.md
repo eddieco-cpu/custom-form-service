@@ -80,7 +80,7 @@ Next round: prerequisite only; not started
 | R5 | Form 基礎讀寫 | Create／List／Detail／Delete；安全邊界 | **accepted（2026-10-03，Owner 人工驗收確認通過；AI case 執行紀錄仍有缺口）**：[`R5_Acceptance_Test.md`](../test-plan/R5_Acceptance_Test.md)；[`R5_Manual_Tests.http`](../test-plan/R5_Manual_Tests.http) |
 | R6 | Draft Definition 與 Delta | 完整 Question／Option／Config 編輯與原子性 | **accepted（2026-10-04，Owner review 提交證據後明確確認；人工未執行）**。AI：Windows 原生 API PASS、完整回歸 118/118、HTTP／DB 56/56 PASS；Linux 本次未執行（fallback 不需要）。計畫提交 `034a0be`、執行紀錄提交 `81b64f3`；保留資料與復原／秘密清理完成。成對紀錄：[`R6_Acceptance_Test.md`](../test-plan/R6_Acceptance_Test.md)、[`R6_Manual_Tests.http`](../test-plan/R6_Manual_Tests.http)。 |
 | R7 | Lifecycle 與 Result Policy | Publish／Close／Visibility、Freeze 與並行 | **acceptance results pending owner confirmation（2026-10-04）**。Owner 核准 `28cb8e2` 並授權三項成對局部修訂後直接執行；修訂 `858d6ae`。RunId `r7-acceptance-20261004-01`：Windows 本次 restore/build／原生 API PASS、full 首次 167/167、M2 1/1、HTTP／DB 42/42 PASS；Linux 未執行，人工全部未執行。M2 未重現、根因未明；既有資料不變、新 fixtures 保留、probe／秘密清理完成，詳見 [執行報告](R7_Acceptance_Execution_Report.md) 與 [成對紀錄](../test-plan/R7_Acceptance_Test.md)。未 accepted，未開始 R8。 |
-| R8 | Submission | 全題型 Answer／Response、single／multiple、並行 | not started |
+| R8 | Submission | 全題型 Answer／Response、single／multiple、並行 | **A 開發完成、待 review（2026-10-04）；B 未開始**。Owner 核准 [兩段計畫](R8_Implementation_Plan.md) 及六項局部補充，只授權 A。Windows build 0 warnings/errors，但 focused 在 DLL 載入階段被應用程式控制政策封鎖；Linux A 78/78、full 245/245 PASS。完整 R8 未完成／未驗收；詳見 [A 開發報告](R8_A_Development_Report.md)。 |
 | R9 | Latest 與 Respondent Count | 最新整份回覆與有效人數 | not started |
 | R10 | Statistics | Closed／Visibility／anonymous／identified／分布 | not started |
 | R11 | A 階段整合與交付 | 契約回歸、從零建庫、本機驗收、缺口清單 | not started |
@@ -160,6 +160,8 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 
 **輸入**：01 SUB／CON、02 §10～11、03c §3～4、04、05 §8～12。**工作**：完成 15 號端點，登入者（Owner 亦可）提交；一次成功建立 Response 和全部有效 Answers；選項歸屬、required、optional omission、全題型 value／正規化、deadline、responseMode；single 並行最多一次成功；multiple 保留歷史。Submit／Close／Delete 實作可解釋的交易順序。
 
+**A 開發交付（2026-10-04）**：Owner review 通過計畫提交 `1a0cf46`，授權六項局部補充後直接開發 A。新增兩階段無副作用 validator（Envelope 不提前驗 answers 必填／Array；答案階段完成 Shape、Question 歸屬、Required、五題型／精確數值／Choice 與 omission）；NUL／孤立 surrogate 受控錯誤、合法 pair 保留、明確 null 使用 INVALID_VALUE、輸入／輸出 JSON 生命週期已測。Windows restore／build 成功，但 focused testhost 被安全政策封鎖（未執行案例）；Linux 同套 A 首次 78/78、full 首次 245/245 PASS，0 skipped，既有資料完整快照相等，暫存 SDK 容器已清理。詳見 [R8_A_Development_Report.md](R8_A_Development_Report.md)。停止於「A 開發完成、待 review」；沒有 Submit 路由、Receipt、交易保存或 Delete 修正，不以 A 自測宣稱 R8 完成／accepted。沒有準備或執行正式驗收。
+
 **R8 前置事項（R7 review M1）**：現有 Delete 在讀取／Owner 判定時沒有使用共用 Form lock 或明確交易；不能以最終 UPDATE 的隱含列鎖宣稱 Submit 競爭安全。R8 開發須將 Delete 與 Submit／既有 Close 納入同一 `FormAggregateLock`／交易策略：每一寫入自己的交易先鎖未刪除 Form，再讀目前 Aggregate、判權限／狀態／deadline／single，持鎖直到 commit／rollback。Delete 仍只軟刪除，不改 status／子列；Submit 保證 Response + 全部 Answers 原子保存，與 Close／Delete 形成一致先後。必要測試涵蓋 Submit 先提交→Response 保留且 Close／Delete 可成功；Close 先提交→`409 FORM_NOT_SUBMITTABLE`；Delete 先提交→`404 FORM_NOT_FOUND`，含等待後重讀以及故障回滾。本項只是依 03b §8.1／8.3、03c §4.3、05 §8／9.2 登記的實作前置，不授權提前修改 Delete 或新增 Submit。
 
 **驗收／證據**：匿名僅指 Statistics 身分揭露模式，未登入仍不可填；`serverNow < deadline` 才接受，等於 deadline 拒絕；錯誤答卷零殘留；同時兩筆 single 至多一個 201；multiple 兩筆均保存；Close／Delete 競爭測試，狀態及 Response 一致；ResponseReceipt 形狀與錯誤 details 正確。時間測試使用可控制 Clock，避免等待真實時鐘。**提交**：可拆 answer validation／transaction。**停止**：提供 DB 狀態與 API 驗證證據。
@@ -173,6 +175,8 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 ### R10 — Statistics／Result Access
 
 **輸入**：01 STA、03c §7～8、04 統計特殊錯誤優先序、05 §11／13／20。**工作**：完成 18 號端點；只在 Closed 提供，依 owner_only／respondents／public 全矩陣授權；Public 壞 Cookie 視為匿名；匿名不出 respondents 或跨題 mapping，identified 的 respondents 僅 ID＋目前 displayName。即時計算每人最新**整份** Response 的題型分布，排序、count、zero-data 與回傳 metadata 對齊契約。
+
+**R8 A 數值依賴登記**：Answer 已沿用 DefinitionNumber 的 PostgreSQL JSONB 安全保存範圍（01 §3.3），不經 decimal／double 捨入；Receipt 不承諾逐字保留原始 token。R10 必須依 01 §3.3／05 §11.4 按精確數值等值分組及排序，`1`／`1.0`／`1e0` 同組，不以 token 文本或有限精度轉型分組。本次只登記後續依賴，未實作 R10。
 
 **驗收／證據**：角色 × lifecycle × visibility 存取矩陣；未登入及壞／過期 Cookie 下 Published／Draft 的存在性保護；同一人多次提交只算最新完整回覆；選項 count、multiple choice 總數、空值項目、zero-data 200、identified item.count 與 respondents 長度一致；anonymous 結果（包含 Owner）無身分資訊。**提交**：如 `feat(statistics): implement closed form statistics`。**停止**：附測試矩陣及漏項。
 

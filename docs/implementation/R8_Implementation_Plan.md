@@ -1,6 +1,6 @@
 # R8 — Submit／Response／Answer 精簡實作計畫
 
-2026-10-04；**計畫待 review，A／B 尚未開始**。本次只授權盤點與規劃；review 通過並授權後才開始 A，A 交付後停止待 review／B 授權。
+2026-10-04；**A 開發完成、待 review；B 尚未授權／未開始**。Owner 已 review 通過並授權六項局部補充及 A 開發；本次 A 證據見 [開發報告](R8_A_Development_Report.md)，不增加其他 review 停止點。
 
 依最新 [AGENTS.md](../../AGENTS.md)、[development skill](../../.agents/skills/v1-round-development/SKILL.md)、[Implementation Plan](V1_Backend_Implementation_Plan.md) §3／R8。正式規格對照：01 §3、QST、SUB-01～05、CON-01／02／04；02 §10～11／15；03a §2／5～6；03b §8.1／8.3；03c §3.1～3.2／4；04 §4／6.1／9；05 §7～12／13.1／14～15／20。
 
@@ -14,7 +14,7 @@ Repo 的 R7 仍記為「acceptance results pending owner confirmation」。本�
 
 ## A. Answer 驗證與正規化
 
-新增無 DbContext／Clock 依賴、不修改 EF Aggregate 的 validator；輸入 Request JSON 與只讀 Questions／Options，輸出正式 details 或獨立正規化 Answers，保留原始 Array index。分開提供傳輸欄位檢查與答案驗證入口，讓 B 按正式階段呼叫。
+新增無 DbContext／Clock 依賴、不修改 EF Aggregate 的 validator；輸入 Request JSON 與只讀 Questions／Options，輸出正式 details 或獨立正規化 Answers，保留原始 Array index。分開提供傳輸欄位檢查與答案驗證入口，讓 B 按正式階段呼叫。返回的 Request value 使用 Clone、重建值使用 SerializeToElement，保證來源 JsonDocument 釋放後仍可使用，不借用其生命週期。
 
 ### 驗證次序
 
@@ -23,7 +23,7 @@ Repo 的 R7 仍記為「acceptance results pending owner confirmation」。本�
 1. 完整 Authentication → formId UUID／JSON／Content-Type 可解析性，拒絕未知／唯讀欄位。頂層只允許 `answers`；可安全巡覽的 Answer object 只允許 `questionId`／`value`，此時不先做題型驗證。
 2. 交易內鎖未刪除 Form、重讀 Aggregate。不存在／已刪除 → `404 FORM_NOT_FOUND`；非 Published → `409 FORM_NOT_SUBMITTABLE`。Submit 不套 Owner 管理權限或 Detail 的他人 Draft 隱藏規則。
 3. 取唯一 submissionTime → deadline → responseMode；依序回 `409 SUBMISSION_DEADLINE_EXCEEDED`、`409 RESPONSE_ALREADY_SUBMITTED`。
-4. 驗證 answers 存在且為 Array、Item object／必要欄位／questionId UUID／重複 questionId；再驗證所有 Question 屬於目標 Form。
+4. 驗證 answers 存在且為 Array、Item object／必要欄位／questionId UUID／重複 questionId；再驗證所有 Question 屬於目標 Form。必填／Array 檢查不移到步驟 1；「非 Published + 缺少 answers」必須先回 409 FORM_NOT_SUBMITTABLE。A 驗證兩入口的延後檢查行為；B 再驗證真正 Submit 的 HTTP 409。
 5. Required 未作答 → Answer JSON Type／Config／範圍 → Choice Option 歸屬／multiple 重複 → 移除 Optional 未作答、形成正規化結果。
 6. 寫入前重確認提交條件 → 原子保存 → 排序 Receipt。
 
@@ -33,13 +33,13 @@ Repo 的 R7 仍記為「acceptance results pending owner confirmation」。本�
 
 | 題型 | 驗證與正規化 |
 | --- | --- |
-| text | 僅 String；沿用 TextRules 的 Unicode White_Space 頭尾 trim，保留中間空白、大小寫與原碼點序列，不做 normalization。非空值以 Code Point 數檢查 minLength／maxLength，含邊界；trim 後空字串視為未作答。 |
-| number | 僅合法、有限且可由現有 JSONB 精確保存的 JSON Number；沿用 DefinitionNumber 精確比較 min／max，含邊界，保留精確 token，不經 decimal／double。1／1.0 數值等值；超出既有安全保存範圍回 INVALID_VALUE，不捨入。 |
-| rating | JSON Integer，min ≤ value ≤ max；不接受 Number String，不以捨入把小數當整數。保存 Integer。 |
+| text | 僅 String；沿用 TextRules 的 Unicode White_Space 頭尾 trim，保留中間空白、大小寫與原碼點序列，不做 normalization。非空值以 Code Point 數檢查 minLength／maxLength，含邊界；trim 後空字串視為未作答。NUL（`\u0000`）及孤立 surrogate 受控拒絕，合法 surrogate pair 接受且不刪除／替換字元；依實際 JSON parse／string decode／保存相容性階段回正式 400，能定位答案時用 answers[i].value + INVALID_VALUE。先實測既有處理，不宣稱 R6 已保護。 |
+| number | 依 01 §3.3 的安全處理範圍，沿用 DefinitionNumber 精確比較 min／max，不經 decimal／double；超出既有 JSONB numeric 安全保存範圍回 INVALID_VALUE，不捨入，不直接列規格衝突。範圍依據為 PostgreSQL 17 numeric／JSONB（整數位 131072、小數位 16383、raw exponent guard int.MaxValue / 2，含零）；不新增欄位精度規則。保留精確數值不保證 Receipt 逐字保留 token；R10 必須按數值等值分組（1／1.0 同組）。 |
+| rating | 沿用既有 ValueKind.Number + TryGetInt32 的 Integer 判定，min ≤ value ≤ max；補測 5、5.0、5e0 與超大值，不轉型／捨入。保存 Integer。 |
 | single_choice | Option UUID String，須屬於該 Question；不用 label／Option value。保存一致的 UUID String。 |
 | multiple_choice | String Array；每個 UUID 屬於該 Question，以解析後 UUID 判重，大小寫差異不能繞過。一題一筆 Answer、保存完整 Array；正規化 UUID 表示，保留 Array 順序。空 Array 視為未作答，不新增選取數限制。 |
 
-Optional 完全省略、text trim 後空字串、multiple 空 Array 均不建立 Answer，不因 minLength 而變成必答；Required 的相同情況失敗。`0`／rating 下界是有效答案。JSON null、缺失 Item value、錯型值或非法 Option 不是 Optional omission，仍拒絕。全題 Optional 時 `answers: []` 可建立零 Answer 的 Response。
+Optional 完全省略、text trim 後空字串、multiple 空 Array 均不建立 Answer，不因 minLength 而變成必答；Required 缺題及合法空答案用 REQUIRED_FIELD。`0`／rating 下界是有效答案。明確 value: null 在 Required／Optional 一律 INVALID_VALUE、path 為 answers[i].value；缺失 Item value 是必要欄位缺少，於 Item Shape 階段回 REQUIRED_FIELD。錯型或非法 Option 不是 omission。全題 Optional 時 answers: [] 可通過 A；建立 Response 留 B。
 
 **代表測試**：五題型成功／錯型；Unicode trim、補充平面字元長度、保留大小寫／碼點；text／number／rating 邊界；超過 decimal 精度的 number 比較及 JSONB round-trip、安全範圍拒絕；Required 缺題／明示空值、Optional omission／null 拒絕、零答案；重複 UUID／Question 與 Option 歸屬、原始 index paths／early return，以及輸入定義與 JSON 不被修改。
 
@@ -70,7 +70,7 @@ Optional 完全省略、text trim 後空字串、multiple 空 Array 均不建立
 | Delete | 鎖查詢等待後不再找到未刪除列 → Submit 404 FORM_NOT_FOUND，零新增。 |
 | 首個 single Submit rollback | 零殘留；等待者重判後仍可成功。 |
 
-順序由取得鎖及成功 commit 決定，不由 HTTP 抵達時間決定。已知競爭以鎖後現況回正式錯誤；不把任意 DB 例外當 RESPONSE_ALREADY_SUBMITTED，其他持久化／commit 故障沿用受控 500 並完整回滾。
+順序由取得鎖及成功 commit 決定，不由 HTTP 抵達時間決定。已知競爭以鎖後現況回正式錯誤；不把任意 DB 例外當 RESPONSE_ALREADY_SUBMITTED。提交前可確認故障完整回滾；COMMIT 已送達但結果未知時可能已成功，不能推論零新增，不新增重試框架。
 
 全驗證通過才建立 server ID 的 Response + 正規化 Answer graph、同交易保存；正確設定外鍵／entity state，避免誤插入 User 或修改凍結 Definition。交易內 AsNoTracking 讀實際保存結果、建立 Receipt，commit 成功後才回 201。Receipt 僅 id／formId／submittedAt／實際 answers（questionId／value），按 Question sortOrder ASC、id ASC 排序，不回 Answer ID／userId、不補 null。Submit 不更新 Form／Question／Option timestamps。
 
@@ -78,15 +78,15 @@ Optional 完全省略、text trim 後空字串、multiple 空 Array 均不建立
 
 - API：Owner／其他 Active User、anonymous 需登入、disabled／壞 Cookie；五題型 Receipt／排序／JSONB／零答案；Definition／timestamps 不變。錯誤次序覆蓋未登入 + 壞 Body、非 Published + 壞答案、deadline + single、single + 壞 answers、傳輸錯誤 + 不存在資源。
 - Clock：無 deadline、之前／相等／之後；鎖等待中推進到 deadline；判定後延遲 commit 並推進時鐘仍成功、提交時間不變，無二次業務取樣。
-- 真 DB 並行：single 同 User 一個 201／一個 409、不同 User 各成功；multiple 同 User 兩個 201、兩份歷史（較新可略過 Optional）；Submit→Close、Close→Submit、Submit→Delete、Delete→Submit。以 interceptor gate + pg_stat_activity／pg_blocking_pids 確認 waiter 後釋放，不以固定 sleep 宣稱並行。
-- 原子性：錯答零殘留；在實際 INSERT Response／部分 Answers 後注入故障及 commit 故障，另一 connection 確認全部回滾；single 首個 rollback 後等待者成功。Delete save／commit 故障保持原 Form／子資料，等待 Submit 依回滾後狀態判定。重跑 Delete 權限／三狀態／重試與 R7 lifecycle／競爭回歸。
+- 真 DB 並行：single 同 User 一個 201／一個 409、不同 User 各成功；multiple 同 User 兩個 201、兩份歷史（較新可略過 Optional）；Submit→Close、Close→Submit、Submit→Delete、Delete→Submit。gate／waiter／請求完成均用有限等待；finally 釋放 gate、取消／收尾請求與交易。未觀察到真 DB waiter 必須 FAIL／BLOCKED，不得宣稱並行 PASS。
+- 原子性注入點：(a) 同交易已 INSERT Response 及至少一筆 Answer、其餘 Answer 尚未完成時注入 SQL 故障；(b) 全部 Save 成功後，在 TransactionCommittingAsync／送出 COMMIT 前注入 SQL 故障；另一 connection 確認全部回滾，single 等待者仍可成功。Delete 在 UPDATE 後／送出 COMMIT 前用同類注入，確認原狀保留。這些證據僅涵蓋已確認提交前失敗，不涵蓋 COMMIT 已送達的結果未知情境。重跑 Delete 權限／三狀態／重試與 R7 lifecycle／競爭回歸。
 
 **修改與停止點**：新增 `Controllers/ResponsesController.cs`、`Contracts/Responses/ResponseReceipt.cs`、Submit／Clock／Concurrency 測試；局部修改 FormsController.Delete、FormAggregateLock 用途註解及必要測試工具。不改 Schema／Migration 或提前加 R9／R10 路由。執行 `dotnet restore CustomFormService.sln`、`dotnet build CustomFormService.sln --no-restore`、測試專案 focused tests（`dotnet test ... --no-build --filter ...`）與完整回歸；報告實際命令／filter／TRX／平台結果。只清本次合成測資，保留既有 fixtures，不刪開發 volume。
 
-完成必要驗證／diff，更新 R8 開發報告與 Implementation Plan 開發狀態，以單一目的 commit 交付後停止於 **「R8 開發完成、待驗收」**。A review 不自動授權 B；B 交付不自動準備／執行正式驗收，成對計畫另待授權，執行仍需 Owner 核准與明確授權。
+完成必要驗證／diff，更新 R8 開發報告與 Implementation Plan 開發狀態，以單一目的 commit 交付後停止於 **「R8 開發完成、待驗收」**。B 可拆 Delete／Submit 單一目的提交，兩者之間不新增 review gate。A review 不自動授權 B；B 交付不自動準備／執行正式驗收，成對計畫另待授權，執行仍需 Owner 核准與明確授權。
 
 ## 衝突與本次交付
 
 未發現 R8 正式規格衝突。03c §4.3 的寫入前 deadline 重確認與 01 CON-04／05 §10 單一時間相容：重驗使用同一 submissionTime；02 §10.3 的 now() 是 Schema default，API 明確寫入該取樣值。Delete 缺鎖／交易是已登記的實作待補事項，非 Frozen Contract 衝突。
 
-本次只讀檔、盤點並交付此文件；未修改業務程式、啟動／操作 API、執行 build／測試或驗收，不宣稱這些檢查通過。交付後停止，等待 Owner review 與 A 開發授權。
+初次計畫提交 1a0cf46 未改業務程式／執行測試。Owner 已核准本計畫及六項局部補充，直接授權 A；本次 A 實跑結果另記 R8_A_Development_Report.md，A 交付後停止待 review，不開始 B。
