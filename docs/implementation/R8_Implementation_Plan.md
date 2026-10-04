@@ -2,6 +2,8 @@
 
 2026-10-04；**R8 驗收結果待 Owner review**。A／B code review 通過、cleanup `d3f75b3` 與開發結果保留歷史。Owner 已核准成對驗收計畫 `8680ccc` 並授權 Execute；本次 restore/build/native startup 成功，01a PASS／01b 首次 503 Unhealthy FAIL，因 PostgreSQL 實際 host binding 為空，HTTP 其餘 52 案與 02 full／DB probe／並行未執行、BLOCKED。零新 fixtures／probe／worker／secret，既有資料唯讀比較相同；人工全部未執行，未改產品／預期。詳見 [執行報告](R8_Acceptance_Execution_Report.md)及[成對結果](../test-plan/R8_Acceptance_Test.md)。停止於「R8 驗收結果待 Owner review」，環境恢復與補驗待下一步指示；未 accepted，未進 R9／R10／G1。
 
+**後續環境修復（2026-10-04）**：Owner 授權直接處理；WinNAT 重啟後釋放涵蓋 5432 的 active excluded range，Compose 以原 `127.0.0.1:5432 -> 5432/tcp` 與原 named volume 成功啟動、healthy。同版 API 重新啟動後，獨立環境檢查 TCP 成功／readiness 200 Healthy，完整非秘密資料列與先前最終 snapshot 相等。未變更持久網路設定／產品／預期，原正式 FAIL／BLOCKED 保留；正式補驗尚未執行。詳見執行報告「後續環境修復」。
+
 依最新 [AGENTS.md](../../AGENTS.md)、[development skill](../../.agents/skills/v1-round-development/SKILL.md)、[Implementation Plan](V1_Backend_Implementation_Plan.md) §3／R8。正式規格對照：01 §3、QST、SUB-01～05、CON-01／02／04；02 §10～11／15；03a §2／5～6；03b §8.1／8.3；03c §3.1～3.2／4；04 §4／6.1／9；05 §7～12／13.1／14～15／20。
 
 ## 現況與範圍

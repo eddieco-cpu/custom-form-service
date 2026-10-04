@@ -63,6 +63,14 @@ readiness 失敗後的唯讀 snapshot 與最終 snapshot 完整相等：**4 user
 
 未完成：01b readiness、02 同版 full／Clock／故障與 EF 讀回，以及 03～13 所有業務 HTTP／DB／並行驗證、14 五 fixture 最終結果。需要先恢復既有 PostgreSQL localhost:5432 host binding，保持同一 regular development volume 與既有資料；本次只提出環境恢復方向，沒有執行容器修復或產品修正。環境恢復後的補驗需保留這次首次 FAIL／BLOCKED 記錄，依 Owner 下一步授權記另次結果；不要重設舊 fixture 或把本次結果改填 PASS。
 
+## 後續環境修復（非正式補驗）
+
+2026-10-04 Owner 授權直接處理本機環境，維持 `5432:5432`。修復首次 `docker compose up -d --no-deps --pull never postgres` exit 1，保留原始錯誤：`bind: An attempt was made to access a socket in a way forbidden by its access permissions.` Windows 的 active TCP excluded range 當時包含 5432。以 UAC 提權 helper 執行 `Stop-Service winnat`／`Start-Service winnat`（各以有限 15 秒等待，finally 確保服務 Running）；重啟後 excluded range 不再包含 5432。重送同一 Compose up 命令 exit 0，原容器成功啟動、healthy，實際 binding 為 `127.0.0.1:5432 -> 5432/tcp`，沿用 `custom-form-service-postgres-data`。未修改 port、產品 timeout、持久網路設定或動態 port 範圍，未刪除 volume／fixtures。
+
+原 API 已未監聽 5000，故以同一先前 restore/build 的 DLL 重新啟動（`dotnet run --project src/CustomFormService.Api/CustomFormService.Api.csproj --launch-profile http --no-build`；hidden launcher PID 16784）。啟動前確認 DLL SHA256 仍為上列相同值，未另建置或修改產品。`verify-recovery.py` exit 0：`127.0.0.1:5432` socket connect 成功；`2026-10-04T12:59:31.567285Z` 的獨立環境 readiness 檢查回 `200 Healthy`。唯讀 full non-secret snapshot 與本次正式執行 `retained-final.json` 完整相等，仍為 **4 users／9 forms／22 questions／12 options／0 responses／0 answers**。
+
+證據另存 [首次啟動錯誤](../../artifacts/r8-environment-repair/compose-up-first.log)、[WinNAT 修復與 finally 狀態](../../artifacts/r8-environment-repair/winnat-restart-result.json)、[修復後 Compose 啟動](../../artifacts/r8-environment-repair/compose-up-after-winnat.log)、[TCP／readiness](../../artifacts/r8-environment-repair/connectivity-readiness.json)、[完整資料保留比較](../../artifacts/r8-environment-repair/retention-verification.json)、[同版 API 識別](../../artifacts/r8-environment-repair/api-restart-identity.json)。這些是環境恢復證據，**不是正式 01b 補驗或 R8 PASS**；原 run 的首次 FAIL／52 BLOCKED 與成對實際紀錄維持不變，未執行 full／業務 HTTP／DB probe／並行 harness，正式補驗尚未執行。
+
 ## 文件與提交
 
 實際 AI 結果已逐案回填兩份核准文件（預期／requests 不變），Implementation Plan 同步為「R8 驗收結果待 Owner review」。人工欄仍全部未執行；開發 PASS 保留為歷史。執行結果以單一目的 commit 記錄；SHA、完整 diff 與剩餘 Git 狀態見交付訊息。沒有產品／測試／正式規格變更，沒有自行 accepted 或開始 R9。
