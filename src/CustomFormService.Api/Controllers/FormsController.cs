@@ -472,6 +472,13 @@ public sealed class FormsController(
             return ApiErrors.Validation([validationError]);
         }
 
+        await using var transaction = await database.Database.BeginTransactionAsync(
+            IsolationLevel.ReadCommitted, cancellationToken);
+        if (!await FormAggregateLock.TryAcquireActiveFormAsync(database, id, cancellationToken))
+        {
+            return FormNotFound();
+        }
+
         var form = await database.Forms.SingleOrDefaultAsync(
             candidate => candidate.Id == id && candidate.DeletedAt == null,
             cancellationToken);
@@ -492,6 +499,7 @@ public sealed class FormsController(
         form.DeletedAt = deletedAt;
         form.UpdatedAt = deletedAt;
         await database.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return NoContent();
     }
 

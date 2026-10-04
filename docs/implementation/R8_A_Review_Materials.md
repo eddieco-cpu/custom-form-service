@@ -1,5 +1,7 @@
 # R8 A — Code review 補件索引
 
+**目前狀態（2026-10-04）**：Owner 已確認 A code review 通過並授權 B。下方「A 待 review／B 未授權」為當時補件交付的歷史狀態；原 diff／測試結果保持原紀錄。
+
 2026-10-04；**A 開發完成、待 review；B 未授權／未開始**。原開發提交：`986cfd86be2ff906734ba4b4895918cdc24ba1ea`。本次僅補交 review 材料、一個缺少的代表測試與必要驗證，沒有修改 validator／Definition Validation／正式規格或擴大 UUID／Unicode 矩陣。
 
 ## 1. 四項依賴

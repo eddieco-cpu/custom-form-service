@@ -1,12 +1,15 @@
 using System.Net;
 using System.Net.Http.Json;
+using CustomFormService.Api.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace CustomFormService.IntegrationTests;
 
@@ -116,17 +119,20 @@ public sealed class CustomFormServiceApiFactory : WebApplicationFactory<Program>
     private readonly IReadOnlyDictionary<string, string?> _overrides;
     private readonly IReadOnlyList<IInterceptor> _interceptors;
     private readonly TimeProvider? _timeProvider;
+    private readonly int? _maxBatchSize;
 
     public CustomFormServiceApiFactory(
         string environment = "Development",
         IReadOnlyDictionary<string, string?>? overrides = null,
         IReadOnlyList<IInterceptor>? interceptors = null,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null,
+        int? maxBatchSize = null)
     {
         _environment = environment;
         _overrides = overrides ?? new Dictionary<string, string?>();
         _interceptors = interceptors ?? [];
         _timeProvider = timeProvider;
+        _maxBatchSize = maxBatchSize;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -156,6 +162,16 @@ public sealed class CustomFormServiceApiFactory : WebApplicationFactory<Program>
         });
         builder.ConfigureServices(services =>
         {
+            // Fault tests split EF inserts to inject only after a real partial Answer write.
+            if (_maxBatchSize is { } batchSize)
+                services.AddDbContext<ApplicationDbContext>((provider, options) =>
+                    options.UseNpgsql(provider.GetRequiredService<IOptions<PostgreSqlOptions>>().Value.BuildConnectionString(),
+                        postgres =>
+                        {
+                            // UseNpgsql retains Program's existing enum mappings; do not register them twice.
+                            postgres.MinBatchSize(1);
+                            postgres.MaxBatchSize(batchSize);
+                        }));
             if (_timeProvider is not null) services.AddSingleton(_timeProvider);
             foreach (var interceptor in _interceptors)
             {

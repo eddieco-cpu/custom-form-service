@@ -37,6 +37,14 @@ public sealed partial class FormEndpointsTests
         {
             await ExecuteAsync(
                 """
+                DELETE FROM answers WHERE response_id IN (
+                    SELECT id FROM responses
+                    WHERE user_id = (SELECT id FROM users WHERE email = @email)
+                       OR form_id IN (SELECT id FROM forms WHERE user_id = (SELECT id FROM users WHERE email = @email))
+                );
+                DELETE FROM responses
+                WHERE user_id = (SELECT id FROM users WHERE email = @email)
+                   OR form_id IN (SELECT id FROM forms WHERE user_id = (SELECT id FROM users WHERE email = @email));
                 DELETE FROM questions
                 WHERE form_id IN (
                     SELECT id FROM forms WHERE user_id = (SELECT id FROM users WHERE email = @email)

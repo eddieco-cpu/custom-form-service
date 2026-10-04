@@ -1,12 +1,12 @@
 # R8 — Submit／Response／Answer 精簡實作計畫
 
-2026-10-04；**A 開發完成、待 review；B 尚未授權／未開始**。Owner 已 review 通過並授權六項局部補充及 A 開發；本次 A 證據見 [開發報告](R8_A_Development_Report.md)，不增加其他 review 停止點。
+2026-10-04；**A code review 通過；B 開發與必要驗證完成；R8 開發完成、待驗收**。A 證據見 [開發報告](R8_A_Development_Report.md) 與 [review 補件](R8_A_Review_Materials.md)，B 的 Windows build／31 focused／277 full、實際 EF round-trip／12 個 waiter／提交前故障證據見 [B 開發報告](R8_B_Development_Report.md)。Git 權限審查逾時後已獲 Owner 新指示完成必要提交；維持兩段切分與原定 B 交付停止點，不增加其他 review 停止點；尚未進入正式驗收。
 
 依最新 [AGENTS.md](../../AGENTS.md)、[development skill](../../.agents/skills/v1-round-development/SKILL.md)、[Implementation Plan](V1_Backend_Implementation_Plan.md) §3／R8。正式規格對照：01 §3、QST、SUB-01～05、CON-01／02／04；02 §10～11／15；03a §2／5～6；03b §8.1／8.3；03c §3.1～3.2／4；04 §4／6.1／9；05 §7～12／13.1／14～15／20。
 
 ## 現況與範圍
 
-基準 HEAD `8108bda`，盤點時 working tree 乾淨。Response／Answer 實體、JSONB mapping、FK、`(response_id, question_id)` unique 與必要 indexes 已存在；沒有 Submit 端點、Answer validator 或 ResponseReceipt。PATCH／Publish／Close／Visibility 已採 `ReadCommitted` + `FormAggregateLock`，先鎖未刪除 Form、再讀 Aggregate，持鎖到 commit／rollback。Delete 尚無共用鎖與明確交易；Implementation Plan R8 已登記 R7 review M1 的局部調整。
+初次計畫盤點基準 HEAD `8108bda`，當時 working tree 乾淨。Response／Answer 實體、JSONB mapping、FK、`(response_id, question_id)` unique 與必要 indexes 已存在；當時沒有 Submit 端點、Answer validator 或 ResponseReceipt。PATCH／Publish／Close／Visibility 已採 `ReadCommitted` + `FormAggregateLock`，先鎖未刪除 Form、再讀 Aggregate，持鎖到 commit／rollback。當時 Delete 尚無共用鎖與明確交易；Implementation Plan R8 已登記 R7 review M1 的局部調整，本次 B 已局部完成。
 
 沿用既有 `TimeProvider` DI、可替換 Clock／EF interceptors 的 TestFactory、`TextRules`、`RequestJson`、精確數值比較 `DefinitionNumber` 及 PostgreSQL lock waiter／故障測試模式。R8 只完成端點 15：`POST /api/v1/forms/{formId}/responses` 與必要依賴；Active User（含 Owner）可填答，anonymous 仍需登入並保存內部 User ID。不做 R9 Latest／Count、R10 Statistics、G1、Migration、容量政策或全面重構。
 
@@ -89,4 +89,4 @@ Optional 完全省略、text trim 後空字串、multiple 空 Array 均不建立
 
 未發現 R8 正式規格衝突。03c §4.3 的寫入前 deadline 重確認與 01 CON-04／05 §10 單一時間相容：重驗使用同一 submissionTime；02 §10.3 的 now() 是 Schema default，API 明確寫入該取樣值。Delete 缺鎖／交易是已登記的實作待補事項，非 Frozen Contract 衝突。
 
-初次計畫提交 1a0cf46 未改業務程式／執行測試。Owner 已核准本計畫及六項局部補充，直接授權 A；本次 A 實跑結果另記 R8_A_Development_Report.md，A 交付後停止待 review，不開始 B。
+初次計畫提交 1a0cf46 未改業務程式／執行測試。Owner 核准本計畫及六項局部補充後授權 A；A 交付與補件曾停止待 review，其實跑結果另記 R8_A_Development_Report.md。Owner 其後明確確認 A code review 通過並授權 B；B 依原核准範圍完成，實跑結果另記 R8_B_Development_Report.md。完整 R8 停止於開發完成、待驗收，不自動進入驗收準備／執行。

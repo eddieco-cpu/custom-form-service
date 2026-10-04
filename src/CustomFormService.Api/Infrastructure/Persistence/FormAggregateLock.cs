@@ -5,8 +5,8 @@ namespace CustomFormService.Api.Infrastructure.Persistence;
 
 public static class FormAggregateLock
 {
-    // PATCH, Publish, Close and Result Visibility acquire this before reading the aggregate.
-    // Hold it through validation and commit/rollback so definition/state/policy writes agree.
+    // PATCH, Publish, Close, Result Visibility, Delete and Submit acquire this before reading.
+    // Hold it through validation and commit/rollback so aggregate writes and submissions agree.
     public static async Task<bool> TryAcquireActiveFormAsync(
         ApplicationDbContext database,
         Guid formId,
