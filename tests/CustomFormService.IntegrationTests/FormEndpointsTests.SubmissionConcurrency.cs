@@ -163,6 +163,55 @@ public sealed partial class FormEndpointsTests
         : R8RequestAsync(action == "delete" ? HttpMethod.Delete : HttpMethod.Post,
             $"/api/v1/forms/{form.Id}" + (action == "delete" ? "" : "/close"), cookie, null, cancellationToken);
 
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task R8_request_cleanup_observes_remaining_requests_and_reports_all_failures(bool firstTimesOut)
+    {
+        var pending = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var firstFailure = new InvalidOperationException("First request failed.");
+        var laterFailure = new InvalidOperationException("Later request failed.");
+        var later = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var first = firstTimesOut ? pending.Task : Task.FromException<HttpResponseMessage>(firstFailure);
+        var drain = DrainR8RequestsAsync(first, later.Task);
+        try
+        {
+            Assert.IsFalse(drain.IsCompleted, "Cleanup must continue to the remaining request after an earlier failure.");
+            later.SetException(laterFailure);
+            var aggregate = await Assert.ThrowsAsync<AggregateException>(async () =>
+                await drain.WaitAsync(TimeSpan.FromSeconds(15)));
+            Assert.HasCount(2, aggregate.InnerExceptions);
+            Assert.AreSame(laterFailure, aggregate.InnerExceptions[1]);
+            if (firstTimesOut) Assert.IsInstanceOfType<TimeoutException>(aggregate.InnerExceptions[0]);
+            else Assert.AreSame(firstFailure, aggregate.InnerExceptions[0]);
+            Console.WriteLine($"R8 cleanup evidence: first={(firstTimesOut ? "timeout" : "fault")}, later=fault; observed both requests; aggregate failures=2.");
+        }
+        finally
+        {
+            pending.TrySetCanceled();
+            later.TrySetException(laterFailure);
+            // Observe intentionally faulted test tasks even if the assertion detects a regression.
+            foreach (var task in new[] { first, later.Task, drain })
+            {
+                try { await task.WaitAsync(TimeSpan.FromSeconds(15)); }
+                catch (Exception) { }
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task R8_request_cleanup_only_ignores_actual_task_cancellation()
+    {
+        var failure = new OperationCanceledException("Faulted request, not a canceled task.");
+        var canceled = Task.FromCanceled<HttpResponseMessage>(new CancellationToken(canceled: true));
+        var faulted = Task.FromException<HttpResponseMessage>(failure);
+        var aggregate = await Assert.ThrowsAsync<AggregateException>(async () =>
+            await DrainR8RequestsAsync(canceled, faulted));
+        Assert.HasCount(1, aggregate.InnerExceptions);
+        Assert.AreSame(failure, aggregate.InnerExceptions[0]);
+        Console.WriteLine("R8 cleanup evidence: canceled task accepted; faulted OperationCanceledException reported, aggregate failures=1.");
+    }
+
     private async Task<(HttpResponseMessage First, HttpResponseMessage Second)> RunR8OrderedAsync(
         R8SaveGate gate, Func<CancellationToken, Task<HttpResponseMessage>> firstSend,
         Func<CancellationToken, Task<HttpResponseMessage>> secondSend)
@@ -191,11 +240,15 @@ public sealed partial class FormEndpointsTests
     private static async Task DrainR8RequestsAsync(params Task<HttpResponseMessage>[] requests)
     {
         // Bound cleanup and observe every request; a timeout is a failure, not concurrency evidence.
+        var failures = new List<Exception>();
         foreach (var request in requests)
         {
             try { await request.WaitAsync(TimeSpan.FromSeconds(10)); }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException) when (request.IsCanceled) { }
+            catch (Exception exception) { failures.Add(exception); }
         }
+        if (failures.Count > 0)
+            throw new AggregateException("R8 request cleanup failed after observing all remaining requests.", failures);
     }
 
     private async Task WaitForR8BlockedAsync(int blockerPid)

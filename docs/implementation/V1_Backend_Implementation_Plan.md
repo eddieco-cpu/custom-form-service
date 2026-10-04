@@ -158,6 +158,8 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 
 ### R8 — Submit／Response／Answer
 
+**B review／收尾與新授權（2026-10-04）**：Owner 確認 `14aac30` 的 B code review 通過，授權 Drain helper 局部收尾後直接準備驗收。Helper 現逐一有限等待、收集非預期失敗，全部處理後 AggregateException；只有真正 canceled Task 可視為預期取消。新增三案，修正前兩案 FAIL 證據保留，Windows build 0 warnings/errors、最終 R8 affected 34/34 PASS、12 個 waiter／四項提交前故障仍通過、資料 snapshot 相等。只改測試 helper，未改業務契約；本次未重跑 full，原 277/277 為 B 歷史結果，不能代填当前 280 full。詳見 [B 報告收尾節](R8_B_Development_Report.md#b-review-後局部收尾2026-10-04)。接續驗收準備已授權；尚未執行正式驗收，最終交付停止於「R8 驗收計畫待 review」，不改填 accepted。下方原 A／B 授權与交付保留當時狀態。
+
 **目前授權（2026-10-04）**：Owner 已確認 A code review 通過，明確授權依 [核准計畫](R8_Implementation_Plan.md) 開發 B（Submit／Receipt、Clock、原子保存／並行與 Delete 局部交易／鎖）。不重做 A／Definition Validation，不開始 R9／R10／G1；交付停止於「R8 開發完成、待驗收」，尚未授權驗收準備／執行。下方 A 交付與補件保留當時歷史狀態。
 
 **B 開發交付（2026-10-04）**：新增 Submit／ResponseReceipt；取 Form lock 並重讀 Published 後只取一次 submissionTime，驗證順序沿 03c §4.3，寫入前以同時間重確認。Response＋正規化 Answers 同交易 EF 保存後 AsNoTracking 讀回，Receipt 按 Question sortOrder／ID 排序，commit 成功才回 201。Delete 已局部加入共用鎖／ReadCommitted／鎖後 Owner 判定／commit。Windows restore／build 成功、0 warnings/errors，B 最終 31/31、full 首次 277/277 PASS（含 A 79 與原 167），0 skipped；實際 EF JSONB／timestamp round-trip、12 個 PostgreSQL waiter、部分 Answer／全部 Save 後 precommit 及 Delete UPDATE／precommit 故障通過。首輪測試工具錯誤與診斷保留，不覆寫成 PASS；COMMIT 結果未知情形未測且不推論零新增。既有 fixture 完整快照相等，未移除 DB volume，Linux fallback 未使用。Git 權限審查逾時後獲 Owner 新明確指示完成必要提交；詳見 [R8_B_Development_Report.md](R8_B_Development_Report.md)。停止於「R8 開發完成、待驗收」，沒有準備或執行正式驗收，未 accepted。

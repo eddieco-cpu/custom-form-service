@@ -1,5 +1,7 @@
 # R8 B — Submit／Receipt／原子保存與並行開發報告
 
+**目前狀態（2026-10-04）**：Owner 已確認 `14aac30` 的 B code review 通過，授權 Drain helper 局部收尾後直接準備驗收計畫；收尾實跑結果見末節。以下原 B 交付的 31／277 與未進入驗收準備描述保留為歷史紀錄，不代填本次驗收結果或 accepted。
+
 2026-10-04；**R8 開發完成、待驗收**。Owner 已確認 A code review 通過，明確授權依 [核准計畫](R8_Implementation_Plan.md) 完成 B。基準 HEAD `62f278422f14bdb6ce2b45d4ad53d2ebd3428775`，開始時 working tree 乾淨。A 初次開發與補件的歷史結果保留；本報告是 B 開發自測，不代表正式驗收或 Round accepted。
 
 **Git 操作紀錄**：Git staging 的自動權限審查曾兩次逾時（不是安全判定），普通 sandbox 另回 `.git/index.lock: Permission denied`。先備妥全部工作區 diff／報告後，Owner 明確回覆「授權再次請求 Git 寫入並提交」；其後 staging 成功，依此新指示完成必要 Git 提交。阻碍時的工作區 diff 保留於 `artifacts/r8-b/B-before-git-authorization.diff`，最終 commit diff／SHA 與 Git 狀態另見下方及交付訊息。
@@ -90,3 +92,27 @@ dotnet test CustomFormService.sln --no-build --no-restore --configuration Debug 
 以單一目的 B 開發 commit 交付；完整 [B commit diff](../../artifacts/r8-b/B-full.diff) 含全部程式、測試、報告與兩份計畫，SHA 在 diff header／交付訊息，提交後 Git 狀態見交付訊息。A code review 通過不等於完整 B 已 review；本次是依核准計畫的開發交付。
 
 未做 R9 Latest／Count、R10 Statistics、G1、部署或正式驗收準備／執行；未驗證 commit 結果未知的故障情形。既有正式驗收文件／歷史結果不改填，後續正式驗收須使用本次 R8 版本；尚無 R8 成對驗收計畫。停止於 **「R8 開發完成、待驗收」**，等待 Owner 下一階段授權，不自動準備驗收或宣告 accepted。
+
+## B review 後局部收尾（2026-10-04）
+
+Owner review 通過 B，明確授權修正 `DrainR8RequestsAsync`，完成必要驗證後直接準備成對驗收計畫。本次只修改測試 helper 與代表性回歸，未修改業務 Controller／Validator／Receipt／Schema／Frozen Contract。
+
+Helper 保持每個 request 10 秒有限等待；單個 timeout 或其他失敗加入清單，繼續觀察其餘 requests，全部等待嘗試結束後以 AggregateException 回報全部清理失敗。只有 `request.IsCanceled` 的真正取消 Task 才沿用預期取消處理；faulted Task 中的 OperationCanceledException 不得被誤吞。Timeout 表示該 Task 未在時限內結束，不能宣稱已完成或將清理視為 PASS。既有 finally 仍先釋放 gate、取消請求，再呼叫 drain。
+
+新增 `R8_request_cleanup_observes_remaining_requests_and_reports_all_failures`（一般失敗／timeout 各一案），第一個 request 失敗後仍須處理後續 fault，最後 AggregateException 包含兩個原始失敗；另以 `R8_request_cleanup_only_ignores_actual_task_cancellation` 確認真正取消與 faulted OperationCanceledException 的區別。Synthetic failure 的測試 finally 只負責觀察預期 fault，不改變 assertion 的成敗。
+
+實際 Windows 命令（repo root，輸出以 Tee-Object 存入 `artifacts/r8-closeout/`）：
+
+```powershell
+dotnet build CustomFormService.sln --no-restore --configuration Debug --disable-build-servers -m:1 -p:UseSharedCompilation=false
+dotnet test CustomFormService.sln --no-build --no-restore --configuration Debug -m:1 --filter "FullyQualifiedName~R8_request_cleanup" --logger "console;verbosity=normal" --logger "trx;LogFileName=cleanup-before-fix.trx" --results-directory artifacts/r8-closeout
+dotnet test CustomFormService.sln --no-build --no-restore --configuration Debug -m:1 --filter "FullyQualifiedName~R8_" --logger "console;verbosity=normal" --logger "trx;LogFileName=r8-affected-final.trx" --results-directory artifacts/r8-closeout
+```
+
+- 修正前：兩個新增案例 **2/2 FAIL**、exit 1；一般失敗提早返回、timeout 直接拋出而非處理後续 requests。保留 [log](../../artifacts/r8-closeout/cleanup-before-fix.log)／[TRX](../../artifacts/r8-closeout/cleanup-before-fix.trx)，沒有覆寫。
+- 首次修正後 R8 focused **33/33 PASS**；再補 actual-cancellation filter 與一個必要代表案例，最終 **34/34 PASS、0 skipped**、exit 0、25.9920 秒；[log](../../artifacts/r8-closeout/r8-affected-final.log)／[TRX](../../artifacts/r8-closeout/r8-affected-final.trx)。最終 [build](../../artifacts/r8-closeout/build-final.log) exit 0，0 warnings／0 errors；before／after／final builds 均成功。
+- 本次 12 個真 DB waiter 與四項提交前故障案例仍通過；清理失敗聚合及並行證據見 [StdOut 擷取](../../artifacts/r8-closeout/cleanup-concurrency-evidence.json)。沒有延伸為 COMMIT 結果未知時零新增。
+- 本次只重跑受影響的 R8 tests；完整回歸未重跑。原 B 的 277/277 是 `14aac30` 歷史結果，不能宣稱當前新增三案的全套 280/280 已執行；後續驗收計畫將要求同版全套。
+- 測試前後非秘密完整資料 snapshot 逐字相等；[比較結果](../../artifacts/r8-closeout/verification-summary.json)。只清本次開發測資，沒有執行驗收 fixture 操作。既有未追蹤 `src/CustomFormService.Api.zip`、`tests/CustomFormService.IntegrationTests.zip` 保留，不加入提交。
+
+修正以單一目的 commit 交付，SHA 在 [repair 完整 diff](../../artifacts/r8-closeout/repair-full.diff) header／交付訊息。沒有舊 R8 驗收計畫／執行結果需作廢；原 B review 與開發證據保留，本次修正證據另列。依 Owner 多階段授權接續 Prepare，不執行正式驗收，最終停止於「R8 驗收計畫待 review」，不改填 accepted。

@@ -1,6 +1,6 @@
 # R8 — Submit／Response／Answer 精簡實作計畫
 
-2026-10-04；**A code review 通過；B 開發與必要驗證完成；R8 開發完成、待驗收**。A 證據見 [開發報告](R8_A_Development_Report.md) 與 [review 補件](R8_A_Review_Materials.md)，B 的 Windows build／31 focused／277 full、實際 EF round-trip／12 個 waiter／提交前故障證據見 [B 開發報告](R8_B_Development_Report.md)。Git 權限審查逾時後已獲 Owner 新指示完成必要提交；維持兩段切分與原定 B 交付停止點，不增加其他 review 停止點；尚未進入正式驗收。
+2026-10-04；**A／B code review 通過；B 局部收尾完成；已授權接續驗收準備**。B `14aac30` 的歷史 31 focused／277 full 與本次 Drain helper 修正、34/34 受影響測試、12 個 waiter 證據見 [B 開發報告](R8_B_Development_Report.md)。業務契約／A／B 範圍不變；Owner 已明確授權收尾後直接 Prepare，成對計畫交付停止於「R8 驗收計畫待 review」，尚未授權正式驗收執行，未 accepted。
 
 依最新 [AGENTS.md](../../AGENTS.md)、[development skill](../../.agents/skills/v1-round-development/SKILL.md)、[Implementation Plan](V1_Backend_Implementation_Plan.md) §3／R8。正式規格對照：01 §3、QST、SUB-01～05、CON-01／02／04；02 §10～11／15；03a §2／5～6；03b §8.1／8.3；03c §3.1～3.2／4；04 §4／6.1／9；05 §7～12／13.1／14～15／20。
 
