@@ -1,5 +1,7 @@
 # R8 AI 驗收執行報告
 
+**最新狀態（2026-10-04）**：正式補驗完成，待 Owner review。新 RunId `r8-acceptance-20261004-02` 已完成 280/280 Windows 全套、54 HTTP／4 非 HTTP PASS，详見 [正式補驗報告](R8_Acceptance_Reexecution_Report.md)。下方全文保留首次 run `r8-acceptance-20261004-01` 的 FAIL／BLOCKED 與後續環境恢復歷史；不覆寫首次證據。本輪採 AI 執行驗收＋Owner 審核證據；人工全部未執行，依 Owner 指示不作為本輪 accepted 必要條件。仍須 Owner 明確確認 R8 accepted，才可進入 R9。
+
 2026-10-04；**R8 驗收結果待 Owner review**。Owner 已核准成對計畫 `8680cccd17e98646a6f257757dfa65654c039153` 並明確授權 Execute。本次 RunId `r8-acceptance-20261004-01`，Windows 原生 .NET SDK 10.0.400／runtime 10.0.11，PostgreSQL 17.11。未改產品、正式規格、預期結果或 timeout；未 accepted，未開始 R9／R10／G1。
 
 成對實際紀錄：[R8_Acceptance_Test.md](../test-plan/R8_Acceptance_Test.md)／[R8_Manual_Tests.http](../test-plan/R8_Manual_Tests.http)。人工全部未執行；Owner 核准 AI 執行不代替人工結果。
