@@ -148,11 +148,15 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 
 **本次計畫／授權（2026-10-04）**：Owner 已 review 並核准提交 `0f1f70a` 的 [R7 精簡實作計畫](R7_Implementation_Plan.md)，明確授權開發；補充 Publish／Close 不要求 Body／JSON、Result Visibility 才解析並驗證 JSON Body，以及 Publish 正規化只改獨立 Candidate、成功後 Definition／子列及 timestamps 原樣保留並以 DB 測試證明。直接納入實作，不需重送計畫。計畫涵蓋共用 Validator／Form lock、生命週期與獨立 Visibility、必要局部整理與開發測試。後續開發交付、成對驗收計畫 review、授權 AI 執行及 Owner 確認仍依 §3 四階段，未提前進入 R8～R11／G1。
 
-**開發交付（2026-10-04）**：實作提交 `0496041c762062f310bf61662276d44c8ea83e09`；[R7 開發報告](R7_Development_Report.md) 記錄規格對照、命令、資料安全與平台證據。完整 DB 快照／UPDATE SQL 證明 Publish 共用正規化不回寫 Definition 或子列；37 個開發案例涵蓋必要錯誤／no-op／deadline／rollback／七種可觀察 lock waiter 的並行。Windows 首次 testhost 封鎖與全套 CORS TestFactory 偶發例外均保留紀錄，最終 focused 37/37、full 155/155；Linux 同套亦 37/37、155/155。CORS 例外根因未在 R7 修正，未改該測試預期。R4／R5／R6 保留資料完整快照相等，SDK 暫存容器已清理、PostgreSQL／volume 與重新啟動的 API 保留。僅 development verified，不以自測標 accepted；交付後停止待另行授權準備成對驗收計畫。
+**開發交付（2026-10-04）**：實作提交 `0496041c762062f310bf61662276d44c8ea83e09`；[R7 開發報告](R7_Development_Report.md) 記錄規格對照、命令、資料安全與平台證據。完整 DB 快照／UPDATE SQL 證明 Publish 共用正規化不回寫 Definition 或子列；37 個開發案例涵蓋必要錯誤／no-op／deadline／rollback／七種可觀察 lock waiter 的並行。Windows 首次 testhost 封鎖與全套 CORS TestFactory 例外均保留紀錄，最終 focused 37/37、full 155/155；Linux 同套亦 37/37、155/155。CORS 例外為「未重現、根因未明」，撤回先前偶發判斷，未改該測試預期。R4／R5／R6 保留資料完整快照相等，SDK 暫存容器已清理、PostgreSQL／volume 與重新啟動的 API 保留。僅 development verified，不以自測標 accepted。
+
+**外部 review 有限確認（2026-10-04）**：依 Owner 指示核對 M2 首次堆疊及 TestFactory／TimeProvider diff；本次單獨重跑前後各 1/1、Windows R7 49/49／full 167/167 PASS，仍為「未重現、根因未明」。L3 缺少／錯誤 Content-Type 原回 200，僅於 Visibility 修正為正式 `400 VALIDATION_ERROR`；四種傳輸錯誤、非字串值、Owner 已刪除存取及 R7／Delete 競爭均通過針對性案例。未做 L2 重構或 Capacity Policy；Linux 此次未重跑。資料快照不變，詳見 [確認報告](R7_Review_Confirmation_Report.md)。無已重現的 R7 阻擋事項，Owner 已授權接續準備驗收計畫；未授權執行，未標 accepted。
 
 ### R8 — Submit／Response／Answer
 
 **輸入**：01 SUB／CON、02 §10～11、03c §3～4、04、05 §8～12。**工作**：完成 15 號端點，登入者（Owner 亦可）提交；一次成功建立 Response 和全部有效 Answers；選項歸屬、required、optional omission、全題型 value／正規化、deadline、responseMode；single 並行最多一次成功；multiple 保留歷史。Submit／Close／Delete 實作可解釋的交易順序。
+
+**R8 前置事項（R7 review M1）**：現有 Delete 在讀取／Owner 判定時沒有使用共用 Form lock 或明確交易；不能以最終 UPDATE 的隱含列鎖宣稱 Submit 競爭安全。R8 開發須將 Delete 與 Submit／既有 Close 納入同一 `FormAggregateLock`／交易策略：每一寫入自己的交易先鎖未刪除 Form，再讀目前 Aggregate、判權限／狀態／deadline／single，持鎖直到 commit／rollback。Delete 仍只軟刪除，不改 status／子列；Submit 保證 Response + 全部 Answers 原子保存，與 Close／Delete 形成一致先後。必要測試涵蓋 Submit 先提交→Response 保留且 Close／Delete 可成功；Close 先提交→`409 FORM_NOT_SUBMITTABLE`；Delete 先提交→`404 FORM_NOT_FOUND`，含等待後重讀以及故障回滾。本項只是依 03b §8.1／8.3、03c §4.3、05 §8／9.2 登記的實作前置，不授權提前修改 Delete 或新增 Submit。
 
 **驗收／證據**：匿名僅指 Statistics 身分揭露模式，未登入仍不可填；`serverNow < deadline` 才接受，等於 deadline 拒絕；錯誤答卷零殘留；同時兩筆 single 至多一個 201；multiple 兩筆均保存；Close／Delete 競爭測試，狀態及 Response 一致；ResponseReceipt 形狀與錯誤 details 正確。時間測試使用可控制 Clock，避免等待真實時鐘。**提交**：可拆 answer validation／transaction。**停止**：提供 DB 狀態與 API 驗證證據。
 

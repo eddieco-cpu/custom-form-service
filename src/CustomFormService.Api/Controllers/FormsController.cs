@@ -394,6 +394,12 @@ public sealed class FormsController(
             return ApiErrors.Validation([validationError]);
         }
 
+        if (!Microsoft.Net.Http.Headers.MediaTypeHeaderValue.TryParse(Request.ContentType, out var contentType)
+            || !string.Equals(contentType.MediaType.Value, "application/json", StringComparison.OrdinalIgnoreCase))
+        {
+            return ApiErrors.Validation([RequestJson.Invalid("body", "The request Content-Type must be application/json.")]);
+        }
+
         // Only this policy endpoint reads JSON. Parse errors (including an absent
         // body) use the contract envelope before resource/owner checks, not MVC 415.
         JsonDocument document;

@@ -2,6 +2,8 @@
 
 2026-10-04；**development verified，開發完成、待驗收**（Owner 核准計畫提交 `0f1f70a` 並明確授權）；實作提交 `0496041`，詳見 [開發報告](R7_Development_Report.md)。R6 accepted 依據：AI 證據提交 `81b64f3` 與 Owner review；文件收尾 `def2d2b`，人工未執行。程式基準 `af1a5a3`。本次只規劃 R7 端點 12～14。
 
+外部 review 有限確認已完成，詳見 [確認報告](R7_Review_Confirmation_Report.md)：M2 本次未重現、根因未明；Visibility 局部補上 JSON Content-Type 驗證，Windows R7 49/49、全套 167/167 PASS，Linux 本次未重跑。M1 的 Delete／Submit／Close 共用 lock／交易要求已登記 R8 前置，未提前實作；不做 L2 重構。Owner 已授權接續 Prepare，仍需成對驗收計畫 review 後才能執行。
+
 依 [AGENTS.md](../../AGENTS.md)、[development skill](../../.agents/skills/v1-round-development/SKILL.md)、[acceptance skill](../../.agents/skills/v1-acceptance-testing/SKILL.md)、[Implementation Plan](V1_Backend_Implementation_Plan.md) R7；規格對照：[01](../specs/01-v1-domain-specification.md) FORM-01／03／04／07／09、CON-01／03；[02](../specs/02-v1-database-specification.md) §7～9；[03a](../specs/03a-v1-api-contract-common.md) §5～6；[03b](../specs/03b-v1-api-contract-auth-user-form.md) §8.2～8.4／9；[04](../specs/04-v1-error-catalog.md) §6～8；[05](../specs/05-v1-system-constraints.md) §8～10。未發現本範圍的規格衝突。
 
 ## Publish 驗證

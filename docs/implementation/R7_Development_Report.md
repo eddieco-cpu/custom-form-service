@@ -55,7 +55,7 @@ Visibility 不套 Draft 限制或 Publish Validator，不改 Definition／respon
 - 第一次 Windows build 因 R6 留存 API 占用 DLL，10 warnings／2 errors；核對完整 DLL 路徑後只停止 PID 12064，後續 build 通過，最後恢復本專案 API 啟動。
 - 第一次 Windows focused 因應用程式控制原則 `0x800711C7` 封鎖新版 API DLL，未執行案例；未更改／停用安全設定，先用官方 Linux SDK 完成測試。最終修正後的 Windows DLL 已實際跑完 37 與 155 案，不把 Linux 結果冒稱 Windows PASS。
 - 初次 Linux R7 為 29 PASS／8 FAIL。三案是 helper 把缺少 Cookie 寫成空 header，四案是 SQL helper 未辨識 UPDATE 與 WHERE 間換行，均修正 helper、未放寬斷言；另一步缺少 Visibility Body 被 MVC formatter 回 415，改由此端點明確解析 JSON，空／無效 JSON 穩定回正式 `400 VALIDATION_ERROR`。原 log／TRX 保留為 `linux-r7-focused-first.*`，修正後 focused／full 全通過。
-- 首次 Windows full 154/155，既有 `Noncanonical_Cors_origin_fails_startup` 收到 TestFactory 的 `ObjectDisposedException (IServiceProvider)`，未取得預期 CORS 文字；原 `windows-full.trx`／log 保留。該案例原碼、預期與產品設定均未改：單獨重查 1/1 PASS（`windows-cors-recheck.trx`），再相同全套 155/155 PASS（`windows-full-recheck.trx`）。此偶發 TestFactory 啟動例外的根因未在 R7 修正；不因一次重查成功宣稱框架問題已根除。
+- 首次 Windows full 154/155，`Noncanonical_Cors_origin_fails_startup` 收到 TestFactory 的 `ObjectDisposedException (IServiceProvider)`，未取得預期 CORS 文字；原 `windows-full.trx`／log 保留。該案例原碼、預期與產品設定均未改：單獨重查 1/1 PASS（`windows-cors-recheck.trx`），再相同全套 155/155 PASS（`windows-full-recheck.trx`）。依外部 review 再核對堆疊、Factory／TimeProvider diff 並重跑，結論為「未重現、根因未明」；先前「既有偶發」判斷撤回，不能排除未定位的 R7 相關影響，也不宣稱框架問題已根除。
 
 ## 資料、安全與後續停止點
 
@@ -66,3 +66,9 @@ Linux SDK 的 source、User Secrets、NuGet 來源唯讀，建置／清理僅在
 R7 必要開發驗證已完成；正式成對驗收計畫尚未準備／執行，人工驗收未執行，未標 accepted。後續另依 acceptance skill 提出計畫供 Owner review，核准且明確授權後才執行。Submit／Close／Delete 真正競爭留 R8，Latest／Count／Statistics 與 G1 留各自 Round；本次交付後停止。
 
 **開發完成、待驗收**
+
+## 外部 review 有限確認（2026-10-04）
+
+詳見 [R7 Review 確認報告](R7_Review_Confirmation_Report.md)。本次僅在 Visibility 加入 `application/json`（可帶 charset）檢查，修正缺少／錯誤 Content-Type 仍 200 並更新資料的正式契約偏離；空 Body／損壞 JSON 仍使用正式 400 Envelope。新增 12 個針對性開發案例，未做 L2 重構／Capacity Policy，也未實作 R8。
+
+本次 Windows build 0 warnings／errors，R7 49/49、full 167/167 PASS；M2 修正前後單獨重跑各 1/1 PASS，全套也未重現，但根因未明。Linux 本次未重跑，前次 37/37／155/155 只作歷史結果，未覆盖新增檢查。R4／R5／R6 快照不變，Windows API 已恢復啟動。Owner 已授權確認後準備成對驗收計畫；開發結果不代填驗收結果，R7 未 accepted。
