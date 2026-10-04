@@ -1,8 +1,8 @@
 # R7 成對驗收計畫 — Lifecycle 與 Result Visibility
 
-2026-10-04；**Prepare／test plan pending owner review**。本文件與 [R7_Manual_Tests.http](R7_Manual_Tests.http) 成對；尚未核准執行，AI／人工皆未執行。只驗收 R7 端點 12～14 及其 PATCH Freeze 依賴，不做 R8／Statistics／G1，也不做 L2 重構或 Capacity Policy。
+2026-10-04；**Owner-approved revised plan／acceptance executing**。Owner 在本 chat 核准 `28cb8e2` 計畫，明確授權本次三項局部修訂後直接執行、不需再停下詢問。本文件與 [R7_Manual_Tests.http](R7_Manual_Tests.http) 成對；開始時 AI／人工皆未執行。只驗收 R7 端點 12～14 及其 PATCH Freeze 依賴，不做 R8／Statistics／G1，也不做 L2 重構或 Capacity Policy。
 
-依 [AGENTS.md](../../AGENTS.md)、[驗收 skill](../../.agents/skills/v1-acceptance-testing/SKILL.md)、[Implementation Plan](../implementation/V1_Backend_Implementation_Plan.md) R7、[核准實作計畫](../implementation/R7_Implementation_Plan.md)、[開發報告](../implementation/R7_Development_Report.md) 與 [有限確認報告](../implementation/R7_Review_Confirmation_Report.md)。實作基準 `db2fe1b`（包含 review 局部修正），正式規格：[03a](../specs/03a-v1-api-contract-common.md) §2／4～6、[03b](../specs/03b-v1-api-contract-auth-user-form.md) §8～9、[04](../specs/04-v1-error-catalog.md) §2～4／Form Errors、[01](../specs/01-v1-domain-specification.md) FORM／CON、[02](../specs/02-v1-database-specification.md) §7～9、[05](../specs/05-v1-system-constraints.md) §8～10。M2 仍「未重現、根因未明」，本次計畫明列追蹤，不稱既有偶發。
+依 [AGENTS.md](../../AGENTS.md)、[驗收 skill](../../.agents/skills/v1-acceptance-testing/SKILL.md)、[Implementation Plan](../implementation/V1_Backend_Implementation_Plan.md) R7、[核准實作計畫](../implementation/R7_Implementation_Plan.md)、[開發報告](../implementation/R7_Development_Report.md) 與 [有限確認報告](../implementation/R7_Review_Confirmation_Report.md)。最新 repository 提交基準 `28cb8e2`；其中最新業務程式提交 `db2fe1b`（包含 review 局部修正）。本次計畫修訂僅文件，業務程式不變，正式規格：[03a](../specs/03a-v1-api-contract-common.md) §2／4～6、[03b](../specs/03b-v1-api-contract-auth-user-form.md) §8～9、[04](../specs/04-v1-error-catalog.md) §2～4／Form Errors、[01](../specs/01-v1-domain-specification.md) FORM／CON、[02](../specs/02-v1-database-specification.md) §7～9、[05](../specs/05-v1-system-constraints.md) §8～10。M2 仍「未重現、根因未明」，本次計畫明列追蹤，不稱既有偶發。
 
 ## 執行規則與共用測資
 
@@ -15,7 +15,7 @@
 
 ## 環境與完整回歸命令（01／02）
 
-在 repo root PowerShell 執行；若 API 鎖住 DLL，先核對完整同 repo 路徑並只停止該 API，完成後重新啟動。不要停止其他 dotnet 或 PostgreSQL。
+01 先在 repo root 核對／僅停止舊的同 repo API，完成本次 restore／build（逐一 exit 0）後，以該 repo、本次 Debug build 的 API DLL 重新啟動並驗證 01a health／01b readiness。記錄 DLL 完整路徑、SHA256、build 命令／時間與 API startup log。不得沿用舊程序冒稱本次 build。02 接著跑同一 build 的 full／M2 targeted（--no-build），不在 API 啟動後重新 build。若必須重建，仍須先核對／停止這個 API，再 build、重啟並重驗 health/readiness，保存第一次紀錄。不要停止其他 dotnet 或 PostgreSQL。
 
 ```powershell
 $RunId = 'r7-acceptance-20261004-01'
@@ -26,21 +26,40 @@ docker compose config --quiet
 docker compose ps
 dotnet restore CustomFormService.sln --disable-build-servers -m:1
 dotnet build CustomFormService.sln --no-restore --configuration Debug --disable-build-servers -m:1 -p:UseSharedCompilation=false
-dotnet test CustomFormService.sln --no-build --no-restore --configuration Debug -m:1 --logger 'console;verbosity=normal' --logger 'trx;LogFileName=windows-full.trx' --results-directory $EvidenceDir
-dotnet test CustomFormService.sln --no-build --no-restore --configuration Debug -m:1 --filter 'FullyQualifiedName~Noncanonical_Cors_origin_fails_startup' --logger 'trx;LogFileName=windows-m2.trx' --results-directory $EvidenceDir
-# 另一個 PowerShell／同 repo：
+# 01：restore/build 全部成功後，在另一個 PowerShell／同 repo 啟動：
 dotnet run --project src/CustomFormService.Api/CustomFormService.Api.csproj --launch-profile http --no-build
+# 原視窗依 .http 送 01a／01b，均成功後才執行 02：
+dotnet test CustomFormService.sln --no-build --no-restore --configuration Debug -m:1 --logger 'console;verbosity=normal' --logger 'trx;LogFileName=windows-full-first.trx' --results-directory $EvidenceDir
+dotnet test CustomFormService.sln --no-build --no-restore --configuration Debug -m:1 --filter 'FullyQualifiedName~Noncanonical_Cors_origin_fails_startup' --logger 'trx;LogFileName=windows-m2-targeted.trx' --results-directory $EvidenceDir
 ```
 
 逐個命令記 exit／log，不能讓最後一個成功掩蓋前面失敗。Linux fallback 使用相同 flags，平台檔名改 linux；不得以 Linux PASS 填 Windows PASS。本計畫 Windows／Linux 實際：均 **未執行（等待 Owner review）**。
 
 | 非 HTTP 檢查／編號 | AI 實際 | 人工實際 |
 | --- | --- | --- |
-| 01 · Windows 原生啟動／既有資料 baseline | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 02 · Windows restore／build／full／M2 targeted | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 01 · Windows restore／build／本次 DLL 原生啟動／既有資料 baseline | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 02 · Windows 同一 build 的 full／M2 targeted | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
 | 02 · Linux fallback（僅 Windows 被阻擋時） | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
 
 HTTP 案例的 AI 實際欄必須註明所用平台；不以 Linux 原生啟動或 TestServer 代填 Windows 啟動。
+
+### 02／12 回歸覆蓋對照（已核對 source，執行後另核對 TRX）
+
+| 宣稱的覆蓋 | 實際案例名稱／範圍 |
+| --- | --- |
+| M2 | `ConfigurationTests.Noncanonical_Cors_origin_fails_startup` |
+| Publish deadline 微秒／鎖後取時 | `R7_publish_deadline_uses_locked_server_time_and_actual_storage_value`（-1／0／+1）；`R7_publish_samples_time_after_waiting_for_the_form_lock` |
+| Deadline 保存精度 no-op | `Patch_deadline_uses_actual_storage_precision_for_no_op` |
+| Candidate 隔離、完整快照／SQL | `R7_publish_without_body_normalizes_only_candidate_and_preserves_entire_definition` |
+| Draft／完整性與多 details | `R7_incomplete_draft_can_be_saved_but_publish_fails_atomically`；`R7_publish_reuses_structural_rules_and_collects_precise_details_without_writes` |
+| 精確 Number Config | `Number_config_compares_and_persists_exact_json_numbers` |
+| 三端點 Save／commit rollback | `R7_save_and_commit_faults_rollback_all_rows`（三 action × Save／commit） |
+| 雙順序 Freeze、重複 Publish／Close、Visibility／Lifecycle 競爭 | `R7_writers_share_lock_and_validate_after_the_first_commit`（七組 DataRow） |
+| 三狀態 Visibility no-op／欄位 | `R7_visibility_is_independent_atomic_and_no_op_in_every_state`；`R7_visibility_rejects_invalid_fields_without_any_write` |
+| 非字串／四種傳輸錯誤 | `R7_review_visibility_non_string_values_are_rejected`；`R7_review_visibility_transport_errors_use_contract_envelope_without_writes` |
+| R7 Auth／parse／existence／Owner／domain、disabled | `R7_errors_follow_auth_parse_existence_owner_and_domain_order`（三 action；含 missing／invalid Cookie／disabled，不含 expired） |
+| expired token（共用 Auth，非 R7 專屬） | `AuthUserEndpointsTests.Missing_invalid_expired_and_unknown_user_tokens_are_distinguished`：GET /users/me 的 AUTH_TOKEN_EXPIRED；`Logout_succeeds_with_missing_invalid_and_expired_tokens` 只覆蓋 Logout 例外 |
+| M1 有限確認／Owner 已刪除 | `R7_review_delete_waiting_on_r7_write_preserves_transition_and_children`；`R7_review_owner_cannot_access_deleted_form`；不涵蓋未實作的 Submit |
 
 ## DB 操作與比較（01／04～15）
 
@@ -96,15 +115,15 @@ UPDATE forms SET submission_deadline_at =
 AI／人工都可用 PowerShell jobs／Python subprocess 或等價 HTTP workers；不得把開發 integration test PASS 當成本案實際 HTTP 執行。只在其他驗收寫入／regression 停止時執行，Cookie jar 本機唯讀、不將 Token 放 process arguments，response 另存非秘密證據。
 
 1. 以唯一 application_name=`r7-barrier-<RunId>` 開 PostgreSQL session；`BEGIN; SELECT 1 FROM forms WHERE id=<concurrentFormId> AND deleted_at IS NULL FOR UPDATE;`，同 session 保留 transaction。記錄 barrier PID，查 `pg_stat_activity` 確認 transaction 及持鎖，才繼續。
-2. 兩個 HTTP workers 發 14a／14b，每個一次，記 start／end UTC、status/body。14b 無 Body／Content-Type；14a body 精確同 .http。可以同一 psql session `SELECT pg_sleep(15); COMMIT;` 自然釋放；這個等待只用來維持 barrier，不用其長度推論順序。
-3. 在 barrier 釋放前持續唯讀輪詢 `SELECT pid,wait_event_type,wait_event,pg_blocking_pids(pid),query FROM pg_stat_activity WHERE wait_event_type='Lock' AND pid<>pg_backend_pid();`。追蹤直接或經 tuple waiter 間接被 barrier 阻擋的兩個 HTTP DB session；保存兩個 waiter 的 PID／blocking chain，排除其他連線。只有一個 waiter／transport timeout 則 BLOCKED／FAIL，不能宣稱確有重疊。
-4. 釋放 barrier／等 jobs 完成（各有 45 秒 timeout），依 14 合法配對、details、14c 與完整 DB 判定。finally 釋放自己的 barrier、回收自己的 jobs／非秘密 JSON 暫存，不停止 API／DB，不刪 fixture。不得強制終止陌生 backend。若平台需語法調整，可用等價 harness 並記錄；改測試語意須先重審。
+2. 兩個 HTTP workers 發 14a／14b，每個一次，記 start／end UTC、status/body。14b 無 Body／Content-Type；14a body 精確同 .http。barrier 由 controller 保持，不設定固定 15 秒或其他自動 COMMIT；只能在第 3 步確認兩個 HTTP DB waiters 後發 COMMIT。
+3. 在 barrier 釋放前持續唯讀輪詢 `SELECT pid,wait_event_type,wait_event,pg_blocking_pids(pid),query FROM pg_stat_activity WHERE wait_event_type='Lock' AND pid<>pg_backend_pid();`。追蹤直接或經 tuple waiter 間接被 barrier 阻擋的兩個 HTTP DB session；保存兩個 waiter 的 PID／blocking chain，排除其他連線。等待上限 30 秒；未確認兩個 HTTP DB waiters，或任一 worker 在確認前結束／transport timeout，統一記本並行案 BLOCKED，finally ROLLBACK 釋放自己的 barrier 並回收 workers，保留首次實際回應／waiter 證據，不宣稱確有重疊、不重設 fixture 重試求 PASS。
+4. 只有第 3 步確認成功才 COMMIT 釋放 barrier，再等 jobs 完成（各有 45 秒 timeout），依 14 合法配對、details、14c 與完整 DB 判定。finally 釋放自己的 barrier、回收自己的 jobs／非秘密 JSON 暫存，不停止 API／DB，不刪 fixture。不得強制終止陌生 backend。若平台需語法調整，可用等價 harness 並記錄；改測試語意須先重審。
 
 ## 依序案例與實際結果
 
 ### R7-01 — 環境、Windows 原生啟動與保留資料
 
-AI 可執行；人工可獨立確認。核對 HEAD／Git、.NET SDK、`docker compose config --quiet`／`docker compose ps`，使用既有 localhost:5432 DB，不重建 volume。原生 PowerShell 以 `dotnet run --project src/CustomFormService.Api/CustomFormService.Api.csproj --launch-profile http --no-build` 啟動或確認目前同 repo／同 build 的 API，記錄完整路徑、Development、localhost:5000；不能以 TestServer 或 Linux 代填 Windows 啟動。
+AI 可執行；人工可獨立確認。核對 HEAD／Git、.NET SDK、`docker compose config --quiet`／`docker compose ps`，使用既有 localhost:5432 DB，不重建 volume。先完成本次 restore／build，再以原生 PowerShell 的 `dotnet run --project src/CustomFormService.Api/CustomFormService.Api.csproj --launch-profile http --no-build` 重新啟動同 repo、本次 build 的 API，記錄完整路徑、Development、localhost:5000；不能以 TestServer 或 Linux 代填 Windows 啟動。
 
 先唯讀備份 A／B 公開會員欄位（不含 hash）、其全部既有 Forms／Questions／Options 的完整 JSON 與 timestamps，特別確認 R5 軟刪除 Form 及三張 R6 fixtures 仍在。不得變更其資料。核對三個新 title 尚不存在；RunId 碰撞就整次換唯一 RunId，不重設舊 Form。
 
@@ -115,7 +134,7 @@ AI 可執行；人工可獨立確認。核對 HEAD／Git、.NET SDK、`docker co
 
 ### R7-02 — 本次全套回歸與 M2 追查
 
-AI 可執行；人工可自行重跑，不能以 AI PASS 代填人工。依前述命令執行目前 HEAD 的 restore／build／整個 solution 無 filter，另針對 CORS 案例重跑一次。預計 167 案，以實際探索數核對；0 tests／未執行不算 PASS。保留首次失敗 log／TRX，不用成功重試覆蓋。
+AI 可執行；人工可自行重跑，不能以 AI PASS 代填人工。在 01 本次 restore／build、重新啟動及 health/readiness 都成功後，依前述命令執行同一 build 的整個 solution 無 filter，另針對 CORS 案例重跑一次。預計 167 案，以實際探索數核對；0 tests／未執行不算 PASS。保留首次失敗 log／TRX，不用成功重試覆蓋。
 
 M2 開發確認為「未重現、根因未明」。若再次出現 ObjectDisposedException，記錄原堆疊、平台、filter／平行執行狀態及受影響案例，該檢查 FAIL，不能直接歸因為既有偶發。全套承接精度（deadline 微秒前／等於／後、鎖後取時）、五題型／Config、獨立 Candidate 全欄位／SQL、三寫入 Save／commit rollback、雙順序 Freeze、重複 Lifecycle、Visibility／Close 競爭與 M1 有限確認；不逐案複製成 HTTP 大矩陣。
 
@@ -222,7 +241,7 @@ AI／人工皆可。核對只有 result_visibility／updated_at 改動，respons
 
 ### R7-12 — 權限、存在性與錯誤優先序
 
-AI／人工皆可。先以唯讀 DB 確認 missingFormId 不存在。所有失敗不寫資料。12a 非 Owner 優先於 Closed 狀態；12b Body 已可解析，但欄位型別驗證在 Owner 之後；12c Authentication 優先 UUID；12d UUID 可解析性先於資源；12e 合法 Body 才查不存在資源。disabled／expired／其他完整矩陣由 02 承接，無須暫改保留會員 status。
+AI／人工皆可。先以唯讀 DB 確認 missingFormId 不存在。所有失敗不寫資料。12a 非 Owner 優先於 Closed 狀態；12b Body 已可解析，但欄位型別驗證在 Owner 之後；12c Authentication 優先 UUID；12d UUID 可解析性先於資源；12e 合法 Body 才查不存在資源。disabled／R7 錯誤優先序由 02 的 `R7_errors_follow_auth_parse_existence_owner_and_domain_order` 承接；expired token 只有共用 Authentication 的 `AuthUserEndpointsTests.Missing_invalid_expired_and_unknown_user_tokens_are_distinguished`（GET /users/me），不宣稱是三支 R7 expired 矩陣。無須暫改保留會員 status。
 
 | 編號／請求 | 預期結果 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
@@ -271,4 +290,4 @@ AI 可執行復原／清理／唯讀比對；人工以 REST Client／DBeaver 獨
 
 ## 交付與停止點
 
-本版所有案例 AI／人工均未執行；沒有使用 `db2fe1b` 的開發證據代填。Owner 核准本版且授權後才執行；若執行發現產品缺陷，先回報具體案例／影響，不修改業務程式或改預期求 PASS。未來執行以 PASS／FAIL／BLOCKED／未執行逐項記錄，Windows／Linux 與人工分開，交付「驗收結果待 Owner 確認」後停止；本次僅交付**驗收計畫待 Owner 審核**。R7 尚未 accepted，R8／G1 未開始。
+Owner 已核准 `28cb8e2` 並授權本次三項修訂後直接執行，開始時所有 AI／人工未執行；不使用開發證據代填。若執行發現產品缺陷，先回報具體案例／影響，不修改業務程式或改預期求 PASS。未來執行以 PASS／FAIL／BLOCKED／未執行逐項記錄，Windows／Linux 與人工分開，交付「驗收結果待 Owner 確認」後停止；本次執行交付**驗收結果待 Owner 確認**。R7 尚未 accepted，R8／G1 未開始。

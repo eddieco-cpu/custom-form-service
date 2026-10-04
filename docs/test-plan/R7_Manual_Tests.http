@@ -1,10 +1,14 @@
-# R7 paired plan: Prepare / pending Owner review; do not execute before approval and authorization.
+# R7 revised plan: Owner approved 28cb8e2 and explicitly authorized these three local revisions plus AI execution.
 # Companion: R7_Acceptance_Test.md owns startup, regression, snapshots, probes, concurrency and cleanup.
-# Implementation baseline db2fe1b. No R8/G1; all AI/manual results pending.
+# Repository baseline 28cb8e2; latest product code db2fe1b (unchanged by these doc revisions). No R8/G1.
 # Retain R4/R5/R6 and new fixtures. Fresh RunId per independent run; no fixture resets.
 # Obtain password locally; copy access_token VALUE only, never the full Set-Cookie header.
 # REST Client: Clear All Cookies, and keep @no-cookie-jar on every request.
-# R7-14a/14b are PARALLEL TEMPLATES; send only inside the Markdown barrier harness.
+# R7-01: restore/build FIRST, restart this repository/build API, then 01a health / 01b readiness.
+# R7-02: full regression and M2 targeted use that build --no-build; no build after API startup.
+# R7-14a/14b: keep barrier until TWO observed HTTP DB waiters, then COMMIT; no fixed auto-COMMIT.
+# 30-second waiter timeout: ROLLBACK own barrier, collect workers/evidence and mark BLOCKED.
+# R7-02/12 coverage names: see Markdown mapping; expired is users/me shared Auth, not R7 expired matrix.
 
 @apiBase = http://localhost:5000
 @runId = r7-acceptance-20261004-01
