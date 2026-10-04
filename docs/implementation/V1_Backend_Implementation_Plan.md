@@ -79,7 +79,7 @@ Next round: prerequisite only; not started
 | R4 | Email Auth 與 User | 註冊、登入、登出、本人資料／更新 | **accepted（2026-10-01，人工確認完成）**：[`R4_Acceptance_Test.md`](../test-plan/R4_Acceptance_Test.md)；[`R4_Manual_Tests.http`](../test-plan/R4_Manual_Tests.http) |
 | R5 | Form 基礎讀寫 | Create／List／Detail／Delete；安全邊界 | **accepted（2026-10-03，Owner 人工驗收確認通過；AI case 執行紀錄仍有缺口）**：[`R5_Acceptance_Test.md`](../test-plan/R5_Acceptance_Test.md)；[`R5_Manual_Tests.http`](../test-plan/R5_Manual_Tests.http) |
 | R6 | Draft Definition 與 Delta | 完整 Question／Option／Config 編輯與原子性 | **accepted（2026-10-04，Owner review 提交證據後明確確認；人工未執行）**。AI：Windows 原生 API PASS、完整回歸 118/118、HTTP／DB 56/56 PASS；Linux 本次未執行（fallback 不需要）。計畫提交 `034a0be`、執行紀錄提交 `81b64f3`；保留資料與復原／秘密清理完成。成對紀錄：[`R6_Acceptance_Test.md`](../test-plan/R6_Acceptance_Test.md)、[`R6_Manual_Tests.http`](../test-plan/R6_Manual_Tests.http)。 |
-| R7 | Lifecycle 與 Result Policy | Publish／Close／Visibility、Freeze 與並行 | **test plan pending owner review（2026-10-04）**；開發與有限確認已驗證，尚未 accepted。實作 `0496041`／review 修正 `db2fe1b`；本次 Windows R7 49/49、全套 167/167 PASS，Linux 本次未重跑（歷史 37/37／155/155），M2「未重現、根因未明」，詳見 [確認報告](R7_Review_Confirmation_Report.md)。成對 [R7_Acceptance_Test.md](../test-plan/R7_Acceptance_Test.md)／[R7_Manual_Tests.http](../test-plan/R7_Manual_Tests.http) 已準備，AI／人工全未執行，停止待審核；未進入 R8。 |
+| R7 | Lifecycle 與 Result Policy | Publish／Close／Visibility、Freeze 與並行 | **acceptance results pending owner confirmation（2026-10-04）**。Owner 核准 `28cb8e2` 並授權三項成對局部修訂後直接執行；修訂 `858d6ae`。RunId `r7-acceptance-20261004-01`：Windows 本次 restore/build／原生 API PASS、full 首次 167/167、M2 1/1、HTTP／DB 42/42 PASS；Linux 未執行，人工全部未執行。M2 未重現、根因未明；既有資料不變、新 fixtures 保留、probe／秘密清理完成，詳見 [執行報告](R7_Acceptance_Execution_Report.md) 與 [成對紀錄](../test-plan/R7_Acceptance_Test.md)。未 accepted，未開始 R8。 |
 | R8 | Submission | 全題型 Answer／Response、single／multiple、並行 | not started |
 | R9 | Latest 與 Respondent Count | 最新整份回覆與有效人數 | not started |
 | R10 | Statistics | Closed／Visibility／anonymous／identified／分布 | not started |
@@ -153,6 +153,8 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 **外部 review 有限確認（2026-10-04）**：依 Owner 指示核對 M2 首次堆疊及 TestFactory／TimeProvider diff；本次單獨重跑前後各 1/1、Windows R7 49/49／full 167/167 PASS，仍為「未重現、根因未明」。L3 缺少／錯誤 Content-Type 原回 200，僅於 Visibility 修正為正式 `400 VALIDATION_ERROR`；四種傳輸錯誤、非字串值、Owner 已刪除存取及 R7／Delete 競爭均通過針對性案例。未做 L2 重構或 Capacity Policy；Linux 此次未重跑。資料快照不變，詳見 [確認報告](R7_Review_Confirmation_Report.md)。無已重現的 R7 阻擋事項，Owner 已授權接續準備驗收計畫；未授權執行，未標 accepted。
 
 **驗收計畫準備（2026-10-04）**：依本次 Owner 授權進入 Prepare，交付 [R7_Acceptance_Test.md](../test-plan/R7_Acceptance_Test.md) 與 [R7_Manual_Tests.http](../test-plan/R7_Manual_Tests.http)，15 組／42 個 HTTP 子項，優先非字串 Visibility／Owner 已刪除存取，包含 Windows 啟動、全套／M2、Candidate 隔離、三狀態 no-op、正式 Envelope、Freeze 真正並行、保留及復原。預定唯一 RunId `r7-acceptance-20261004-01`，所有 AI／人工結果「未執行（等待 Owner review）」；沒有執行計畫中的 HTTP／DB 操作，沒有用開發證據代填。停止待 Owner 審核及執行授權。
+
+**AI 驗收執行（2026-10-04）**：Owner review 通過 `28cb8e2`，並直接核准本次 build→原生 startup／health→full 的順序、兩 waiter 確認後釋放 barrier、回歸名稱核對三項修訂；提交 `858d6ae` 後執行。RunId `r7-acceptance-20261004-01`：Windows restore／build 0 warnings/errors、重新啟動本次 DLL／health/readiness PASS；首次 full 167/167、M2 targeted 1/1 PASS；42 個 HTTP 子項與必要 DB／並行 PASS。M2 本次未重現、根因未明，歷史失敗及本次 helper CLI／UTF-8 處理錯誤均保留，不以重跑覆蓋。Linux 未執行（fallback 不需要）；人工全部未執行。既有 R4／R5／R6 完整快照不變，新三張保留，raw／deadline 復原與秘密掃描完成；API／DB／volume 保留。詳見 [R7_Acceptance_Execution_Report.md](R7_Acceptance_Execution_Report.md)；交付「驗收結果待 Owner 確認」並停止，未 accepted、未開始 R8／G1。
 
 ### R8 — Submit／Response／Answer
 

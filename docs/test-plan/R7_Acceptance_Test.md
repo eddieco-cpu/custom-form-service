@@ -1,6 +1,6 @@
 # R7 成對驗收計畫 — Lifecycle 與 Result Visibility
 
-2026-10-04；**Owner-approved revised plan／acceptance executing**。Owner 在本 chat 核准 `28cb8e2` 計畫，明確授權本次三項局部修訂後直接執行、不需再停下詢問。本文件與 [R7_Manual_Tests.http](R7_Manual_Tests.http) 成對；開始時 AI／人工皆未執行。只驗收 R7 端點 12～14 及其 PATCH Freeze 依賴，不做 R8／Statistics／G1，也不做 L2 重構或 Capacity Policy。
+2026-10-04；**acceptance results pending owner confirmation**。Owner 在本 chat 核准 `28cb8e2` 計畫，明確授權本次三項局部修訂後直接執行、不需再停下詢問。本文件與 [R7_Manual_Tests.http](R7_Manual_Tests.http) 成對；修訂計畫提交 `858d6ae26717d8bcbaf66de46d48692dc9e66d52` 已依授權執行；AI 42/42 HTTP PASS、Windows full 167/167、M2 1/1 PASS。人工全部未執行，R7 未 accepted。只驗收 R7 端點 12～14 及其 PATCH Freeze 依賴，不做 R8／Statistics／G1，也不做 L2 重構或 Capacity Policy。
 
 依 [AGENTS.md](../../AGENTS.md)、[驗收 skill](../../.agents/skills/v1-acceptance-testing/SKILL.md)、[Implementation Plan](../implementation/V1_Backend_Implementation_Plan.md) R7、[核准實作計畫](../implementation/R7_Implementation_Plan.md)、[開發報告](../implementation/R7_Development_Report.md) 與 [有限確認報告](../implementation/R7_Review_Confirmation_Report.md)。最新 repository 提交基準 `28cb8e2`；其中最新業務程式提交 `db2fe1b`（包含 review 局部修正）。本次計畫修訂僅文件，業務程式不變，正式規格：[03a](../specs/03a-v1-api-contract-common.md) §2／4～6、[03b](../specs/03b-v1-api-contract-auth-user-form.md) §8～9、[04](../specs/04-v1-error-catalog.md) §2～4／Form Errors、[01](../specs/01-v1-domain-specification.md) FORM／CON、[02](../specs/02-v1-database-specification.md) §7～9、[05](../specs/05-v1-system-constraints.md) §8～10。M2 仍「未重現、根因未明」，本次計畫明列追蹤，不稱既有偶發。
 
@@ -33,13 +33,13 @@ dotnet test CustomFormService.sln --no-build --no-restore --configuration Debug 
 dotnet test CustomFormService.sln --no-build --no-restore --configuration Debug -m:1 --filter 'FullyQualifiedName~Noncanonical_Cors_origin_fails_startup' --logger 'trx;LogFileName=windows-m2-targeted.trx' --results-directory $EvidenceDir
 ```
 
-逐個命令記 exit／log，不能讓最後一個成功掩蓋前面失敗。Linux fallback 使用相同 flags，平台檔名改 linux；不得以 Linux PASS 填 Windows PASS。本計畫 Windows／Linux 實際：均 **未執行（等待 Owner review）**。
+逐個命令記 exit／log，不能讓最後一個成功掩蓋前面失敗。Linux fallback 使用相同 flags，平台檔名改 linux；不得以 Linux PASS 填 Windows PASS。本次 Windows 實際 **PASS**；Linux **未執行（Windows 原生成功，不需 fallback）**。首次 full／targeted 記錄均保留，未以成功重跑覆蓋失敗。
 
 | 非 HTTP 檢查／編號 | AI 實際 | 人工實際 |
 | --- | --- | --- |
-| 01 · Windows restore／build／本次 DLL 原生啟動／既有資料 baseline | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 02 · Windows 同一 build 的 full／M2 targeted | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 02 · Linux fallback（僅 Windows 被阻擋時） | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 01 · Windows restore／build／本次 DLL 原生啟動／既有資料 baseline | PASS：SDK 10.0.400、0 warnings/errors；新 API PID 19340；health/readiness 200；2 Users/6 Forms/14 Q/9 O baseline | 未執行（人工；未代填 AI 結果） |
+| 02 · Windows 同一 build 的 full／M2 targeted | PASS（Windows）：full 首次 167/167；M2 targeted 1/1，0 failed／notExecuted；TRX／覆蓋名稱已核對 | 未執行（人工；未代填 AI 結果） |
+| 02 · Linux fallback（僅 Windows 被阻擋時） | 未執行：Windows 原生成功，未啟動 fallback | 未執行（人工；未代填 AI 結果） |
 
 HTTP 案例的 AI 實際欄必須註明所用平台；不以 Linux 原生啟動或 TestServer 代填 Windows 啟動。
 
@@ -129,8 +129,8 @@ AI 可執行；人工可獨立確認。核對 HEAD／Git、.NET SDK、`docker co
 
 | 編號／請求 | 預期結果 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| R7-01a · `GET /health` | 200，工程回應 status=healthy | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-01b · `GET /health/ready` | 200 Healthy，原生 API 能連既有 DB | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| R7-01a · `GET /health` | 200，工程回應 status=healthy | PASS（Windows）：HTTP 200 | 未執行（人工；未代填 AI 結果） |
+| R7-01b · `GET /health/ready` | 200 Healthy，原生 API 能連既有 DB | PASS（Windows）：HTTP 200 Healthy；native Windows API/DB | 未執行（人工；未代填 AI 結果） |
 
 ### R7-02 — 本次全套回歸與 M2 追查
 
@@ -140,9 +140,9 @@ M2 開發確認為「未重現、根因未明」。若再次出現 ObjectDispose
 
 Windows 與 Linux 結果分開。預設跑 Windows；若 Windows 執行受安全政策阻擋，Windows 標 BLOCKED，才用官方相同 SDK 的隔離 Linux 暫存副本及既有 DB 跑同套，明列 Linux 結果。不得更改安全設定、清掉開發 volume；只回收本次唯一 SDK 容器。不以歷史 155/155 或本次開發 167/167 代填本案。
 
-**AI 實際：**未執行（等待 Owner review）。
+**AI 實際：**PASS（Windows）：full 首次 167/167；M2 targeted 1/1，0 failed／notExecuted；TRX／覆蓋名稱已核對。
 
-**人工實際：**未執行（等待 Owner review）。
+**人工實際：**未執行（人工；未代填 AI 結果）。
 
 ### R7-03 — 登入保留 Owner／非 Owner
 
@@ -150,8 +150,8 @@ AI 可執行；人工另跑須先清 REST Client Cookies。沿用既有 active R
 
 | 編號／請求 | 預期結果 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| R7-03a · `POST /api/v1/auth/login` | 200；Set-Cookie access_token，Body 無 Token | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-03b · `POST /api/v1/auth/login` | 200；B Cookie 與 A 分開保存 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| R7-03a · `POST /api/v1/auth/login` | 200；Set-Cookie access_token，Body 無 Token | PASS（Windows）：HTTP 200；isolated login cookie in memory only；body no JWT | 未執行（人工；未代填 AI 結果） |
+| R7-03b · `POST /api/v1/auth/login` | 200；B Cookie 與 A 分開保存 | PASS（Windows）：HTTP 200；isolated login cookie in memory only；body no JWT | 未執行（人工；未代填 AI 結果） |
 
 ### R7-04 — 建立本次三張合成 Form
 
@@ -159,9 +159,9 @@ AI／人工皆可。三張都由 A 擁有，Server IDs 由 response 記錄至變
 
 | 編號／請求 | 預期結果 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| R7-04a · `POST /api/v1/forms` | 201 Draft；5 Questions／1 Option，Choice 空／Rating {} 可存；記 mainFormId／子 IDs | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-04b · `POST /api/v1/forms` | 201 Draft；1 Question；記 deletedFormId | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-04c · `POST /api/v1/forms` | 201 Draft；2 Questions／1 Option，完整可發布；記 concurrentFormId／qConcurrentRating | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| R7-04a · `POST /api/v1/forms` | 201 Draft；5 Questions／1 Option，Choice 空／Rating {} 可存；記 mainFormId／子 IDs | PASS（Windows）：HTTP 201 | 未執行（人工；未代填 AI 結果） |
+| R7-04b · `POST /api/v1/forms` | 201 Draft；1 Question；記 deletedFormId | PASS（Windows）：HTTP 201 | 未執行（人工；未代填 AI 結果） |
+| R7-04c · `POST /api/v1/forms` | 201 Draft；2 Questions／1 Option，完整可發布；記 concurrentFormId／qConcurrentRating | PASS（Windows）：HTTP 201 | 未執行（人工；未代填 AI 結果） |
 
 ### R7-05 — Draft 保存與發布要求分開
 
@@ -169,8 +169,8 @@ AI／人工皆可。只操作 main。兩次失敗均完整 DB 快照不變；錯
 
 | 編號／請求 | 預期結果 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| R7-05a · `POST /api/v1/forms/{{mainFormId}}/publish` | 400 FORM_NOT_PUBLISHABLE；details 包含 questions[2].options / INSUFFICIENT_OPTIONS 與 questions[4].config.min / INVALID_QUESTION_CONFIG 與 questions[4].config.max / INVALID_QUESTION_CONFIG | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-05b · `POST /api/v1/forms/{{mainFormId}}/close` | 409 FORM_INVALID_STATE_TRANSITION；不可從 Draft Close | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| R7-05a · `POST /api/v1/forms/{{mainFormId}}/publish` | 400 FORM_NOT_PUBLISHABLE；details 包含 questions[2].options / INSUFFICIENT_OPTIONS 與 questions[4].config.min / INVALID_QUESTION_CONFIG 與 questions[4].config.max / INVALID_QUESTION_CONFIG | PASS（Windows）：HTTP 400 FORM_NOT_PUBLISHABLE；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-05b · `POST /api/v1/forms/{{mainFormId}}/close` | 409 FORM_INVALID_STATE_TRANSITION；不可從 Draft Close | PASS（Windows）：HTTP 409 FORM_INVALID_STATE_TRANSITION；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
 
 ### R7-06 — Draft Visibility 獨立更新與 no-op
 
@@ -178,8 +178,8 @@ AI／人工皆可。main 不完整不妨礙 policy 更新；改值只能變 Form
 
 | 編號／請求 | 預期結果 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| R7-06a · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 200 Draft、respondents；只更新 policy／updatedAt | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-06b · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 200 no-op；全部 DB columns／timestamps 不變 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| R7-06a · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 200 Draft、respondents；只更新 policy／updatedAt | PASS（Windows）：HTTP 200；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-06b · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 200 no-op；全部 DB columns／timestamps 不變 | PASS（Windows）：HTTP 200；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
 
 ### R7-07 — 補完整、Publish Candidate 隔離與 Definition Freeze
 
@@ -189,10 +189,10 @@ AI／人工皆可。07a 只補一個 Single Option 與 Rating config，未提及
 
 | 編號／請求 | 預期結果 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| R7-07a · `PATCH /api/v1/forms/{{mainFormId}}` | 200 Draft；5 Questions／2 Options；Rating 0..5，原 ID／createdAt 保留 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-07b · `POST /api/v1/forms/{{mainFormId}}/publish` | 200 Published；只更新 Form status／updatedAt，raw Definition／子列不變 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-07c · `POST /api/v1/forms/{{mainFormId}}/publish` | 409 FORM_ALREADY_PUBLISHED；DB 不變 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-07d · `PATCH /api/v1/forms/{{mainFormId}}` | 409 FORM_NOT_EDITABLE；空 PATCH 也不能改 Published | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| R7-07a · `PATCH /api/v1/forms/{{mainFormId}}` | 200 Draft；5 Questions／2 Options；Rating 0..5，原 ID／createdAt 保留 | PASS（Windows）：HTTP 200；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-07b · `POST /api/v1/forms/{{mainFormId}}/publish` | 200 Published；只更新 Form status／updatedAt，raw Definition／子列不變 | PASS（Windows）：HTTP 200；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-07c · `POST /api/v1/forms/{{mainFormId}}/publish` | 409 FORM_ALREADY_PUBLISHED；DB 不變 | PASS（Windows）：HTTP 409 FORM_ALREADY_PUBLISHED；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-07d · `PATCH /api/v1/forms/{{mainFormId}}` | 409 FORM_NOT_EDITABLE；空 PATCH 也不能改 Published | PASS（Windows）：HTTP 409 FORM_NOT_EDITABLE；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
 
 ### R7-08 — Visibility 代表性欄位與傳輸錯誤（L3 優先）
 
@@ -202,12 +202,12 @@ AI／人工皆可。所有請求帶 A Cookie，資源有效。每筆均 `400 VAL
 
 | 編號／請求 | 預期結果 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| R7-08a · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 400 VALIDATION_ERROR；resultVisibility / INVALID_VALUE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-08b · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 400 VALIDATION_ERROR；status / INVALID_VALUE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-08c · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 400 VALIDATION_ERROR；body / INVALID_VALUE，缺少 Content-Type | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-08d · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 400 VALIDATION_ERROR；body / INVALID_VALUE，錯誤 Content-Type | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-08e · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 400 VALIDATION_ERROR；body / INVALID_VALUE，空 Body | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-08f · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 400 VALIDATION_ERROR；body / INVALID_VALUE，損壞 JSON | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| R7-08a · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 400 VALIDATION_ERROR；resultVisibility / INVALID_VALUE | PASS（Windows）：HTTP 400 VALIDATION_ERROR；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-08b · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 400 VALIDATION_ERROR；status / INVALID_VALUE | PASS（Windows）：HTTP 400 VALIDATION_ERROR；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-08c · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 400 VALIDATION_ERROR；body / INVALID_VALUE，缺少 Content-Type | PASS（Windows）：HTTP 400 VALIDATION_ERROR；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-08d · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 400 VALIDATION_ERROR；body / INVALID_VALUE，錯誤 Content-Type | PASS（Windows）：HTTP 400 VALIDATION_ERROR；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-08e · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 400 VALIDATION_ERROR；body / INVALID_VALUE，空 Body | PASS（Windows）：HTTP 400 VALIDATION_ERROR；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-08f · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 400 VALIDATION_ERROR；body / INVALID_VALUE，損壞 JSON | PASS（Windows）：HTTP 400 VALIDATION_ERROR；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
 
 ### R7-09 — Published Visibility 更新與 no-op
 
@@ -215,8 +215,8 @@ AI／人工皆可。不經 Publish Validator，不套 Draft 限制；核對 DB �
 
 | 編號／請求 | 預期結果 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| R7-09a · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 200 Published、public；只更新 policy／updatedAt | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-09b · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 200 no-op；完整快照不變 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| R7-09a · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 200 Published、public；只更新 policy／updatedAt | PASS（Windows）：HTTP 200；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-09b · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 200 no-op；完整快照不變 | PASS（Windows）：HTTP 200；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
 
 ### R7-10 — Deadline 不自動 Close、Close 不重驗及終止狀態
 
@@ -224,11 +224,11 @@ AI／人工皆可。先備份本次 main 的實際 DB deadline；依 §DB 操作
 
 | 編號／請求 | 預期結果 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| R7-10a · `GET /api/v1/forms/{{mainFormId}}` | 200；deadline 已過，但 status=published | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-10b · `POST /api/v1/forms/{{mainFormId}}/close` | 200 Closed；只改 status／updatedAt，不重跑 Publish deadline 驗證 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-10c · `POST /api/v1/forms/{{mainFormId}}/close` | 409 FORM_ALREADY_CLOSED | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-10d · `POST /api/v1/forms/{{mainFormId}}/publish` | 409 FORM_INVALID_STATE_TRANSITION | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-10e · `PATCH /api/v1/forms/{{mainFormId}}` | 409 FORM_NOT_EDITABLE；Closed Freeze | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| R7-10a · `GET /api/v1/forms/{{mainFormId}}` | 200；deadline 已過，但 status=published | PASS（Windows）：HTTP 200；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-10b · `POST /api/v1/forms/{{mainFormId}}/close` | 200 Closed；只改 status／updatedAt，不重跑 Publish deadline 驗證 | PASS（Windows）：HTTP 200；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-10c · `POST /api/v1/forms/{{mainFormId}}/close` | 409 FORM_ALREADY_CLOSED | PASS（Windows）：HTTP 409 FORM_ALREADY_CLOSED；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-10d · `POST /api/v1/forms/{{mainFormId}}/publish` | 409 FORM_INVALID_STATE_TRANSITION | PASS（Windows）：HTTP 409 FORM_INVALID_STATE_TRANSITION；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-10e · `PATCH /api/v1/forms/{{mainFormId}}` | 409 FORM_NOT_EDITABLE；Closed Freeze | PASS（Windows）：HTTP 409 FORM_NOT_EDITABLE；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
 
 ### R7-11 — Closed Visibility 更新與 no-op
 
@@ -236,8 +236,8 @@ AI／人工皆可。核對只有 result_visibility／updated_at 改動，respons
 
 | 編號／請求 | 預期結果 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| R7-11a · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 200 Closed、owner_only；只改 policy／updatedAt | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-11b · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 200 no-op；完整快照不變 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| R7-11a · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 200 Closed、owner_only；只改 policy／updatedAt | PASS（Windows）：HTTP 200；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-11b · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 200 no-op；完整快照不變 | PASS（Windows）：HTTP 200；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
 
 ### R7-12 — 權限、存在性與錯誤優先序
 
@@ -245,11 +245,11 @@ AI／人工皆可。先以唯讀 DB 確認 missingFormId 不存在。所有失�
 
 | 編號／請求 | 預期結果 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| R7-12a · `POST /api/v1/forms/{{mainFormId}}/publish` | 403 FORM_ACCESS_DENIED，不能洩漏／先回 Closed 狀態錯誤 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-12b · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 403 FORM_ACCESS_DENIED，先於非字串欄位 400 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-12c · `POST /api/v1/forms/bad-id/close` | 401 AUTH_REQUIRED，先於 UUID 400 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-12d · `POST /api/v1/forms/bad-id/close` | 400 VALIDATION_ERROR；formId / INVALID_VALUE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-12e · `PATCH /api/v1/forms/{{missingFormId}}/result-visibility` | 404 FORM_NOT_FOUND | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| R7-12a · `POST /api/v1/forms/{{mainFormId}}/publish` | 403 FORM_ACCESS_DENIED，不能洩漏／先回 Closed 狀態錯誤 | PASS（Windows）：HTTP 403 FORM_ACCESS_DENIED；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-12b · `PATCH /api/v1/forms/{{mainFormId}}/result-visibility` | 403 FORM_ACCESS_DENIED，先於非字串欄位 400 | PASS（Windows）：HTTP 403 FORM_ACCESS_DENIED；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-12c · `POST /api/v1/forms/bad-id/close` | 401 AUTH_REQUIRED，先於 UUID 400 | PASS（Windows）：HTTP 401 AUTH_REQUIRED；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-12d · `POST /api/v1/forms/bad-id/close` | 400 VALIDATION_ERROR；formId / INVALID_VALUE | PASS（Windows）：HTTP 400 VALIDATION_ERROR；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-12e · `PATCH /api/v1/forms/{{missingFormId}}/result-visibility` | 404 FORM_NOT_FOUND | PASS（Windows）：HTTP 404 FORM_NOT_FOUND；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
 
 ### R7-13 — Owner 存取已刪除 Form（優先）
 
@@ -257,10 +257,10 @@ AI／人工皆可。只軟刪除 04b 本次新建 Form，不碰 R5 保留 delete
 
 | 編號／請求 | 預期結果 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| R7-13a · `DELETE /api/v1/forms/{{deletedFormId}}` | 204、無 Body；只設 deletedAt／updatedAt，status Draft／子列保留 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-13b · `POST /api/v1/forms/{{deletedFormId}}/publish` | 404 FORM_NOT_FOUND，即使 Owner | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-13c · `POST /api/v1/forms/{{deletedFormId}}/close` | 404 FORM_NOT_FOUND，先於 Draft 狀態錯誤 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-13d · `PATCH /api/v1/forms/{{deletedFormId}}/result-visibility` | 404 FORM_NOT_FOUND，即使 Owner | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| R7-13a · `DELETE /api/v1/forms/{{deletedFormId}}` | 204、無 Body；只設 deletedAt／updatedAt，status Draft／子列保留 | PASS（Windows）：HTTP 204；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-13b · `POST /api/v1/forms/{{deletedFormId}}/publish` | 404 FORM_NOT_FOUND，即使 Owner | PASS（Windows）：HTTP 404 FORM_NOT_FOUND；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-13c · `POST /api/v1/forms/{{deletedFormId}}/close` | 404 FORM_NOT_FOUND，先於 Draft 狀態錯誤 | PASS（Windows）：HTTP 404 FORM_NOT_FOUND；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
+| R7-13d · `PATCH /api/v1/forms/{{deletedFormId}}/result-visibility` | 404 FORM_NOT_FOUND，即使 Owner | PASS（Windows）：HTTP 404 FORM_NOT_FOUND；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
 
 ### R7-14 — 真正 PATCH／Publish 並行與 Freeze
 
@@ -272,9 +272,9 @@ AI 可依 §並行 harness 執行；人工須用同樣 barrier 獨立操作，�
 
 | 編號／請求 | 預期結果 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| R7-14a · `PATCH /api/v1/forms/{{concurrentFormId}}` | PARALLEL：200（PATCH 先）或 409 FORM_NOT_EDITABLE（Publish 先） | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-14b · `POST /api/v1/forms/{{concurrentFormId}}/publish` | PARALLEL：400 FORM_NOT_PUBLISHABLE（PATCH 先）或 200（Publish 先） | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| R7-14c · `GET /api/v1/forms/{{concurrentFormId}}` | 200；等於成功 writer 的 response，符合上方唯一合法先後 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| R7-14a · `PATCH /api/v1/forms/{{concurrentFormId}}` | PARALLEL：200（PATCH 先）或 409 FORM_NOT_EDITABLE（Publish 先） | PASS（Windows）：HTTP 409；2 observed DB waiters；Publish first; PATCH frozen；DB PASS | 未執行（人工；未代填 AI 結果） |
+| R7-14b · `POST /api/v1/forms/{{concurrentFormId}}/publish` | PARALLEL：400 FORM_NOT_PUBLISHABLE（PATCH 先）或 200（Publish 先） | PASS（Windows）：HTTP 200；2 observed DB waiters；Publish first; PATCH frozen；DB PASS | 未執行（人工；未代填 AI 結果） |
+| R7-14c · `GET /api/v1/forms/{{concurrentFormId}}` | 200；等於成功 writer 的 response，符合上方唯一合法先後 | PASS（Windows）：HTTP 200；DB assertion PASS | 未執行（人工；未代填 AI 結果） |
 
 ### R7-15 — 人工檢視、暫存復原與秘密清理
 
@@ -284,10 +284,10 @@ AI 可執行復原／清理／唯讀比對；人工以 REST Client／DBeaver 獨
 
 刪除僅本次明確列冊的 TEMP Cookie jar／登入密碼 JSON／秘密 response；每一絕對路徑先驗證在 TEMP 且檔名含本次 RunId，再用 Remove-Item -LiteralPath，不遞迴清理。清 REST Client Cookie／登入 response tab、記憶體 Token；兩份文件密碼／JWT 還原 placeholders，非秘密證據與 fixtures 保留。若用 Linux fallback，只移除核對名稱／ID 的本次 SDK 容器。最後 git diff --check、秘密掃描、Git 狀態與提交；API／PostgreSQL 保留。
 
-**AI 實際：**未執行（等待 Owner review）。
+**AI 實際：**PASS（Windows）：Existing snapshots identical；raw/deadline probes restored；new fixtures retained；credentials memory cleared；no secret files created。
 
-**人工實際：**未執行（等待 Owner review）。
+**人工實際：**未執行（人工；未代填 AI 結果）。
 
 ## 交付與停止點
 
-Owner 已核准 `28cb8e2` 並授權本次三項修訂後直接執行，開始時所有 AI／人工未執行；不使用開發證據代填。若執行發現產品缺陷，先回報具體案例／影響，不修改業務程式或改預期求 PASS。未來執行以 PASS／FAIL／BLOCKED／未執行逐項記錄，Windows／Linux 與人工分開，交付「驗收結果待 Owner 確認」後停止；本次執行交付**驗收結果待 Owner 確認**。R7 尚未 accepted，R8／G1 未開始。
+Owner 已核准 `28cb8e2` 並授權本次三項修訂後直接執行，開始時所有 AI／人工未執行；不使用開發證據代填。若執行發現產品缺陷，先回報具體案例／影響，不修改業務程式或改預期求 PASS。未來執行以 PASS／FAIL／BLOCKED／未執行逐項記錄，Windows／Linux 與人工分開，交付「驗收結果待 Owner 確認」後停止；本次執行交付**驗收結果待 Owner 確認**。實際命令、平台、三張保留 ID、首次 harness 錯誤及清理證據見 [R7 驗收執行報告](../implementation/R7_Acceptance_Execution_Report.md)。R7 尚未 accepted，R8／G1 未開始。

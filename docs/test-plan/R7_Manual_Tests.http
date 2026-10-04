@@ -1,4 +1,7 @@
-# R7 revised plan: Owner approved 28cb8e2 and explicitly authorized these three local revisions plus AI execution.
+# R7 revised approved plan 858d6ae executed 2026-10-04; acceptance results pending Owner confirmation.
+# AI: Windows native startup PASS, full first 167/167 PASS, M2 1/1 PASS, HTTP/DB 42/42 PASS.
+# Linux not run (fallback unnecessary); manual ALL 未執行. R7 NOT accepted; no R8.
+# Do not replay this completed run blindly. Independent manual run needs fresh RunId and fresh Server IDs.
 # Companion: R7_Acceptance_Test.md owns startup, regression, snapshots, probes, concurrency and cleanup.
 # Repository baseline 28cb8e2; latest product code db2fe1b (unchanged by these doc revisions). No R8/G1.
 # Retain R4/R5/R6 and new fixtures. Fresh RunId per independent run; no fixture resets.
@@ -8,7 +11,7 @@
 # R7-02: full regression and M2 targeted use that build --no-build; no build after API startup.
 # R7-14a/14b: keep barrier until TWO observed HTTP DB waiters, then COMMIT; no fixed auto-COMMIT.
 # 30-second waiter timeout: ROLLBACK own barrier, collect workers/evidence and mark BLOCKED.
-# R7-02/12 coverage names: see Markdown mapping; expired is users/me shared Auth, not R7 expired matrix.
+# R7-02/12 coverage names verified in first full TRX; expired is users/me shared Auth, not R7 expired matrix.
 
 @apiBase = http://localhost:5000
 @runId = r7-acceptance-20261004-01
@@ -19,14 +22,14 @@
 @memberBToken = PASTE_ACCESS_TOKEN_VALUE_ONLY
 @futureDeadline = 2036-10-04T00:00:00.123456Z
 @missingFormId = 00000000-0000-0000-0000-000000000007
-@mainFormId = PASTE_FORM_ID_FROM_04a
-@deletedFormId = PASTE_FORM_ID_FROM_04b
-@concurrentFormId = PASTE_FORM_ID_FROM_04c
-@qMainText = PASTE_SORT_0_QUESTION_ID_FROM_04a
-@qMainSingle = PASTE_SORT_2_QUESTION_ID_FROM_04a
-@qMainRating = PASTE_SORT_4_QUESTION_ID_FROM_04a
-@oMainSingle = PASTE_NEW_SINGLE_OPTION_ID_FROM_07a
-@qConcurrentRating = PASTE_SORT_0_QUESTION_ID_FROM_04c
+@mainFormId = fed0ffda-9e30-4b09-83ae-d2a04dc23c68
+@deletedFormId = cc381383-82ff-4fc6-96f2-681118879761
+@concurrentFormId = c44ebb5b-8e27-409e-8c78-81e05de90bb1
+@qMainText = c87c05af-4b5c-4296-917b-60e01246757f
+@qMainSingle = 444b8fd3-52f7-4503-8a36-a5dcdc99c1c6
+@qMainRating = 995258fe-2106-4dae-bf99-abd3bc2d2c60
+@oMainSingle = ee29bc27-78e7-4283-a26f-102d1e47af5e
+@qConcurrentRating = b53a4f5f-a3d3-4ccc-ac5e-14e5e955da3b
 
 ###
 # R7-01 — 環境、Windows 原生啟動與保留資料
@@ -35,21 +38,21 @@
 ###
 # R7-01a — 200，工程回應 status=healthy
 # Prerequisite: preceding cases plus Markdown R7-01; identity: none.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 200; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 GET {{apiBase}}/health HTTP/1.1
 
 ###
 # R7-01b — 200 Healthy，原生 API 能連既有 DB
 # Prerequisite: preceding cases plus Markdown R7-01; identity: none.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 200 Healthy；native Windows API/DB; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 GET {{apiBase}}/health/ready HTTP/1.1
 
 ###
 # R7-02 — 本次全套回歸與 M2 追查
 # Non-HTTP prerequisites/operations: Markdown R7-02 and shared DB/harness instructions.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：full 首次 167/167；M2 targeted 1/1，0 failed／notExecuted；TRX／覆蓋名称已核對; manual actual: 未執行（人工；未代填 AI 結果）.
 # No HTTP request in this step; follow Markdown.
 
 ###
@@ -59,7 +62,7 @@ GET {{apiBase}}/health/ready HTTP/1.1
 ###
 # R7-03a — 200；Set-Cookie access_token，Body 無 Token
 # Prerequisite: preceding cases plus Markdown R7-03; identity: none.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 200；isolated login cookie in memory only；body no JWT; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/auth/login HTTP/1.1
 Content-Type: application/json
@@ -72,7 +75,7 @@ Content-Type: application/json
 ###
 # R7-03b — 200；B Cookie 與 A 分開保存
 # Prerequisite: preceding cases plus Markdown R7-03; identity: none.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 200；isolated login cookie in memory only；body no JWT; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/auth/login HTTP/1.1
 Content-Type: application/json
@@ -89,7 +92,7 @@ Content-Type: application/json
 ###
 # R7-04a — 201 Draft；5 Questions／1 Option，Choice 空／Rating {} 可存；記 mainFormId／子 IDs
 # Prerequisite: preceding cases plus Markdown R7-04; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 201; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -147,7 +150,7 @@ Content-Type: application/json
 ###
 # R7-04b — 201 Draft；1 Question；記 deletedFormId
 # Prerequisite: preceding cases plus Markdown R7-04; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 201; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -167,7 +170,7 @@ Content-Type: application/json
 ###
 # R7-04c — 201 Draft；2 Questions／1 Option，完整可發布；記 concurrentFormId／qConcurrentRating
 # Prerequisite: preceding cases plus Markdown R7-04; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 201; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -208,7 +211,7 @@ Content-Type: application/json
 ###
 # R7-05a — 400 FORM_NOT_PUBLISHABLE；details 包含 questions[2].options / INSUFFICIENT_OPTIONS 與 questions[4].config.min / INVALID_QUESTION_CONFIG 與 questions[4].config.max / INVALID_QUESTION_CONFIG
 # Prerequisite: preceding cases plus Markdown R7-05; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 400 FORM_NOT_PUBLISHABLE；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/publish HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -216,7 +219,7 @@ Cookie: access_token={{memberAToken}}
 ###
 # R7-05b — 409 FORM_INVALID_STATE_TRANSITION；不可從 Draft Close
 # Prerequisite: preceding cases plus Markdown R7-05; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 409 FORM_INVALID_STATE_TRANSITION；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/close HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -228,7 +231,7 @@ Cookie: access_token={{memberAToken}}
 ###
 # R7-06a — 200 Draft、respondents；只更新 policy／updatedAt
 # Prerequisite: preceding cases plus Markdown R7-06; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 200；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -241,7 +244,7 @@ Content-Type: application/json
 ###
 # R7-06b — 200 no-op；全部 DB columns／timestamps 不變
 # Prerequisite: preceding cases plus Markdown R7-06; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 200；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -258,7 +261,7 @@ Content-Type: application/json
 ###
 # R7-07a — 200 Draft；5 Questions／2 Options；Rating 0..5，原 ID／createdAt 保留
 # Prerequisite: preceding cases plus Markdown R7-07; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 200；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}} HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -291,7 +294,7 @@ Content-Type: application/json
 # BEFORE Send: save 07a canonical DB snapshot, apply Markdown 07 raw probes and save publish-before.
 # AFTER response/DB comparison: finally restore only raw title/Text/Option columns before 07c; keep status/timestamps.
 # Prerequisite: preceding cases plus Markdown R7-07; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 200；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/publish HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -299,7 +302,7 @@ Cookie: access_token={{memberAToken}}
 ###
 # R7-07c — 409 FORM_ALREADY_PUBLISHED；DB 不變
 # Prerequisite: preceding cases plus Markdown R7-07; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 409 FORM_ALREADY_PUBLISHED；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/publish HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -307,7 +310,7 @@ Cookie: access_token={{memberAToken}}
 ###
 # R7-07d — 409 FORM_NOT_EDITABLE；空 PATCH 也不能改 Published
 # Prerequisite: preceding cases plus Markdown R7-07; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 409 FORM_NOT_EDITABLE；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}} HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -322,7 +325,7 @@ Content-Type: application/json
 ###
 # R7-08a — 400 VALIDATION_ERROR；resultVisibility / INVALID_VALUE
 # Prerequisite: preceding cases plus Markdown R7-08; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 400 VALIDATION_ERROR；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -335,7 +338,7 @@ Content-Type: application/json
 ###
 # R7-08b — 400 VALIDATION_ERROR；status / INVALID_VALUE
 # Prerequisite: preceding cases plus Markdown R7-08; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 400 VALIDATION_ERROR；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -349,7 +352,7 @@ Content-Type: application/json
 ###
 # R7-08c — 400 VALIDATION_ERROR；body / INVALID_VALUE，缺少 Content-Type
 # Prerequisite: preceding cases plus Markdown R7-08; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 400 VALIDATION_ERROR；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -361,7 +364,7 @@ Cookie: access_token={{memberAToken}}
 ###
 # R7-08d — 400 VALIDATION_ERROR；body / INVALID_VALUE，錯誤 Content-Type
 # Prerequisite: preceding cases plus Markdown R7-08; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 400 VALIDATION_ERROR；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -372,7 +375,7 @@ Content-Type: text/plain
 ###
 # R7-08e — 400 VALIDATION_ERROR；body / INVALID_VALUE，空 Body
 # Prerequisite: preceding cases plus Markdown R7-08; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 400 VALIDATION_ERROR；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -383,7 +386,7 @@ Content-Type: application/json
 ###
 # R7-08f — 400 VALIDATION_ERROR；body / INVALID_VALUE，損壞 JSON
 # Prerequisite: preceding cases plus Markdown R7-08; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 400 VALIDATION_ERROR；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -398,7 +401,7 @@ Content-Type: application/json
 ###
 # R7-09a — 200 Published、public；只更新 policy／updatedAt
 # Prerequisite: preceding cases plus Markdown R7-09; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 200；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -411,7 +414,7 @@ Content-Type: application/json
 ###
 # R7-09b — 200 no-op；完整快照不變
 # Prerequisite: preceding cases plus Markdown R7-09; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 200；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -429,7 +432,7 @@ Content-Type: application/json
 # R7-10a — 200；deadline 已過，但 status=published
 # BEFORE Send: save deadlineSnapshot and temporarily expire only this run's main deadline per Markdown 10.
 # Prerequisite: preceding cases plus Markdown R7-10; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 200；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{mainFormId}} HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -438,7 +441,7 @@ Cookie: access_token={{memberAToken}}
 # R7-10b — 200 Closed；只改 status／updatedAt，不重跑 Publish deadline 驗證
 # AFTER response/DB comparison: finally restore only the original main deadline before 10c; keep status/timestamps.
 # Prerequisite: preceding cases plus Markdown R7-10; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 200；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/close HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -446,7 +449,7 @@ Cookie: access_token={{memberAToken}}
 ###
 # R7-10c — 409 FORM_ALREADY_CLOSED
 # Prerequisite: preceding cases plus Markdown R7-10; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 409 FORM_ALREADY_CLOSED；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/close HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -454,7 +457,7 @@ Cookie: access_token={{memberAToken}}
 ###
 # R7-10d — 409 FORM_INVALID_STATE_TRANSITION
 # Prerequisite: preceding cases plus Markdown R7-10; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 409 FORM_INVALID_STATE_TRANSITION；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/publish HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -462,7 +465,7 @@ Cookie: access_token={{memberAToken}}
 ###
 # R7-10e — 409 FORM_NOT_EDITABLE；Closed Freeze
 # Prerequisite: preceding cases plus Markdown R7-10; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 409 FORM_NOT_EDITABLE；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}} HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -477,7 +480,7 @@ Content-Type: application/json
 ###
 # R7-11a — 200 Closed、owner_only；只改 policy／updatedAt
 # Prerequisite: preceding cases plus Markdown R7-11; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 200；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -490,7 +493,7 @@ Content-Type: application/json
 ###
 # R7-11b — 200 no-op；完整快照不變
 # Prerequisite: preceding cases plus Markdown R7-11; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 200；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -507,7 +510,7 @@ Content-Type: application/json
 ###
 # R7-12a — 403 FORM_ACCESS_DENIED，不能洩漏／先回 Closed 狀態錯誤
 # Prerequisite: preceding cases plus Markdown R7-12; identity: B.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 403 FORM_ACCESS_DENIED；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/publish HTTP/1.1
 Cookie: access_token={{memberBToken}}
@@ -515,7 +518,7 @@ Cookie: access_token={{memberBToken}}
 ###
 # R7-12b — 403 FORM_ACCESS_DENIED，先於非字串欄位 400
 # Prerequisite: preceding cases plus Markdown R7-12; identity: B.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 403 FORM_ACCESS_DENIED；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility HTTP/1.1
 Cookie: access_token={{memberBToken}}
@@ -528,14 +531,14 @@ Content-Type: application/json
 ###
 # R7-12c — 401 AUTH_REQUIRED，先於 UUID 400
 # Prerequisite: preceding cases plus Markdown R7-12; identity: none.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 401 AUTH_REQUIRED；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/bad-id/close HTTP/1.1
 
 ###
 # R7-12d — 400 VALIDATION_ERROR；formId / INVALID_VALUE
 # Prerequisite: preceding cases plus Markdown R7-12; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 400 VALIDATION_ERROR；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/bad-id/close HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -543,7 +546,7 @@ Cookie: access_token={{memberAToken}}
 ###
 # R7-12e — 404 FORM_NOT_FOUND
 # Prerequisite: preceding cases plus Markdown R7-12; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 404 FORM_NOT_FOUND；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{missingFormId}}/result-visibility HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -560,7 +563,7 @@ Content-Type: application/json
 ###
 # R7-13a — 204、無 Body；只設 deletedAt／updatedAt，status Draft／子列保留
 # Prerequisite: preceding cases plus Markdown R7-13; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 204；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 DELETE {{apiBase}}/api/v1/forms/{{deletedFormId}} HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -568,7 +571,7 @@ Cookie: access_token={{memberAToken}}
 ###
 # R7-13b — 404 FORM_NOT_FOUND，即使 Owner
 # Prerequisite: preceding cases plus Markdown R7-13; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 404 FORM_NOT_FOUND；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{deletedFormId}}/publish HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -576,7 +579,7 @@ Cookie: access_token={{memberAToken}}
 ###
 # R7-13c — 404 FORM_NOT_FOUND，先於 Draft 狀態錯誤
 # Prerequisite: preceding cases plus Markdown R7-13; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 404 FORM_NOT_FOUND；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{deletedFormId}}/close HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -584,7 +587,7 @@ Cookie: access_token={{memberAToken}}
 ###
 # R7-13d — 404 FORM_NOT_FOUND，即使 Owner
 # Prerequisite: preceding cases plus Markdown R7-13; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 404 FORM_NOT_FOUND；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{deletedFormId}}/result-visibility HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -601,7 +604,7 @@ Content-Type: application/json
 ###
 # R7-14a — PARALLEL：200（PATCH 先）或 409 FORM_NOT_EDITABLE（Publish 先）
 # Prerequisite: preceding cases plus Markdown R7-14; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 409；2 observed DB waiters；Publish first; PATCH frozen；DB PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{concurrentFormId}} HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -619,7 +622,7 @@ Content-Type: application/json
 ###
 # R7-14b — PARALLEL：400 FORM_NOT_PUBLISHABLE（PATCH 先）或 200（Publish 先）
 # Prerequisite: preceding cases plus Markdown R7-14; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 200；2 observed DB waiters；Publish first; PATCH frozen；DB PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{concurrentFormId}}/publish HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -627,7 +630,7 @@ Cookie: access_token={{memberAToken}}
 ###
 # R7-14c — 200；等於成功 writer 的 response，符合上方唯一合法先後
 # Prerequisite: preceding cases plus Markdown R7-14; identity: A.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：HTTP 200；DB assertion PASS; manual actual: 未執行（人工；未代填 AI 結果）.
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{concurrentFormId}} HTTP/1.1
 Cookie: access_token={{memberAToken}}
@@ -635,5 +638,5 @@ Cookie: access_token={{memberAToken}}
 ###
 # R7-15 — 人工檢視、暫存復原與秘密清理
 # Non-HTTP prerequisites/operations: Markdown R7-15 and shared DB/harness instructions.
-# AI actual: 未執行（等待 Owner review）; manual actual: 未執行（等待 Owner review）.
+# AI actual: PASS（Windows）：Existing snapshots identical；raw/deadline probes restored；new fixtures retained；credentials memory cleared；no secret files created; manual actual: 未執行（人工；未代填 AI 結果）.
 # No HTTP request in this step; follow Markdown.
