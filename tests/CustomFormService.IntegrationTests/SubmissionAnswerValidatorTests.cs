@@ -226,6 +226,14 @@ public sealed class SubmissionAnswerValidatorTests
     }
 
     [TestMethod]
+    public void Nonempty_text_shorter_than_minLength_returns_invalid_value()
+    {
+        var question = Question(QuestionType.Text, config: "{\"minLength\":2}");
+        // Trim produces a nonempty one-code-point answer; this is a length error, not omission.
+        AssertInvalid(Answer(question.Definition.Id, "\" a \""), [question.Definition], ("answers[0].value", "INVALID_VALUE"));
+    }
+
+    [TestMethod]
     [DataRow("1.00000000000000000000000000001", true)]
     [DataRow("1.00000000000000000000000000002", true)]
     [DataRow("1.00000000000000000000000000000", false)]
@@ -334,7 +342,7 @@ public sealed class SubmissionAnswerValidatorTests
     }
 
     [TestMethod]
-    public async Task Accepted_number_tokens_round_trip_as_exact_jsonb_and_rejected_tokens_fail_storage()
+    public async Task Number_jsonb_probes_verify_compatibility_and_exact_numeric_equality()
     {
         await using var factory = new CustomFormServiceApiFactory();
         var options = factory.Services.GetRequiredService<IOptions<PostgreSqlOptions>>().Value;

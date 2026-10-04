@@ -41,7 +41,7 @@ Repo 的 R7 仍記為「acceptance results pending owner confirmation」。本�
 
 Optional 完全省略、text trim 後空字串、multiple 空 Array 均不建立 Answer，不因 minLength 而變成必答；Required 缺題及合法空答案用 REQUIRED_FIELD。`0`／rating 下界是有效答案。明確 value: null 在 Required／Optional 一律 INVALID_VALUE、path 為 answers[i].value；缺失 Item value 是必要欄位缺少，於 Item Shape 階段回 REQUIRED_FIELD。錯型或非法 Option 不是 omission。全題 Optional 時 answers: [] 可通過 A；建立 Response 留 B。
 
-**代表測試**：五題型成功／錯型；Unicode trim、補充平面字元長度、保留大小寫／碼點；text／number／rating 邊界；超過 decimal 精度的 number 比較及 JSONB round-trip、安全範圍拒絕；Required 缺題／明示空值、Optional omission／null 拒絕、零答案；重複 UUID／Question 與 Option 歸屬、原始 index paths／early return，以及輸入定義與 JSON 不被修改。
+**代表測試**：五題型成功／錯型；Unicode trim、補充平面字元長度、保留大小寫／碼點；text／number／rating 邊界（含非空 text 短於 minLength）；超過 decimal 精度的 number 比較及參數化 SELECT 的 JSONB 相容性／數值等值、安全範圍拒絕；Required 缺題／明示空值、Optional omission／null 拒絕、零答案；重複 UUID／Question 與 Option 歸屬、原始 index paths／early return，以及輸入定義與 JSON 不被修改。A 不宣稱 EF 保存或 Receipt round-trip，兩者留 B。
 
 **修改與停止點**：新增 `Validation/SubmissionAnswerValidator.cs`（含必要小型輸入／結果型別）及答案測試檔；RequestJson 至多補 path 支援，DefinitionNumber 保留名稱與算法。Receipt／Controller／保存／Delete 留 B。build、focused tests、受影響回歸、diff／文件與單一目的提交後交付 A 並停止。A PASS 只代表 validator 開發驗證，不代表 Submit／R8 完成。
 

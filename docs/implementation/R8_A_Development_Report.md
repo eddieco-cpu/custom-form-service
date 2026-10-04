@@ -14,7 +14,7 @@
 
 ## 六項 review 補充的實測與界線
 
-1. **Text 受控處理**：先用既有 .NET 10.0.400 runtime probe 確認 `JsonDocument.Parse("\"\\uD800\"")` 可成功，但 GetString 拋 InvalidOperationException；low surrogate 同樣拒絕。`a\u0000b` 可解碼，PostgreSQL 17.11 JSONB SELECT 實際拒絕，SQLSTATE 22P05。A 在 String 解碼點捕捉孤立 surrogate，在 trim／保存前拒絕 NUL，回 `answers[i].value` + INVALID_VALUE；pair `\uD83D\uDE00` 解碼為原 emoji，Code Point 計數 1，JSONB round-trip 原樣相等。不移除／替換不合法字元，也不宣稱 R6 已具有此保護。孤立 surrogate property name 亦受控定位 Body／Item。
+1. **Text 受控處理**：先用既有 .NET 10.0.400 runtime probe 確認 `JsonDocument.Parse("\"\\uD800\"")` 可成功，但 GetString 拋 InvalidOperationException；low surrogate 同樣拒絕。`a\u0000b` 可解碼，PostgreSQL 17.11 JSONB SELECT 實際拒絕，SQLSTATE 22P05。A 在 String 解碼點捕捉孤立 surrogate，在 trim／保存前拒絕 NUL，回 `answers[i].value` + INVALID_VALUE；pair `\uD83D\uDE00` 解碼為原 emoji，Code Point 計數 1，JSONB SELECT 輸出原 emoji，證明字串相容性。不移除／替換不合法字元，也不宣稱 R6 已具有此保護。孤立 surrogate property name 亦受控定位 Body／Item。
 2. **Rating／null**：既有 Integer predicate 的實測為 5 接受；5.0、5e0、2147483648、1e1000 拒絕。min／max 含邊界。Required 缺題及合法空值用 REQUIRED_FIELD；明確 null 不降格成 omission，全部題型／Required 與 Optional 均用 INVALID_VALUE，正確 path 已斷言。
 3. **生命週期**：Envelope Clone 可在原 document Dispose 後驗證；最終五種 normalized value 可在直接來源 Dispose 後讀取及重新序列化，沒有借用來源 buffer。
 4. **驗證次序**：四案確認 Envelope 對缺少／null／object／boolean answers 均不提前報錯，後段才回 answers 的 REQUIRED_FIELD／INVALID_VALUE。這保留「非 Published + 缺少 answers → 409 FORM_NOT_SUBMITTABLE」的 B 呼叫次序；本次沒有 Submit 路由，**未宣稱這個 HTTP 409 已整合實測**，其端點測試已列 B。A 的 400 測試實測 validator details 經 ApiErrors.Validation 形成的正式 ObjectResult／JSON envelope，不冒稱 Submit HTTP 實測。
@@ -44,3 +44,9 @@
 未做：Submit HTTP、Deadline／Clock、Receipt、原子保存／並行、Delete 修正、R9／R10／G1、正式驗收計畫／執行。未確認：本次 DLL 在 Windows testhost 的成功載入與 Windows focused／full；目前由 Linux 同套必要測試提供開發證據。沒有 R8 既有驗收結果需要作廢；R4～R7 正式文件與歷史結果未改填。
 
 主要變更檔為 validator、tests、R8 計畫、本報告與 Implementation Plan（5 檔）。單一目的開發提交 SHA 與提交後 Git 狀態見本次交付訊息。停止於 **「A 開發完成、待 review」**，等待 Owner review 及 B 明確授權。
+
+## Code review 補件（2026-10-04）
+
+原 A 開發提交為 `986cfd86be2ff906734ba4b4895918cdc24ba1ea`。本次補件索引／原 commit 完整 diff／依賴檔案位置見 [R8_A_Review_Materials.md](R8_A_Review_Materials.md)。原 78 案中，非空 Text 的失敗案例只覆蓋超過 maxLength，未覆蓋短於 minLength；本次只補 `Nonempty_text_shorter_than_minLength_returns_invalid_value`：optional text、minLength=2、輸入 `" a "` trim 後一個 Code Point、非空，預期 `answers[0].value` + INVALID_VALUE／正式 400，不能被當成 omission。未修改 validator／Definition Validation，亦未擴大 UUID／Unicode 矩陣。
+
+所有 A JSONB probes 僅以參數化 SQL SELECT 驗證相容性／數值等值，不涉及 EF INSERT、Response／Answer 保存、Receipt 映射或 HTTP round-trip。數值 probe 改名為 `Number_jsonb_probes_verify_compatibility_and_exact_numeric_equality`，只更正名稱，查詢與斷言不變。EF 保存與 Receipt round-trip 明確留 B。原 build／78 focused／245 full 證據保持歷史紀錄；本次新增案例的實跑命令與結果另列補件索引。
