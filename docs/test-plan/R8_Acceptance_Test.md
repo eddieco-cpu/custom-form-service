@@ -1,6 +1,6 @@
 # R8 驗收測試：Submit／Response／Answer
 
-2026-10-04；**Prepare：R8 驗收計畫待 review**。本次只準備文件，未執行任何本計畫的 HTTP、DB probe、並行 harness 或正式回歸；AI／人工欄全部為「未執行（等待 Owner review）」，不改填 accepted。需 Owner 核准目前成對文件並明確授權 Execute 後才執行。
+2026-10-04；**Prepare 修訂：R8 修訂驗收計畫待 review**。依 Owner 回饋局部調整 13 waiter 觀察預算並核對原始 companion。本次只調整文件與靜態檢查，未執行任何本計畫的 HTTP、DB probe、並行 harness 或正式回歸；AI／人工欄全部為「未執行（等待 Owner review）」，不改填 accepted。需 Owner 核准目前成對文件並明確授權 Execute 後才執行。
 
 Companion：[R8_Manual_Tests.http](R8_Manual_Tests.http)。業務版本 `14aac3036c25f5fefa756f2e4133009680369f25`；開發候選／cleanup 修正基準 `d3f75b37623f5f774d8dabe5817c4488a96eb368`。Owner 已確認 A／B code review 通過，並授權 cleanup 局部收尾及 Prepare；本次開發自測 build 0 warnings/errors、R8 affected 34/34 是背景，不能代填驗收。本版若再修業務／測試語意，受影響計畫需重新 review。
 
@@ -383,9 +383,9 @@ finally 復原後完整 snapshot 須等於 10a 後／probe 前：1 Response／0 
 
 依四組 13a/b → 13c/d → 13e/f → 13g/h 執行；其他驗收寫入／全套測試先暫停。同一組兩 worker 各送一次 exact companion request、身份固定，記開始／結束 UTC、status/body 和新 response IDs；Cookie 只用本機 jar／記憶體，不能放可用 JWT 到 command arguments、報告或 Git。
 
-1. 開唯一 application_name=`r8-barrier-<RunId>-<pair>` 的 DB session，`BEGIN; SELECT 1 FROM forms WHERE id=<本組新formId> AND deleted_at IS NULL FOR UPDATE;`，保留同 transaction，記 blocker PID。先查該 PID／transaction 確認持鎖，才開兩個 HTTP workers。native API 使用本次 build／同 DB；worker transport 總 timeout 設 90 秒，另遵守下列 waiter 30 秒與釋放後 45 秒界限。
+1. 開唯一 application_name=`r8-barrier-<RunId>-<pair>` 的 DB session，`BEGIN; SELECT 1 FROM forms WHERE id=<本組新formId> AND deleted_at IS NULL FOR UPDATE;`，保留同 transaction，記 blocker PID。先查該 PID／transaction 確認持鎖，才開兩個 HTTP workers。native API 使用本次 build／同 DB；worker transport 總 timeout 維持 90 秒，另遵守下列 waiter 10 秒與釋放後 45 秒界限。維持現有產品 DB command timeout 與其他 timeout 設定，不為 harness 調大產品 timeout。
 2. controller 持 barrier、兩 worker 同時發，查 pg_stat_activity／pg_blocking_pids 的實際兩個 HTTP DB waiters；不以 Task pending、送出順序或固定 sleep 判重疊。直接／間接 tuple-lock blocking chain 都需追到這個 barrier，排除監控／其他連線，記兩個 waiter PIDs／query／blocking chain。
-3. waiter 等待上限 30 秒。兩個 waiter 都確認成功後才 `COMMIT` 釋放 barrier；不設定固定自動 COMMIT。任一 worker 提前完成／transport timeout、查不到兩個真 waiters 或前置失敗，該並行組記 BLOCKED（觀察到錯誤狀態／資料時記 FAIL），finally ROLLBACK 自己的 barrier，保留原回應，不重設 fixture 重試求 PASS。
+3. 每組 waiter 觀察／輪詢共用同一個 **10 秒**上限：在送出本組第一個 worker 前開始單一 monotonic 計時，包含兩個 waiter 的觀察、所有輪詢 SQL／blocking-chain 查詢與輪詢間隔；不能每個 waiter、每次查詢或每次輪詢重新取得 10 秒。監控查詢與 delay 使用剩餘預算／取消訊號，整體不越過此期限，替既有產品 DB command timeout 留餘裕。兩個真實 waiter 必須在此期限內都確認成功後才 `COMMIT` 釋放 barrier；不設定固定自動 COMMIT。任一 worker 提前完成／transport timeout、期限內查不到兩個真 waiters 或前置失敗，該並行組記 BLOCKED（觀察到錯誤狀態／資料時記 FAIL），finally ROLLBACK 自己的 barrier並回收全部 workers，保留原回應，不重設 fixture 重試求 PASS。
 4. 釋放後每個 HTTP worker 完成上限 45 秒。finally 一定釋放／Dispose 自己的 barrier、取消尚未完成 workers；逐一有限等待回收（各 10 秒），即使某個 timeout／fault 也繼續觀察其餘，最後彙整失敗。清理失敗不得當 PASS；不強制終止陌生 DB backend／API／DB service。
 5. 與每組案前 counts／snapshot 比，並核對每個成功 Receipt／DB ID/user_id/value/time、所有失敗零新增。13 的 native run 可能只出現其中一種合法先後，不宣稱兩方向都由本次 HTTP 重現；02 的 deterministic tests 分別覆蓋兩方向。
 
@@ -422,8 +422,12 @@ SELECT pid,application_name,wait_event_type,wait_event,pg_blocking_pids(pid),que
 
 ## 覆蓋限制與準備狀態
 
+本次局部修訂以 `63bd1a9` 原始文件為比對基準；只改 13 的 waiter 共用觀察預算及配對註解／review 狀態，不改 54 個 requests 的 Method、URL、headers、Body、身份、預期或 fixture。產品 timeout 設定不變；正式 HTTP／DB／並行語意仍依核准契約。
+
+實跑文件靜態命令：`& ./artifacts/r8-closeout/validate-plan.ps1`、`& ./artifacts/r8-plan-revision/verify-raw-plan.ps1`、`git diff --check`。結果：兩檔 54 唯一 ID／順序一致，含 05b；每個 request 內容與原版逐段相同（僅正規化 CRLF／LF 比較），分隔符、URL、headers、variables、05e 空 JSON Body 已核對。38 個非空 Body 語法正確；05a 刻意壞 JSON 保留。07j／08a 的 JSON 跳脫、5.0／精確長數值／1e0 token 保留，沒有 code fence／Markdown 貼上標記。證據：[原始文件檢查](../../artifacts/r8-plan-revision/raw-static-check.json)，script 同目錄保留；此為靜態檢查，不是驗收 PASS。
+
 本計畫包含 54 個 HTTP requests（其中環境／登入／建 fixture 是前置），另外 02 同版全套及 13／14 DB、並行／復原檢查。04～14 覆蓋代表性五題型、驗證次序、不同 User single、multiple 歷史、Deadline、Receipt／實際保存、Close／Delete 先後。Owner 指定的 real foreign Question 在 06c、空 JSON Body 在 05e、非 Owner Draft Submit／Detail 分別在 06a／06b。
 
 UUID／Unicode／Number／Rating 細部矩陣由 02 既有 tests 限定證據，未新增業務矩陣／Definition Validation；共用 Auth expired/disabled 是回歸與 source 共用管線證據，不當成 Submit 專屬 native HTTP 全矩陣。精確等值 Clock 與 precommit faults 只由本次 02 受控測試驗證；不做 production Clock 注入／新 retry 框架。COMMIT 結果未知時零新增未驗證，不聲稱保證；multiple 不確定重送仍可能新增另一筆歷史。Number 依 01 §3.3 現有 JSONB 安全範圍，Receipt 不承諾原 token；R10 按精確數值等值分組的依賴保留，不執行 R10。
 
-準備階段只核對 pairing、variables、請求語法、source/spec 對照與 Git；所有正式 case／回歸／DB 操作 **未執行**。交付兩檔後停止於 **「R8 驗收計畫待 review」**；尚需 Owner review 與明確執行授權，未 accepted，不自動開始 R9／R10／G1。
+準備階段只核對 repo 原始兩檔的 pairing、完整 54 requests（含 05b）、分隔符、URL、headers、variables、空 Body、刻意壞 JSON、合法 JSON 跳脫及精確 number token；不將 `.http` 轉成 Markdown，不加入 code fence／貼上標記。所有正式 case／回歸／DB 操作 **未執行**。交付原始兩檔及本次 diff 後停止於 **「R8 修訂驗收計畫待 review」**；尚需 Owner review 與另行明確執行授權，未 accepted，不自動開始 R9／R10／G1。

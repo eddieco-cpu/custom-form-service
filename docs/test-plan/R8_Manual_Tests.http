@@ -1,9 +1,10 @@
-# R8 — paired acceptance plan；2026-10-04 Prepare，等待 Owner review
+# R8 — paired acceptance plan；2026-10-04 Prepare 修訂，R8 修訂驗收計畫待 review
 # Companion: R8_Acceptance_Test.md；cleanup candidate d3f75b37623f5f774d8dabe5817c4488a96eb368
 # 本次未執行；正式驗收需目前成對計畫核准及 Execute 授權；不改填 accepted。
 # 所有 credential/token/server IDs 必須本機取得；每次獨立 run 換唯一 RunId。
 # Clear All Cookies；各 request @no-cookie-jar；有身份時僅用明確 Cookie。
 # 非 HTTP 01：按 Markdown 01 restore/build、Windows native startup、baseline／碰撞檢查；未完成不得繼續。
+# 原始 .http 共 54 requests（含 05b）；保留原 Body／JSON 跳脫／精確 number token，不包 Markdown code fence。
 # AI 實際：未執行（等待 Owner review）
 # 人工實際：未執行（等待 Owner review）
 
@@ -715,6 +716,8 @@ Content-Type: application/json
 {"answers":[]}
 
 ### 13a — single race worker 1
+# 本組 waiter：送出第一個 worker 前起算單一 monotonic 10 秒；兩 waiter／所有觀察與輪詢 SQL、blocking-chain 查詢、delay 共用剩餘預算／取消訊號，不重新計時。
+# 兩個真實 waiter 都確認後才 COMMIT；逾期 finally 釋放 barrier 並逐一回收全部 workers。產品 timeout 不變；worker transport 90 秒／釋放後 45 秒／逐一回收 10 秒不變。
 # 前置：Markdown 13；此前依賴成功；只可與配對 worker 按 13 barrier harness 並行，不以順序單送求 PASS。
 # 預期：與 13b 合併：恰一個 201／一個 409 RESPONSE_ALREADY_SUBMITTED
 # 只可依 Markdown 13 barrier harness 與 13b 同時執行；確認兩個實際 DB waiters 後釋放，不能按 REST Client 順序單送求並行 PASS。
@@ -741,6 +744,7 @@ Content-Type: application/json
 {"answers":[{"questionId":"{{qSingleRaceText}}","value":"race two"}]}
 
 ### 13c — multiple race worker 1
+# 本組 waiter：與 13a 相同的單一 10 秒觀察／輪詢預算；兩個真實 waiter 都確認後才釋放 barrier，finally 回收全部 workers；產品 timeout 不變。
 # 前置：Markdown 13；此前依賴成功；只可與配對 worker 按 13 barrier harness 並行，不以順序單送求 PASS。
 # 預期：與 13d：兩個 201；delta 2 Responses／1 Answer
 # 前置 09 已成功且保留 2 Responses／2 Answers；仍用 Published multiple，兩 waiter 已確認後才釋放 barrier。
@@ -767,6 +771,7 @@ Content-Type: application/json
 {"answers":[]}
 
 ### 13e — Submit／Close race 的 Submit
+# 本組 waiter：與 13a 相同的單一 10 秒觀察／輪詢預算；兩個真實 waiter 都確認後才釋放 barrier，finally 回收全部 workers；產品 timeout 不變。
 # 前置：Markdown 13；此前依賴成功；只可與配對 worker 按 13 barrier harness 並行，不以順序單送求 PASS。
 # 預期：201 或 409 FORM_NOT_SUBMITTABLE（與 13f 配對）
 # 前置 deadline 已復原、B 尚無此 Form Response；先前 10a 是 A。Submit 先 commit 時保留新增 B Response；Close 先 commit 時不新增。
@@ -790,6 +795,7 @@ POST {{apiBase}}/api/v1/forms/{{deadlineFormId}}/close
 Cookie: access_token={{memberAToken}}
 
 ### 13g — Submit／Delete race 的 Submit
+# 本組 waiter：與 13a 相同的單一 10 秒觀察／輪詢預算；兩個真實 waiter 都確認後才釋放 barrier，finally 回收全部 workers；產品 timeout 不變。
 # 前置：Markdown 13；此前依賴成功；只可與配對 worker 按 13 barrier harness 並行，不以順序單送求 PASS。
 # 預期：201 或 404 FORM_NOT_FOUND（與 13h 配對）
 # 前置 13c/d 通過，總 4 Responses／3 Answers；multiple 不受已提交次數限制。
@@ -814,6 +820,7 @@ Cookie: access_token={{memberAToken}}
 
 ### 13 — 非 HTTP waiter／barrier／worker 回收／pair DB 核對
 # 詳見 Markdown 13；四組各須兩個實際 waiter、有限等待與 finally；清理失敗彙整，不可吞掉求 PASS。
+# 每組觀察／輪詢共用單一 monotonic 10 秒上限，含監控 SQL／blocking-chain／delay；使用剩餘預算／取消訊號，替既有 DB command timeout 留餘裕。不得每個 waiter／查詢重設 10 秒。
 # AI 實際：未執行（等待 Owner review）
 # 人工實際：未執行（等待 Owner review）
 
