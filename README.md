@@ -61,6 +61,8 @@ docker compose ps
 
 The Compose project has one `postgres` service. It uses `postgres:17.11-alpine`, publishes the configured host port to container port 5432, and stores data in the `custom-form-service-postgres-data` named volume.
 
+If the container is healthy but the host cannot connect, check the actual published port and Windows TCP exclusions; container health alone does not verify the host mapping. See the [Windows port troubleshooting procedure](docs/configuration/environment-configuration.md#windows-postgresql-host-port-troubleshooting).
+
 ## Restore, build, and test
 
 Run these commands from the repository root:

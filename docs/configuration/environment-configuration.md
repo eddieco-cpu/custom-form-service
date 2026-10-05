@@ -264,6 +264,54 @@ docker compose config --quiet
 - CORS 不是 CSRF protection；若部署改成 cross-site、SameSite=None、iframe 或不受信任的 same-site subdomain，必須重新做 Cookie／CSRF security review。
 - 正式部署必須使用 HTTPS；平台內部 HTTP bind 不等於公開連線可以不用 HTTPS。
 
+## Windows PostgreSQL host port troubleshooting
+
+Container 的 `healthy` 只驗證容器內部 PostgreSQL。若 `docker compose ps` 只顯示 `5432/tcp`，而沒有 `127.0.0.1:5432->5432/tcp`，不能據此判定主機可連線。先從 repository root 檢查：
+
+```powershell
+docker compose config --quiet
+docker compose ps
+docker inspect custom-form-service-postgres-1 --format '{{json .HostConfig.PortBindings}}'
+docker inspect custom-form-service-postgres-1 --format '{{json .NetworkSettings.Ports}}'
+netsh interface ipv4 show dynamicportrange protocol=tcp
+netsh interface ipv6 show dynamicportrange protocol=tcp
+netsh interface ipv4 show excludedportrange protocol=tcp
+netsh interface ipv6 show excludedportrange protocol=tcp
+Test-NetConnection 127.0.0.1 -Port 5432
+```
+
+2026-10-05 的復發原因是主機 IPv4／IPv6 TCP 動態範圍為 `1024–15000`，而 active exclusion `5417–5516` 包含 `5432`。Docker 保留設定中的 PortBindings，實際 NetworkSettings.Ports 卻是空陣列；主機 bind 回 `10013 AccessDenied`。Compose 已有正確 ports 宣告，不能靠再補一份 ports 設定修正。2026-10-04 僅重啟 WinNAT 釋放當次保留，沒有修正動態範圍，因此下次虛擬網路啟動仍可能重現。
+
+若診斷確認是這個條件，可在**管理員 PowerShell** 恢復 Windows 預設 TCP 動態範圍，再清除舊 WinNAT 暫時保留。這是主機層設定，會短暫影響 NAT 網路；若主機有刻意限制 outbound source ports 的需求，應先確認該需求。只調整 TCP，不調整 UDP 或 Firewall：
+
+```powershell
+netsh interface ipv4 set dynamicportrange protocol=tcp startport=49152 numberofports=16384
+netsh interface ipv6 set dynamicportrange protocol=tcp startport=49152 numberofports=16384
+# 確認上述兩個命令成功後才重啟；finally 確保服務恢復。
+try {
+    Stop-Service winnat -ErrorAction Stop
+    (Get-Service winnat).WaitForStatus('Stopped', [TimeSpan]::FromSeconds(15))
+} finally {
+    Start-Service winnat -ErrorAction Stop
+    (Get-Service winnat).WaitForStatus('Running', [TimeSpan]::FromSeconds(15))
+}
+```
+
+確認 exclusion 不再涵蓋 `5432` 且沒有其他程式監聽該 port 後，只重建 postgres service，保留 `custom-form-service-postgres-data`：
+
+```powershell
+docker compose up -d --no-deps --pull never --force-recreate postgres
+docker compose ps
+docker inspect custom-form-service-postgres-1 --format '{{json .NetworkSettings.Ports}}'
+Test-NetConnection 127.0.0.1 -Port 5432
+# 等待容器 healthy；確認 API 已啟動後驗證應用程式的實際 DB 連線。
+Invoke-WebRequest http://localhost:5000/health/ready
+```
+
+不得使用 `down -v`、刪除開發 volume 或重設 fixture。重啟瞬間的 `503 Unhealthy` 可能是 PostgreSQL 尚未 ready；等待容器 healthy 後再檢查，並保留首次失敗紀錄。這些是環境診斷，不會自動改填 Round 驗收結果。
+
+修復前應記錄原動態範圍與唯讀資料快照，修復後比對資料。這次原範圍的回復命令為 `netsh interface ipv4 set dynamicportrange protocol=tcp startport=1024 numberofports=13977`，IPv6 同理；回復會再次將 `5432` 納入動態範圍。詳見 [本次修復紀錄](../implementation/Database_Connectivity_Repair_20261005.md)。Windows 預設 `49152–65535` 與查詢／設定方式見 [Microsoft TCP/IP port 文件](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/tcp-ip-port-exhaustion-troubleshooting)。
+
 ## 10. 參考資料
 
 Repository：
