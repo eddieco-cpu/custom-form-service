@@ -9,10 +9,10 @@
 # 人工實際：未執行（等待 Owner review）
 
 @apiBase = http://localhost:5000
-@runId = r9-acceptance-20261005-01
+@runId = r9-acceptance-20261005-02
 @futureDeadline = 2036-10-05T00:00:00.123456Z
-@memberAEmail = r9-a-r9-acceptance-20261005-01@example.com
-@memberBEmail = r9-b-r9-acceptance-20261005-01@example.com
+@memberAEmail = r9-a-r9-acceptance-20261005-02@example.com
+@memberBEmail = r9-b-r9-acceptance-20261005-02@example.com
 @testPassword = <GENERATE_RANDOM_10_TO_128_CHARACTER_PASSWORD_LOCALLY>
 @memberAToken = <COPY_ONLY_ACCESS_TOKEN_VALUE_FROM_03b_LOCALLY>
 @memberBToken = <COPY_ONLY_ACCESS_TOKEN_VALUE_FROM_03d_LOCALLY>
@@ -483,3 +483,7 @@ Cookie: access_token={{memberBToken}}
 # 所有失敗／BLOCKED／未執行與首次 evidence 保留；人工結果獨立，不標記 accepted。
 # AI 實際：未執行（等待 Owner review）
 # 人工實際：未執行（等待 Owner review）
+
+# 首次 RunId r9-acceptance-20261005-01：HTTP 6 PASS／04a harness FAIL／33 BLOCKED；13 精度誤報保留且精確復核舊列相同。
+# 2 Users／1 Draft Form／2 Questions 原樣保留；首次 logs／results 依 Markdown 歷史連結，不覆寫。
+# 本檔 -02 補驗需包含首次合法 fixtures 的新 baseline；同次 build/PID hash 不變，重新 health/readiness 後 full；人工未執行。

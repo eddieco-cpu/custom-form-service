@@ -8,10 +8,10 @@ Companion：[R9_Manual_Tests.http](R9_Manual_Tests.http)。依 [AGENTS.md](../..
 
 ## 共用變數、測資與執行順序
 
-兩檔使用同一新 RunId `r9-acceptance-20261005-01`（規劃值，尚未執行）；每次獨立 AI／人工 run 另取未使用的 RunId 並同步兩檔。使用本次動態註冊的兩位 Active 合成會員：A 擁有新 Form，B 是不同會員。03a 註冊 A、03b 登入 A、03c 註冊 B、03d 登入 B；依 Owner 本 chat 明確指示追加這兩個註冊請求，並非新功能驗收。Email 為 `r9-a-r9-acceptance-20261005-01@example.com`／`r9-b-r9-acceptance-20261005-01@example.com`，碰撞時換新 RunId 並同步兩檔；密碼使用本次隨機 10～128 字元值，僅記憶體／本機臨時操作，不寫進文件、Git、log 或證據。不讀舊密碼／JWT，不改舊會員 Profile／status；新會員與其合法 fixtures 保留。
+兩檔使用同一新 RunId `r9-acceptance-20261005-02`（本次補驗 RunId；首次 -01 保留歷史）；每次獨立 AI／人工 run 另取未使用的 RunId 並同步兩檔。使用本次動態註冊的兩位 Active 合成會員：A 擁有新 Form，B 是不同會員。03a 註冊 A、03b 登入 A、03c 註冊 B、03d 登入 B；依 Owner 本 chat 明確指示追加這兩個註冊請求，並非新功能驗收。Email 為 `r9-a-r9-acceptance-20261005-02@example.com`／`r9-b-r9-acceptance-20261005-02@example.com`，碰撞時換新 RunId 並同步兩檔；密碼使用本次隨機 10～128 字元值，僅記憶體／本機臨時操作，不寫進文件、Git、log 或證據。不讀舊密碼／JWT，不改舊會員 Profile／status；新會員與其合法 fixtures 保留。
 
 ```powershell
-$RunId = 'r9-acceptance-20261005-01'
+$RunId = 'r9-acceptance-20261005-02'
 $ApiBase = 'http://localhost:5000'
 $FutureDeadline = '2036-10-05T00:00:00.123456Z'
 $RepoRoot = (Get-Location).Path
@@ -212,7 +212,7 @@ SELECT a.question_id,a.value,q.sort_order
 
 Receipt root 僅 id／formId／submittedAt／answers，每項僅 questionId／value；不回 userId／Answer ID。核對真正當次 User、DB UTC 時間／微秒、已保存 JSONB 值／完整集合／Question 排序，不只看 200 或 response ID。08a／08b 的長小數須與 DB JSONB 數值精確等值；08c 可從 1e0 保存為 1，不承諾原始 token。08c 若時間未嚴格晚於 08a，本案 FAIL 並留證，不臨時修改 submitted_at；同時間 tie-break 另由 02 已知 UUID 測試證明。
 
-POST Submit 後 Definition／子列／timestamps 不變，Response＋有效 Answers 一起新增；08a 累計 1／2，08c 累計 2／3，09a 累計 3／3。Close 只允許 Form status／updated_at 變化；Delete 只允許 deleted_at／updated_at，status 仍 closed，全部子列／歷史保持相等。錯誤 Envelope 核對 HTTP／top-level code，06c 另核 details path=formId／INVALID_VALUE，不得洩漏 SQL／異常。
+POST Submit 後 Definition／子列／timestamps 不變，Response＋有效 Answers 一起新增；08a 累計 1／2，08c 累計 2／3，09a 累計 3／3。Close 只允許 Form status／updated_at 變化；Delete 只允許 deleted_at／updated_at，status 仍 closed，全部子列／歷史保持相等。錯誤 Envelope 核對 HTTP／error.code，06c 另核 details path=formId／INVALID_VALUE，不得洩漏 SQL／異常。
 
 ## 依序 HTTP 案例（Request Body 依 companion）
 
@@ -356,3 +356,10 @@ AI／人工均執行各自 run 的清理；失敗 run 仍記錄能確認的實�
 HTTP 矩陣保持兩張 Form 的主流程；Auth 過期／未知 User／disabled、Identity×Visibility 六組合、跨 Form、所有五題型、完整 single/multiple 與快照競爭明確由 02 同版自動回歸承擔。Latest 同 Question sortOrder 的人工異常數據不額外構造（正式 Definition sortOrder 唯一）；01～13 不增加原生故障／大容量／生產部署／Statistics 測試。細粒度原生 HTTP 重複組合暫緩，不能據此放寬正式契約。
 
 **Prepare 静態檢查**：只核對兩檔編號／順序／40 requests／變量引用／JSON 與精確 Number token／無 GET Body／Cookie 身分／雙結果欄／SQL scope 與連結、`git diff --check`。本輪未 restore/build/start API，未發送 HTTP、未跑回歸／DB probe／清理操作；所有本次驗收結果仍 未執行（等待 Owner review）。以上為 `17b1c2f` Prepare 的歷史記錄；本次 Owner 已核准三項修訂後直接 AI Execute，另記實際結果，不改歷史 PASS。
+
+
+## 首次執行歷史（保留，不作補驗 PASS）
+
+RunId `r9-acceptance-20261005-01`；Windows build／原生 API／health/readiness PASS；full 兩次 306/306（首次早於 health，第二次依序執行），R9 26/26。HTTP 6 PASS／04a FAIL／33 BLOCKED。04a 已 201 建立 main Draft，之後 harness 誤用不存在的 is_required（正式欄位 required）中止；未建立 empty／未送 R9 業務 GET。13 初次 FAIL 是 baseline JSON 的小數精度損失造成誤報；[精確復核](../../artifacts/r9-acceptance/r9-acceptance-20261005-01/retention-correction.json)確認舊六表全列相同，新增 2 Users／1 Draft Form／2 Questions 保留，無 Responses／Answers。未執行 deadline probe；密碼與 Cookie 只在已退出進程記憶體。另保留環境 harness 首次 cp950 讀檔失敗，之後 UTF-8 接續。均屬臨時工具缺陷，不改產品或預期；[首次結果](../../artifacts/r9-acceptance/r9-acceptance-20261005-01/results.json)／[首次 HTTP log](../../artifacts/r9-acceptance/r9-acceptance-20261005-01/http-first.log)／[首次失敗](../../artifacts/r9-acceptance/r9-acceptance-20261005-01/first-http-failure.json)不覆寫。人工全部未執行。
+
+補驗 -02 使用新的 A/B 及兩張 Form，包含首次新增的合法 fixtures 在新的 baseline；沿用同一次授權執行中已驗證的 repo build／原生 PID 34980（source 與 DLL hash 必須相同）、再送 01a/b 並在其後跑本次新 full，所有結果另記；未改程式，不啟動 Linux fallback。
