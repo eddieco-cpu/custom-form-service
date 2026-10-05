@@ -4,6 +4,7 @@ using System.Text.Json;
 using CustomFormService.Api.Authentication;
 using CustomFormService.Api.Contracts.Errors;
 using CustomFormService.Api.Contracts.Forms;
+using CustomFormService.Api.Contracts.Responses;
 using CustomFormService.Api.Domain.Entities;
 using CustomFormService.Api.Domain.Enums;
 using CustomFormService.Api.Infrastructure.Persistence;
@@ -213,6 +214,31 @@ public sealed class FormsController(
             query.PageSize,
             totalItems,
             totalPages)));
+    }
+
+    [HttpGet("{formId}/respondent-count")]
+    [ProducesResponseType<RespondentCountResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetRespondentCount(string formId, CancellationToken cancellationToken)
+    {
+        if (!TryReadFormId(formId, out var id, out var validationError))
+            return ApiErrors.Validation([validationError]);
+
+        await using var transaction = await database.Database.BeginTransactionAsync(
+            IsolationLevel.RepeatableRead, cancellationToken);
+        var form = await database.Forms.AsNoTracking()
+            .Where(candidate => candidate.Id == id && candidate.DeletedAt == null)
+            .Select(candidate => new { candidate.UserId })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (form is null) return FormNotFound();
+        if (form.UserId != RequiredCurrentUser().Id)
+            return ApiErrors.Result(StatusCodes.Status403Forbidden, "FORM_ACCESS_DENIED",
+                "You do not have permission to access this form.");
+
+        var count = await database.Responses.AsNoTracking()
+            .Where(response => response.FormId == id)
+            .Select(response => response.UserId).Distinct().CountAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return Ok(new RespondentCountResponse(count));
     }
 
     [HttpGet("{formId}")]

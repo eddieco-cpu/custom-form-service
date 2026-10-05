@@ -22,6 +22,44 @@ public sealed class ResponsesController(
     CurrentUserContext currentUser,
     TimeProvider timeProvider) : ControllerBase
 {
+    [HttpGet("me/latest")]
+    [ProducesResponseType<ResponseReceipt>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetMyLatest(string formId, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(formId, out var id))
+            return ApiErrors.Validation([RequestJson.Invalid("formId", "formId must be a UUID.")]);
+
+        var userId = currentUser.User?.Id
+            ?? throw new InvalidOperationException("Authentication must resolve the current user.");
+        // The first SELECT establishes the snapshot, shared by the Form, Response and Answers reads.
+        await using var transaction = await database.Database.BeginTransactionAsync(
+            IsolationLevel.RepeatableRead, cancellationToken);
+        var form = await database.Forms.AsNoTracking()
+            .Where(candidate => candidate.Id == id && candidate.DeletedAt == null)
+            .Select(candidate => new { candidate.UserId, candidate.Status })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (form is null) return FormNotFound();
+        if (form.Status == FormStatus.Draft)
+            return form.UserId == userId ? ResponseNotFound() : FormNotFound();
+
+        var response = await database.Responses.AsNoTracking()
+            .Where(candidate => candidate.FormId == id && candidate.UserId == userId)
+            .OrderByDescending(candidate => candidate.SubmittedAt).ThenByDescending(candidate => candidate.Id)
+            .Select(candidate => new { candidate.Id, candidate.FormId, candidate.SubmittedAt })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (response is null) return ResponseNotFound();
+
+        var answers = await database.Answers.AsNoTracking()
+            .Where(answer => answer.ResponseId == response.Id)
+            .OrderBy(answer => answer.Question.SortOrder).ThenBy(answer => answer.QuestionId)
+            .Select(answer => new ResponseAnswerReceipt(answer.QuestionId, answer.Value))
+            .ToArrayAsync(cancellationToken);
+        var receipt = new ResponseReceipt(response.Id, response.FormId, response.SubmittedAt,
+            answers.Select(answer => answer with { Value = answer.Value.Clone() }).ToArray());
+        await transaction.CommitAsync(cancellationToken);
+        return Ok(receipt);
+    }
+
     [HttpPost]
     [ProducesResponseType<ResponseReceipt>(StatusCodes.Status201Created)]
     public async Task<IActionResult> Submit(string formId, CancellationToken cancellationToken)
@@ -128,4 +166,7 @@ public sealed class ResponsesController(
 
     private static ObjectResult FormNotFound() =>
         ApiErrors.Result(StatusCodes.Status404NotFound, "FORM_NOT_FOUND", "The form was not found.");
+
+    private static ObjectResult ResponseNotFound() =>
+        ApiErrors.Result(StatusCodes.Status404NotFound, "RESPONSE_NOT_FOUND", "The response was not found.");
 }

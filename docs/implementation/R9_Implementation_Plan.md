@@ -1,6 +1,6 @@
 # R9 — My Latest／Respondent Count 精簡實作計畫
 
-2026-10-05；狀態：**計畫待 codex-reviewer 審查與 Owner 確認，未授權開發**。基準 `a925bbd`，規劃前 Git 乾淨。Owner 本次已確認 R8 驗收通過；Implementation Plan 的 R8 紀錄仍停在待 Owner review，屬進度紀錄尚未同步，不是規格衝突。本次不改寫既有驗收結果。
+2026-10-05；狀態：**development verified（開發完成、待驗收）**。Owner 已確認計畫 `14442b2` review 通過並授權開發，維持 `RepeatableRead`，補充並行測試必須以實際查詢建立快照為控制點，不能以 BeginTransaction 當證據。R8 Owner accepted 已依授權同步於 Implementation Plan（`0f44286`），原驗收結果與證據保留。規劃基準 `a925bbd`，規劃前 Git 乾淨；本次實作與實際驗證見 [開發報告](R9_Development_Report.md)。下方為核准實作計畫。
 
 依 repo 最新 [AGENTS.md](../../AGENTS.md)、[development skill](../../.agents/skills/v1-round-development/SKILL.md) 與 [Implementation Plan](V1_Backend_Implementation_Plan.md) R9；契約對照：01 SUB-06～07／STA-01、02 §10～11、03a §5～6、03b §3.6／6.2、03c §3.1／3.3／5～6、04 §4／5／7／9、05 §13～15。未發現 R9 契約衝突。
 
@@ -38,4 +38,6 @@ Deadline、resultVisibility、responseIdentity 不改變兩端點權限或既有
 - 預計修改 `src/CustomFormService.Api/Controllers/ResponsesController.cs`、`Controllers/FormsController.cs`；新增 `Contracts/Responses/RespondentCountResponse.cs`、`tests/CustomFormService.IntegrationTests/FormEndpointsTests.ResponseQueries.cs`。重用 `ResponseReceipt.cs`，僅在必要處做局部整理；不改 Entity、Mapping、Migration 或 Schema。
 - 開發獲授權後執行 `dotnet restore CustomFormService.sln`、`dotnet build CustomFormService.sln --no-restore`、R9 focused tests 及同版全套 `dotnet test CustomFormService.sln --no-build`；實際測試數與結果寫入 `R9_Development_Report.md`，更新 Implementation Plan 開發進度、檢查 diff 並提交單一目的變更，交付「開發完成、待驗收」後停止。
 
-本次只有計畫文件，未開發、未執行 build／tests，未準備或執行驗收。不擴充 API／DB schema，不拆 A／B，不建立 R10 Statistics／Result Access 或後續共用統計框架。待 codex-reviewer 審查及 Owner 明確確認開發後，才開始 R9。
+**初次計畫交付紀錄（歷史）**：當時只有計畫文件，未開發、未執行 build／tests，未準備或執行驗收；待 codex-reviewer 審查及 Owner 確認後才開始 R9。
+
+**本次開發交付**：核准範圍已完成；Windows build 0 warnings／errors，Windows 測試探索／原生 API 啟動受 application control 封鎖。Linux 同份 source／PostgreSQL focused 26/26、full 306/306 首次 PASS，四組實際 SELECT 快照競爭 PASS；既有資料未變。詳見開發報告的原生環境限制。不擴充 API／DB schema，不拆 A／B，未準備或執行正式驗收，未開始 R10；交付後停止於「開發完成、待驗收」。
