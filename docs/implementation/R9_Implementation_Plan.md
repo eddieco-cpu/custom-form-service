@@ -1,6 +1,6 @@
 # R9 — My Latest／Respondent Count 精簡實作計畫
 
-2026-10-05；狀態：**development verified（開發完成、待驗收）**。Owner 已確認計畫 `14442b2` review 通過並授權開發，維持 `RepeatableRead`，補充並行測試必須以實際查詢建立快照為控制點，不能以 BeginTransaction 當證據。R8 Owner accepted 已依授權同步於 Implementation Plan（`0f44286`），原驗收結果與證據保留。規劃基準 `a925bbd`，規劃前 Git 乾淨；本次實作與實際驗證見 [開發報告](R9_Development_Report.md)。下方為核准實作計畫。
+2026-10-05；狀態：**test plan pending owner review（驗收計畫待 review；開發已驗證）**。Owner 已確認計畫 `14442b2` review 通過並授權開發，維持 `RepeatableRead`，補充並行測試必須以實際查詢建立快照為控制點，不能以 BeginTransaction 當證據。R8 Owner accepted 已依授權同步於 Implementation Plan（`0f44286`），原驗收結果與證據保留。規劃基準 `a925bbd`，規劃前 Git 乾淨；本次實作與實際驗證見 [開發報告](R9_Development_Report.md)。下方為核准實作計畫。
 
 依 repo 最新 [AGENTS.md](../../AGENTS.md)、[development skill](../../.agents/skills/v1-round-development/SKILL.md) 與 [Implementation Plan](V1_Backend_Implementation_Plan.md) R9；契約對照：01 SUB-06～07／STA-01、02 §10～11、03a §5～6、03b §3.6／6.2、03c §3.1／3.3／5～6、04 §4／5／7／9、05 §13～15。未發現 R9 契約衝突。
 
@@ -41,3 +41,5 @@ Deadline、resultVisibility、responseIdentity 不改變兩端點權限或既有
 **初次計畫交付紀錄（歷史）**：當時只有計畫文件，未開發、未執行 build／tests，未準備或執行驗收；待 codex-reviewer 審查及 Owner 確認後才開始 R9。
 
 **本次開發交付**：核准範圍已完成；Windows build 0 warnings／errors，Windows 測試探索／原生 API 啟動受 application control 封鎖。Linux 同份 source／PostgreSQL focused 26/26、full 306/306 首次 PASS，四組實際 SELECT 快照競爭 PASS；既有資料未變。詳見開發報告的原生環境限制。不擴充 API／DB schema，不拆 A／B，未準備或執行正式驗收，未開始 R10；交付後停止於「開發完成、待驗收」。
+
+**驗收準備（2026-10-05）**：Owner 已確認 `32bb41c` code review 通過並授權 Prepare；成對 [Markdown](../test-plan/R9_Acceptance_Test.md)／[.http](../test-plan/R9_Manual_Tests.http) 已備妥且只做文件靜態核對，所有 AI／人工結果仍未執行。Windows 原生 API 已知 policy 限制與本次 build／startup／health/readiness gate、同版 26 個 R9 案例對應與 full 新證據、資料保留與 probe finally 復原均明列；停止於「驗收計畫待 review」，未執行驗收／未開始 R10。

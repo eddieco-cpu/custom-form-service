@@ -1,0 +1,457 @@
+# R9 — 驗收計畫待 review；Prepare only，未授權執行
+# Companion: R9_Acceptance_Test.md；候選 source/tests/specs: 32bb41c2aa02600d3e1f6d10466676e3a145160a
+# Owner 本 chat 確認 R9 code review 通過；本版仍須 codex-reviewer 審查及 Owner 核准／執行授權。
+# 38 HTTP requests，另有 01／02／10／13 非 HTTP 操作，按 Markdown 順序。
+# 不跑 R10 Statistics；保留舊資料及本次兩張 Form／合法 Responses。
+# 先 Clear All Cookies，每 request @no-cookie-jar；只用明確 Cookie，不輸出可用 Token。
+# 所有動態值本機取得；不要複製舊 RunId／JWT／Form IDs；重跑換兩檔一致新 RunId。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+
+@apiBase = http://localhost:5000
+@runId = r9-acceptance-20261005-01
+@futureDeadline = 2036-10-05T00:00:00.123456Z
+@memberAEmail = <ENTER_RETAINED_ACTIVE_OWNER_EMAIL_LOCALLY>
+@memberBEmail = <ENTER_DIFFERENT_RETAINED_ACTIVE_MEMBER_EMAIL_LOCALLY>
+@testPassword = <ENTER_LOCAL_SYNTHETIC_PASSWORD>
+@memberAToken = <COPY_ONLY_ACCESS_TOKEN_VALUE_FROM_03a_LOCALLY>
+@memberBToken = <COPY_ONLY_ACCESS_TOKEN_VALUE_FROM_03b_LOCALLY>
+@memberAId = <COPY_USER_ID_FROM_03a>
+@memberBId = <COPY_DIFFERENT_USER_ID_FROM_03b>
+@missingFormId = 00000000-0000-4000-8000-000000000009
+@mainFormId = <COPY_FRESH_FORM_ID_FROM_04a>
+@emptyFormId = <COPY_FRESH_FORM_ID_FROM_04b>
+@qMainNumber = <COPY_04a_QUESTION_ID_BY_TYPE_number_AND_sortOrder_10>
+@qMainText = <COPY_04a_QUESTION_ID_BY_TYPE_text_AND_sortOrder_20>
+@bResponse1Id = <COPY_RESPONSE_ID_FROM_08a>
+@bResponse2Id = <COPY_RESPONSE_ID_FROM_08c>
+@aResponseId = <COPY_RESPONSE_ID_FROM_09a>
+
+### 01 — 非 HTTP：環境／本次 build／原生啟動／baseline
+# 按 Markdown 01；本次 repo build、API process／DLL 身分／DB host binding／非秘密 baseline。
+# 原生 API load 失敗或 health/readiness 非 200，03～12 BLOCKED；不得用 TestServer 代填。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+
+### 01a — 本次原生 API health
+# 前置：01 build／原生啟動與 process／DLL 身分確認；依 companion 相同編號記證據。
+# 預期：200；{"status":"healthy"}
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/health
+
+### 01b — 本次原生 API readiness
+# 前置：01a 成功；依 companion 相同編號記證據。
+# 預期：200；Healthy
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/health/ready
+
+### 02 — 非 HTTP：同版 full 回歸與承接案例證據
+# 執行 Markdown 02：預計 306（R9 26），核對實際 TRX／名稱／DataRows／四組 SELECT snapshot StdOut。
+# 開發 PASS 只是歷史；本次須重跑並保存 log／TRX／before-after baseline。
+# Native gate 失敗時，只允許按 Markdown 的 Linux SDK 測試 fallback；不授權替代 API host。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+
+### 03a — 登入既有 Active Owner A
+# 前置：01a／01b／02 通過；本機既有合成帳密；依 companion 相同編號記證據。
+# 預期：200 User＋access_token Cookie；記 memberAId／本機 token
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/login
+Content-Type: application/json
+
+{"email":"{{memberAEmail}}","password":"{{testPassword}}"}
+
+### 03b — 登入另一位 Active User B
+# 前置：03a；B active，token 僅留本機；依 companion 相同編號記證據。
+# 預期：200 User＋Cookie；memberBId 必須不同於 A
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/login
+Content-Type: application/json
+
+{"email":"{{memberBEmail}}","password":"{{testPassword}}"}
+
+### 04a — 建立 multiple 主 Form
+# 前置：03 完成、RunId／missing ID 碰撞檢查為零；依 companion 相同編號記證據。
+# 預期：201 Draft；2 optional Questions，qMainNumber sortOrder=10／qMainText=20
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms
+Cookie: access_token={{memberAToken}}
+Content-Type: application/json
+
+{"title":"R9 main {{runId}}","responseMode":"multiple","responseIdentity":"anonymous","resultVisibility":"owner_only","submissionDeadlineAt":"{{futureDeadline}}","questions":[{"type":"text","title":"Text","sortOrder":20},{"type":"number","title":"Number","sortOrder":10}]}
+
+### 04b — 建立空資料／Draft Form
+# 前置：04a；記 emptyFormId；依 companion 相同編號記證據。
+# 預期：201 Draft；1 optional Text，無 Response
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms
+Cookie: access_token={{memberAToken}}
+Content-Type: application/json
+
+{"title":"R9 empty {{runId}}","responseMode":"single","responseIdentity":"identified","resultVisibility":"public","questions":[{"type":"text","title":"Empty Text","sortOrder":0}]}
+
+### 05a — Owner 查 Draft Latest
+# 前置：04b；empty 保持 Draft；依 companion 相同編號記證據。
+# 預期：404 RESPONSE_NOT_FOUND
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{emptyFormId}}/responses/me/latest
+Cookie: access_token={{memberAToken}}
+
+### 05b — 非 Owner 查 Draft Latest
+# 前置：05a；相同 Draft；依 companion 相同編號記證據。
+# 預期：404 FORM_NOT_FOUND
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{emptyFormId}}/responses/me/latest
+Cookie: access_token={{memberBToken}}
+
+### 05c — Owner 查 Draft Count
+# 前置：05b；相同 Draft；依 companion 相同編號記證據。
+# 預期：200；count=0
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{emptyFormId}}/respondent-count
+Cookie: access_token={{memberAToken}}
+
+### 05d — 非 Owner 查 Draft Count
+# 前置：05c；相同 Draft；依 companion 相同編號記證據。
+# 預期：403 FORM_ACCESS_DENIED
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{emptyFormId}}/respondent-count
+Cookie: access_token={{memberBToken}}
+
+### 06a — 未登入＋壞 UUID
+# 前置：05；Clear All Cookies／不附 Cookie；依 companion 相同編號記證據。
+# 預期：401 AUTH_REQUIRED，先於 UUID 驗證
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/not-a-uuid/responses/me/latest
+
+### 06b — 壞 Cookie＋壞 UUID
+# 前置：06a；只附刻意無效 Cookie；依 companion 相同編號記證據。
+# 預期：401 AUTH_TOKEN_INVALID，先於 UUID 驗證
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/not-a-uuid/respondent-count
+Cookie: access_token=invalid-r9-cookie
+
+### 06c — Active User＋壞 UUID
+# 前置：06b；有效 A Cookie；依 companion 相同編號記證據。
+# 預期：400 VALIDATION_ERROR；details path=formId／code=INVALID_VALUE
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/not-a-uuid/responses/me/latest
+Cookie: access_token={{memberAToken}}
+
+### 06d — 非 Owner＋不存在 Form
+# 前置：06c；missingFormId 已查證不存在；依 companion 相同編號記證據。
+# 預期：404 FORM_NOT_FOUND，先於 Owner 判定
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{missingFormId}}/respondent-count
+Cookie: access_token={{memberBToken}}
+
+### 07a — Publish multiple 主 Form
+# 前置：04a Draft；futureDeadline 尚晚於 Server UTC；依 companion 相同編號記證據。
+# 預期：200 FormDetail；status=published
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mainFormId}}/publish
+Cookie: access_token={{memberAToken}}
+
+### 07b — Publish 空資料 Form
+# 前置：05 完成；1 optional Text 足以 Publish；依 companion 相同編號記證據。
+# 預期：200 FormDetail；status=published
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{emptyFormId}}/publish
+Cookie: access_token={{memberAToken}}
+
+### 07c — Published 無本人 Response
+# 前置：07b；此 Form 無任何提交；依 companion 相同編號記證據。
+# 預期：404 RESPONSE_NOT_FOUND
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{emptyFormId}}/responses/me/latest
+Cookie: access_token={{memberBToken}}
+
+### 07d — Published 零 Respondent
+# 前置：07c；此 Form 無任何提交；依 companion 相同編號記證據。
+# 預期：200；count=0
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{emptyFormId}}/respondent-count
+Cookie: access_token={{memberAToken}}
+
+### 08a — B 第一份完整回覆
+# 前置：07a；反序送 answers；main 初始 0 Response；依 companion 相同編號記證據。
+# 預期：201 Receipt；記 bResponse1Id；Answers 順序 Number→Text，Text=Old 😀，Number 精確保存
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
+Cookie: access_token={{memberBToken}}
+Content-Type: application/json
+
+{"answers":[{"questionId":"{{qMainText}}","value":"  Old 😀  "},{"questionId":"{{qMainNumber}}","value":1.00000000000000000000000000001}]}
+
+### 08b — B 查最新完整 Receipt 與排序
+# 前置：08a 成功；取 main 完整 DB snapshot；依 companion 相同編號記證據。
+# 預期：200；id=bResponse1Id；2 Answers，內容／時間／排序等於實際保存的 08a Receipt
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/responses/me/latest
+Cookie: access_token={{memberBToken}}
+
+### 08c — B 較新回覆略過 optional Text
+# 前置：08b；multiple；保存兩次實際 UTC timestamp；依 companion 相同編號記證據。
+# 預期：201 Receipt；記 bResponse2Id；只有 Number，submittedAt 嚴格晚於第一份
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
+Cookie: access_token={{memberBToken}}
+Content-Type: application/json
+
+{"answers":[{"questionId":"{{qMainNumber}}","value":1e0}]}
+
+### 08d — Latest 不補舊 Text
+# 前置：08c；DB 按 submitted_at DESC／id DESC 核對；依 companion 相同編號記證據。
+# 預期：200；id=bResponse2Id；answers 僅 Number=1，無 Text／null
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/responses/me/latest
+Cookie: access_token={{memberBToken}}
+
+### 08e — 同人兩份 Count 去重
+# 前置：08d；A 尚未提交；依 companion 相同編號記證據。
+# 預期：200；count=1；DB 2 Responses／3 Answers／1 distinct User
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/respondent-count
+Cookie: access_token={{memberAToken}}
+
+### 09a — Owner 自己提交整份零 Answer
+# 前置：08e；所有 Questions optional；依 companion 相同編號記證據。
+# 預期：201 Receipt；記 aResponseId；answers=[]；DB 3 Responses／3 Answers
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
+Cookie: access_token={{memberAToken}}
+Content-Type: application/json
+
+{"answers":[]}
+
+### 09b — Owner Latest 僅自己的零 Answer 回覆
+# 前置：09a；A 與 B 身分不同；依 companion 相同編號記證據。
+# 預期：200；id=aResponseId；answers=[]，不取得 B 的 Answers
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/responses/me/latest
+Cookie: access_token={{memberAToken}}
+
+### 09c — Count 包含 Owner 與零 Answer
+# 前置：09b；DB 3 Responses／3 Answers／2 distinct Users；依 companion 相同編號記證據。
+# 預期：200；count=2，不是歷史 Response 數 3
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/respondent-count
+Cookie: access_token={{memberAToken}}
+
+### 09d — Respondent 仍無 Count 權限
+# 前置：09c；B 曾成功提交但非 Owner；依 companion 相同編號記證據。
+# 預期：403 FORM_ACCESS_DENIED；不回 count／Answers
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/respondent-count
+Cookie: access_token={{memberBToken}}
+
+### 10 — 非 HTTP：deadline probe 準備
+# 僅對本次 Owner A＋RunId＋mainFormId；完整備份 deadline／snapshot，Markdown SQL 恰一列。
+# 完成 UPDATE／commit 後才發 10a／10b；不得持 transaction 等 HTTP。
+# try/finally 無論 HTTP 結果都還原原 deadline；不改 status／timestamps／舊 fixtures。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+
+### 10a — 截止後 Published 仍可讀 Latest
+# 前置：Markdown 10 probe：備份並只暫設本次 main deadline 為過去；依 companion 相同編號記證據。
+# 預期：200；仍為 bResponse2Id，僅 Number=1；Form 仍 published
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/responses/me/latest
+Cookie: access_token={{memberBToken}}
+
+### 10b — 截止後 Published 仍可讀 Count
+# 前置：10a；仍為過期 deadline；完成後必做 Markdown 10 finally 復原；依 companion 相同編號記證據。
+# 預期：200；count=2；GET 無寫入
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/respondent-count
+Cookie: access_token={{memberAToken}}
+
+### 10z — 非 HTTP：deadline finally 復原／核對
+# 按 Markdown 10 復原 snapshot 原值並確認完整 main snapshot 相等；成功才可進 11。
+# 復原失敗：記 FAIL，11～12 BLOCKED；13 必須仍嘗試安全復原並交付實際未完成事項。
+# AI 實際（同 Markdown 10 probe 欄）：未執行（等待 Owner review）
+# 人工實際（同 Markdown 10 probe 欄）：未執行（等待 Owner review）
+
+### 11a — Close 主 Form
+# 前置：10 deadline 已成功復原、全列快照相等；依 companion 相同編號記證據。
+# 預期：200 FormDetail；status=closed；保留全部 Responses／Answers
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mainFormId}}/close
+Cookie: access_token={{memberAToken}}
+
+### 11b — Close 零資料 Form
+# 前置：11a；empty 從未提交；依 companion 相同編號記證據。
+# 預期：200 FormDetail；status=closed；0 Responses／Answers
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{emptyFormId}}/close
+Cookie: access_token={{memberAToken}}
+
+### 11c — Closed Latest 可讀本人歷史
+# 前置：11a；不受 owner_only／anonymous 影響；依 companion 相同編號記證據。
+# 預期：200；仍為 bResponse2Id，只含 Number=1
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/responses/me/latest
+Cookie: access_token={{memberBToken}}
+
+### 11d — Closed Owner Count
+# 前置：11c；3 歷史 Responses 仍保留；依 companion 相同編號記證據。
+# 預期：200；count=2
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/respondent-count
+Cookie: access_token={{memberAToken}}
+
+### 11e — Closed 無 Response
+# 前置：11b；empty 保持零資料；依 companion 相同編號記證據。
+# 預期：404 RESPONSE_NOT_FOUND
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{emptyFormId}}/responses/me/latest
+Cookie: access_token={{memberAToken}}
+
+### 11f — Closed Count 空資料
+# 前置：11e；public／identified 不改 Owner Count；依 companion 相同編號記證據。
+# 預期：200；count=0
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{emptyFormId}}/respondent-count
+Cookie: access_token={{memberAToken}}
+
+### 12a — Soft Delete 主 Form
+# 前置：11 全部完成；保存 main-before-delete 全列 snapshot；依 companion 相同編號記證據。
+# 預期：204；deleted_at 非 null、status 仍 closed；子列與回覆全部保留
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+DELETE {{apiBase}}/api/v1/forms/{{mainFormId}}
+Cookie: access_token={{memberAToken}}
+
+### 12b — Deleted Latest 不繞過保留回覆
+# 前置：12a；DB 仍有 B 的歷史 Responses；依 companion 相同編號記證據。
+# 預期：404 FORM_NOT_FOUND，不是 RESPONSE_NOT_FOUND
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/responses/me/latest
+Cookie: access_token={{memberBToken}}
+
+### 12c — Deleted Count 存在性先於 Owner
+# 前置：12b；原先 B 是 403；子列保留；依 companion 相同編號記證據。
+# 預期：404 FORM_NOT_FOUND，不是 FORM_ACCESS_DENIED
+# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/respondent-count
+Cookie: access_token={{memberBToken}}
+
+### 13 — 非 HTTP：最終資料保留／清理與交付
+# 按 Markdown 13：probe 復原、舊列 snapshot 不變、保留本次 2 Forms／3 Questions／3 Responses／3 Answers。
+# 保留成功建立的 API／DB／volume；只清自己的暫存 SDK／workers／可用 Cookies／credentials。
+# 所有失敗／BLOCKED／未執行與首次 evidence 保留；人工結果獨立，不標記 accepted。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
