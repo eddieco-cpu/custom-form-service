@@ -1,6 +1,6 @@
-# R9 — 驗收計畫待 review；Prepare only，未授權執行
+# R9 — Owner 核准 17b1c2f 並授權三項局部補強後 AI Execute
 # Companion: R9_Acceptance_Test.md；候選 source/tests/specs: 32bb41c2aa02600d3e1f6d10466676e3a145160a
-# Owner 本 chat 確認 R9 code review 通過；本版仍須 codex-reviewer 審查及 Owner 核准／執行授權。
+# Owner 本 chat 確認驗收計畫 review 通過，2026-10-05 授權修訂後直接執行；38 requests／預期不變。
 # 38 HTTP requests，另有 01／02／10／13 非 HTTP 操作，按 Markdown 順序。
 # 不跑 R10 Statistics；保留舊資料及本次兩張 Form／合法 Responses。
 # 先 Clear All Cookies，每 request @no-cookie-jar；只用明確 Cookie，不輸出可用 Token。
@@ -29,6 +29,7 @@
 
 ### 01 — 非 HTTP：環境／本次 build／原生啟動／baseline
 # 按 Markdown 01；本次 repo build、API process／DLL 身分／DB host binding／非秘密 baseline。
+# 每個 Windows native stage 檢查 LASTEXITCODE 並保存 log／exit；restore/build 失敗不執行依賴 stage，launcher 早退留 ExitCode。
 # 原生 API load 失敗或 health/readiness 非 200，03～12 BLOCKED；不得用 TestServer 代填。
 # AI 實際：未執行（等待 Owner review）
 # 人工實際：未執行（等待 Owner review）
@@ -54,6 +55,8 @@ GET {{apiBase}}/health/ready
 ### 02 — 非 HTTP：同版 full 回歸與承接案例證據
 # 執行 Markdown 02：預計 306（R9 26），核對實際 TRX／名稱／DataRows／四組 SELECT snapshot StdOut。
 # 開發 PASS 只是歷史；本次須重跑並保存 log／TRX／before-after baseline。
+# Linux 完整輸入清單／hash：必備 src/tests/global.json/solution＋存在的 root Directory.Build.*／Directory.Packages.props／NuGet.Config 與額外 Import。
+# Linux set -Eeuo pipefail；tar 兩側 PIPESTATUS、copy hash／restore／build／full 各保存 exit，前階段失敗即停止，不只看最後命令。
 # Native gate 失敗時，只允許按 Markdown 的 Linux SDK 測試 fallback；不授權替代 API host。
 # AI 實際：未執行（等待 Owner review）
 # 人工實際：未執行（等待 Owner review）
@@ -83,6 +86,7 @@ Content-Type: application/json
 {"email":"{{memberBEmail}}","password":"{{testPassword}}"}
 
 ### 04a — 建立 multiple 主 Form
+# missingFormId 若碰撞，以新 GUID 查 DB 至不存在，同步 Markdown 實際值與本檔 @missingFormId；不能只換 RunId。
 # 前置：03 完成、RunId／missing ID 碰撞檢查為零；依 companion 相同編號記證據。
 # 預期：201 Draft；2 optional Questions，qMainNumber sortOrder=10／qMainText=20
 # DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。

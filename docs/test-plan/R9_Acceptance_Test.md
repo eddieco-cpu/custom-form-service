@@ -1,6 +1,6 @@
 # R9 驗收計畫 — My Latest／Respondent Count
 
-2026-10-05；**驗收計畫待 review（Prepare only，未授權執行）**。Owner 本 chat 已確認 R9 code review 通過並授權設計計畫；本版須 codex-reviewer 審查及 Owner 核准與明確執行授權後才可 Execute。候選程式／測試／正式規格基準 `32bb41c2aa02600d3e1f6d10466676e3a145160a`；目前沒有另存於 repo 的 R9 review 報告，不補造審查證據。
+2026-10-05；**Owner 已核准計畫並授權本次 AI Execute（2026-10-05）**。核准計畫 `17b1c2f`；Owner 指定三項局部補強後直接執行，不需再次詢問。補強僅限腳本 exit code／完整建置輸入／missing UUID 碰撞處理，38 requests 與預期不變。候選程式／測試／正式規格基準 `32bb41c2aa02600d3e1f6d10466676e3a145160a`；目前沒有另存於 repo 的 R9 review 報告，不補造審查證據。
 
 Companion：[R9_Manual_Tests.http](R9_Manual_Tests.http)。依 [AGENTS.md](../../AGENTS.md)、[acceptance skill](../../.agents/skills/v1-acceptance-testing/SKILL.md)、[Implementation Plan](../implementation/V1_Backend_Implementation_Plan.md) R9、[核准實作計畫](../implementation/R9_Implementation_Plan.md) 與 [開發報告](../implementation/R9_Development_Report.md)。正式對照：01 SUB-06～07／STA-01；02 §10～11；03a §5～6；03b §3.6／6.1／8；03c §3.1／3.3／5～6；04 §4／5／7／9；05 §13～15／20。
 
@@ -30,26 +30,50 @@ $DbUser = '<POSTGRES_USER from local .env>'
 | mainFormId | multiple／anonymous／owner_only；optional Text sortOrder=20、Number=10；未來 Deadline。反序 answers、B 兩份歷史、A 零 Answer，deadline probe 後復原 | Closed＋Soft Delete；2 Questions／3 Responses／3 Answers |
 | emptyFormId | single／identified／public；1 optional Text。先 Draft 權限，再 Published／Closed 零資料 | Closed 未刪除；1 Question／0 Responses／0 Answers |
 
-04 只建立 **2 Forms／3 Questions／0 Options**。取本次 server UUID，Question 依 type／sortOrder 配對變數，不以 Request array index 猜 ID。03 取得 A／B ID、確認不同且 active；04 前 DB 查 RunId title 與 missingFormId 未存在，碰撞時整個 run 換新識別，不修改舊 fixtures。最終 2 Forms／3 Questions／0 Options／3 Responses／3 Answers；其他舊資料完全保留。
+04 只建立 **2 Forms／3 Questions／0 Options**。取本次 server UUID，Question 依 type／sortOrder 配對變數，不以 Request array index 猜 ID。03 取得 A／B ID、確認不同且 active；04 前 DB 查 RunId title 與 missingFormId 未存在，RunId title 碰撞時換新 RunId；missingFormId（初值 `00000000-0000-4000-8000-000000000009`）碰撞時以 `[guid]::NewGuid()` 產生新 UUID，再查 DB 直到不存在，同步本 Markdown 的實際值與 .http `@missingFormId` 並記錄查證結果，不能只換 RunId。不修改舊 fixtures。最終 2 Forms／3 Questions／0 Options／3 Responses／3 Answers；其他舊資料完全保留。
 
 ## 01 — 環境、本次 build／原生 API 身分與 baseline（非 HTTP）
 
-目的：確認本次候選版本、既有 PostgreSQL host binding／連線、保留資料及真正的原生 API。以下命令均為**待核准後執行**，Prepare 不執行。
+目的：確認本次候選版本、既有 PostgreSQL host binding／連線、保留資料及真正的原生 API。以下腳本依本次 Owner 授權執行；各階段失敗保留首次 log／exit code，停止該平台的依賴操作。
 
 ```powershell
+$ErrorActionPreference = 'Stop'
+New-Item -ItemType Directory -Path $EvidenceRoot -Force | Out-Null
+function Invoke-NativeStage([string]$Stage, [string]$Exe, [string[]]$StageArgs) {
+    & $Exe @StageArgs 2>&1 | Tee-Object -FilePath (Join-Path $EvidenceRoot "$Stage.log")
+    $stageExit = $LASTEXITCODE
+    Set-Content -LiteralPath (Join-Path $EvidenceRoot "$Stage.exit.txt") -Value $stageExit
+    if ($stageExit -ne 0) { throw "$Stage failed (exit $stageExit); stop dependent stages" }
+}
 git status --short
+if ($LASTEXITCODE -ne 0) { throw 'Prerequisite failed; stop dependent stages and retain output' }
 git rev-parse HEAD
+if ($LASTEXITCODE -ne 0) { throw 'Prerequisite failed; stop dependent stages and retain output' }
 git diff 32bb41c -- src tests docs/specs
+if ($LASTEXITCODE -ne 0) { throw 'Prerequisite failed; stop dependent stages and retain output' }
 dotnet --info
+if ($LASTEXITCODE -ne 0) { throw 'Prerequisite failed; stop dependent stages and retain output' }
 docker compose config --quiet
+if ($LASTEXITCODE -ne 0) { throw 'Prerequisite failed; stop dependent stages and retain output' }
 docker compose ps
+if ($LASTEXITCODE -ne 0) { throw 'Prerequisite failed; stop dependent stages and retain output' }
 docker inspect custom-form-service-postgres-1 --format '{{json .NetworkSettings.Ports}}'
+if ($LASTEXITCODE -ne 0) { throw 'Prerequisite failed; stop dependent stages and retain output' }
 # DB 只讀連線，不提供密碼 argument，不輸出 secrets／完整 connection string。
 docker compose exec -T postgres psql -U $DbUser -d $DbName -X -v ON_ERROR_STOP=1 -c 'SELECT current_database(), current_user, now();'
-dotnet restore CustomFormService.sln --disable-parallel --verbosity minimal
-dotnet build CustomFormService.sln --no-restore --configuration Debug --disable-build-servers -m:1 -p:UseSharedCompilation=false
-# build 成功才啟動；只處理 command line 已確認屬於此 repo 的舊 API。
-$ApiLauncher = Start-Process -FilePath 'dotnet' -ArgumentList @('run','--project','src/CustomFormService.Api/CustomFormService.Api.csproj','--launch-profile','http','--no-build','--no-restore') -WorkingDirectory $RepoRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $EvidenceRoot 'api-stdout.log') -RedirectStandardError (Join-Path $EvidenceRoot 'api-stderr.log')
+if ($LASTEXITCODE -ne 0) { throw 'Prerequisite failed; stop dependent stages and retain output' }
+Invoke-NativeStage 'windows-restore-first' 'dotnet' @('restore','CustomFormService.sln','--disable-parallel','--verbosity','minimal')
+Invoke-NativeStage 'windows-build-first' 'dotnet' @('build','CustomFormService.sln','--no-restore','--configuration','Debug','--disable-build-servers','-m:1','-p:UseSharedCompilation=false')
+# restore 失敗不 build；build 失敗不 test／啟動。先核對所有輸入，不複製秘密。
+# API 是長駐進程，Start-Process 成功不等於啟動成功；記錄早退的 ExitCode 與 stderr。
+try {
+    $ApiLauncher = Start-Process -FilePath 'dotnet' -ArgumentList @('run','--project','src/CustomFormService.Api/CustomFormService.Api.csproj','--launch-profile','http','--no-build','--no-restore') -WorkingDirectory $RepoRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $EvidenceRoot 'api-stdout-first.log') -RedirectStandardError (Join-Path $EvidenceRoot 'api-stderr-first.log')
+} catch {
+    $_ | Out-String | Set-Content (Join-Path $EvidenceRoot 'api-launch-first-error.log')
+    throw
+}
+# 有限等待 launcher／listener；若已退出，Refresh() 後記 ExitCode，停止 HTTP gate。
+# 活著仍須下述 listener／DLL 身分及 01a／01b，不能只用 HasExited=false 判 PASS。
 Get-FileHash src/CustomFormService.Api/bin/Debug/net10.0/CustomFormService.Api.dll -Algorithm SHA256
 ```
 
@@ -68,7 +92,7 @@ Get-FileHash src/CustomFormService.Api/bin/Debug/net10.0/CustomFormService.Api.d
 目的：承接已存在的開發測試，**重新執行當前版本**並核對案例與證據，不能用歷史 26／306 自動填 PASS。原生 API health/readiness 成功後首選 Windows full；若 Windows test loader 被政策阻擋，保留失敗 log／TRX，可依既有只讀 Linux SDK fallback 跑同 source/tests。若 01 原生 API 已被阻擋但 DB／baseline 可用，02 可獨立跑 fallback，仍不解鎖 03～12。
 
 ```powershell
-dotnet test CustomFormService.sln --no-build --no-restore --configuration Debug -m:1 --logger "console;verbosity=normal" --logger "trx;LogFileName=r9-acceptance-full-first.trx" --results-directory $EvidenceRoot
+Invoke-NativeStage 'windows-full-first' 'dotnet' @('test','CustomFormService.sln','--no-build','--no-restore','--configuration','Debug','-m:1','--logger','console;verbosity=normal','--logger','trx;LogFileName=r9-acceptance-full-first.trx','--results-directory',$EvidenceRoot)
 ```
 
 預期當前 full **306**、其中 R9 **26**，以實際 discovery／TRX 為準；0 failed／notExecuted，新增／少案須解釋，不把 0 tests 當 PASS。完整 full 已包含下表，無需為湊證據重複 focused。取 02-after baseline，與 01 舊列逐字／結構精確比較；測試自有臨時資料必須清完，舊 fixture 不變。
@@ -100,19 +124,46 @@ $SdkName = "r9-acceptance-sdk-$RunId"
 $NuGetCache = Join-Path $env:USERPROFILE '.nuget/packages'
 $ProjectSecrets = Join-Path ([Environment]::GetFolderPath('ApplicationData')) 'Microsoft/UserSecrets/07f62f1e-ff60-47a2-bf24-866b69909532'
 docker run -d --name $SdkName --network custom-form-service_default --mount "type=bind,source=$RepoRoot,target=/source,readonly" --mount "type=bind,source=$EvidenceRoot,target=/evidence" --mount "type=bind,source=$NuGetCache,target=/nuget,readonly" --mount "type=bind,source=$ProjectSecrets,target=/root/.microsoft/usersecrets/07f62f1e-ff60-47a2-bf24-866b69909532,readonly" --env PostgreSql__Host=postgres --env NUGET_PACKAGES=/nuget --env DOTNET_CLI_TELEMETRY_OPTOUT=1 --env DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE=true mcr.microsoft.com/dotnet/sdk:10.0.400 sleep infinity
+if ($LASTEXITCODE -ne 0) { throw 'SDK container creation failed; do not copy/restore/build/test' }
 # 下方 bash 內容由本次 /evidence 的非秘密腳本透過 docker exec $SdkName bash /evidence/linux-prepare.sh 執行；
 # full 命令執行在 /work/r9；保存 source copy／restore／build／test 原始 log／exit code。
 ```
 
-複製 `src tests global.json CustomFormService.sln` 到一次性 /work/r9，tar 排除 bin／obj；還原／建置後執行同 full。命令沿既有腳本語意：
+**完整輸入核對**：先列根目錄／src／tests 與上層自動匯入檔、csproj Import／ProjectReference／Content，保存 `build-inputs.json` 路徑與 SHA256。必備 `src tests global.json CustomFormService.sln`；根目錄存在的 `Directory.Build.*`、`Directory.Packages.props`、大小寫等價 NuGet.Config 一併帶入。額外 Import／建置資產須保持相對路徑與雜湊；無法確認或含秘密的 NuGet.Config 不輸出內容／不照抄，停止 fallback 並回報。2026-10-05 核對目前這些 root／ancestor 檔皆不存在，兩 csproj 無額外 Import；各專案設定與 runtime content 已在 src/tests。既有 Linux NuGet cache 配置另記非秘密來源／hash，不宣稱是 repo 檔案。
+
+複製至新的 /work/r9，排除 bin／obj；必備與存在的 root 輸入一起 tar。`set -Eeuo pipefail`，tar pipeline 任一側失敗即停止；保留 `PIPESTATUS` 兩側 exit、stderr 與 stage exit。restore 失敗不 build，build 失敗不 test；每個 stage 都保存 exit code，不能只採最後一條命令。範例：
 ```bash
+set -Eeuo pipefail
+stage=setup
+trap 'rc=$?; printf "%s %s\n" "$stage" "$rc" >> /evidence/linux-stages.exit.txt; exit "$rc"' ERR
 mkdir -p /work/r9
-tar -C /source --exclude='*/bin' --exclude='*/obj' -cf - src tests global.json CustomFormService.sln | tar -C /work/r9 -xf -
+inputs=(src tests global.json CustomFormService.sln)
+shopt -s nullglob nocaseglob
+for file in /source/Directory.Build.* /source/Directory.Packages.props /source/NuGet.Config; do
+  [[ -f "$file" ]] && inputs+=("${file#/source/}")
+done
+stage=copy
+if tar -C /source --exclude='*/bin' --exclude='*/obj' -cf - "${inputs[@]}" 2>/evidence/linux-copy-create.log | tar -C /work/r9 -xf - 2>/evidence/linux-copy-extract.log; then
+  copy_status=("${PIPESTATUS[@]}")
+else
+  copy_status=("${PIPESTATUS[@]}")
+fi
+printf 'copy-create %s\ncopy-extract %s\n' "${copy_status[0]}" "${copy_status[1]}" >> /evidence/linux-stages.exit.txt
+if ((copy_status[0] != 0 || copy_status[1] != 0)); then exit 1; fi
+# Windows 清單另輸出 build-inputs.sha256，路徑相對 repo 並使用 /；涵蓋同一組輸入。
 cd /work/r9
-dotnet restore CustomFormService.sln --disable-parallel --ignore-failed-sources
-dotnet build CustomFormService.sln --no-restore --configuration Debug --disable-build-servers -m:1 -p:UseSharedCompilation=false
-dotnet test CustomFormService.sln --no-build --no-restore --configuration Debug -m:1 --logger "console;verbosity=normal" --logger "trx;LogFileName=r9-acceptance-linux-full-first.trx" --results-directory /evidence
+run_stage() {
+  stage="$1"; shift
+  if "$@" >"/evidence/linux-$stage-first.log" 2>&1; then rc=0; else rc=$?; fi
+  printf '%s %s\n' "$stage" "$rc" >> /evidence/linux-stages.exit.txt
+  if ((rc != 0)); then exit "$rc"; fi
+}
+run_stage hash sha256sum -c /evidence/build-inputs.sha256
+run_stage restore dotnet restore CustomFormService.sln --disable-parallel --ignore-failed-sources
+run_stage build dotnet build CustomFormService.sln --no-restore --configuration Debug --disable-build-servers -m:1 -p:UseSharedCompilation=false
+run_stage full dotnet test CustomFormService.sln --no-build --no-restore --configuration Debug -m:1 --logger "console;verbosity=normal" --logger "trx;LogFileName=r9-acceptance-linux-full-first.trx" --results-directory /evidence
 ```
+外層 `docker exec $SdkName bash /evidence/linux-prepare.sh` 同樣透過 Invoke-NativeStage 保存 exit；非零不得執行後續依賴 HTTP。setup／copy／hash／restore／build／full 的首次失敗不得覆寫。
 所有日誌／exit code 留存，明確平台為 Linux；03～12 仍須 Windows 原生 API gate。測試完只 stop／rm 此次 SDK，不 rm volume；保留初次失敗，後續若需重跑另存結果，不覆寫。
 
 | 非 HTTP 工作 | 預期與證據 | AI 實際 | 人工實際 |
@@ -302,4 +353,4 @@ AI／人工均執行各自 run 的清理；失敗 run 仍記錄能確認的實�
 
 HTTP 矩陣保持兩張 Form 的主流程；Auth 過期／未知 User／disabled、Identity×Visibility 六組合、跨 Form、所有五題型、完整 single/multiple 與快照競爭明確由 02 同版自動回歸承擔。Latest 同 Question sortOrder 的人工異常數據不額外構造（正式 Definition sortOrder 唯一）；01～13 不增加原生故障／大容量／生產部署／Statistics 測試。細粒度原生 HTTP 重複組合暫緩，不能據此放寬正式契約。
 
-**Prepare 静態檢查**：只核對兩檔編號／順序／38 requests／變量引用／JSON 與精確 Number token／無 GET Body／Cookie 身分／雙結果欄／SQL scope 與連結、`git diff --check`。本輪未 restore/build/start API，未發送 HTTP、未跑回歸／DB probe／清理操作；所有本次驗收結果仍 未執行（等待 Owner review）。交付兩檔與進度記錄並停止於“驗收計畫待 review”。
+**Prepare 静態檢查**：只核對兩檔編號／順序／38 requests／變量引用／JSON 與精確 Number token／無 GET Body／Cookie 身分／雙結果欄／SQL scope 與連結、`git diff --check`。本輪未 restore/build/start API，未發送 HTTP、未跑回歸／DB probe／清理操作；所有本次驗收結果仍 未執行（等待 Owner review）。以上為 `17b1c2f` Prepare 的歷史記錄；本次 Owner 已核准三項修訂後直接 AI Execute，另記實際結果，不改歷史 PASS。
