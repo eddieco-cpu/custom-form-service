@@ -1,5 +1,9 @@
 # R8 — Submit／Response／Answer 精簡實作計畫
 
+**2026-10-05 獨立 review／本次 AI 驗收：BLOCKED，驗收結果待 Owner review。** HEAD `0bb7842`、核准 `8680ccc`，source/tests 與 `d3f75b3` 相同、54 請求未改；未發現具體 R8 產品／計畫缺陷。新 RunId `r8-acceptance-20261005-01`：build 0 warnings/errors、native 01a PASS；01b 首次 503 Unhealthy FAIL，PostgreSQL 實際 host binding 空。HTTP 1 PASS／1 FAIL／52 BLOCKED；非 HTTP 01 FAIL、02／13／14 BLOCKED，full／後續未執行。舊完整資料與前次最終 snapshot 相同，無新 fixture；所有舊失敗與補驗 PASS 保留歷史、人工未執行。詳見 [本次獨立報告](R8_Independent_Review_Acceptance_Report.md)。需恢復環境後新 RunId 補驗；未 accepted、未進 R9。
+
+**以下保留 2026-10-04 歷史。**
+
 2026-10-04；**正式補驗完成，待 Owner review（2026-10-04）**。核准 `8680ccc`、Execute 授權持續有效；新 RunId `r8-acceptance-20261004-02`：Windows restore/build 0 warnings/errors、本次 native API health/readiness PASS、全套實際 280/280、54 HTTP／4 非 HTTP 全部 PASS。四組 native 兩 waiter／共用 10 秒／finally 與 Clock／EF／precommit faults 證據完整，旧列不變、新五 fixtures／9 Responses／10 Answers 保留。首次 FAIL／BLOCKED 與環境修復紀錄保留；人工未執行，Owner 指定本輪依 AI 證據審核、不要求人工作為 accepted 必要條件。详見 [正式補驗報告](R8_Acceptance_Reexecution_Report.md)及成對結果。未改產品／預期，未 accepted、未進 R9／R10／G1。
 
 **首次 AI 執行歷史**：2026-10-04；**R8 驗收結果待 Owner review**。A／B code review 通過、cleanup `d3f75b3` 與開發結果保留歷史。Owner 已核准成對驗收計畫 `8680ccc` 並授權 Execute；本次 restore/build/native startup 成功，01a PASS／01b 首次 503 Unhealthy FAIL，因 PostgreSQL 實際 host binding 為空，HTTP 其餘 52 案與 02 full／DB probe／並行未執行、BLOCKED。零新 fixtures／probe／worker／secret，既有資料唯讀比較相同；人工全部未執行，未改產品／預期。詳見 [執行報告](R8_Acceptance_Execution_Report.md)及[成對結果](../test-plan/R8_Acceptance_Test.md)。停止於「R8 驗收結果待 Owner review」，環境恢復與補驗待下一步指示；未 accepted，未進 R9／R10／G1。
