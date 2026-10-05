@@ -1,7 +1,7 @@
 # R9 — Owner 核准 17b1c2f 並授權三項局部補強後 AI Execute
 # Companion: R9_Acceptance_Test.md；候選 source/tests/specs: 32bb41c2aa02600d3e1f6d10466676e3a145160a
-# Owner 本 chat 確認驗收計畫 review 通過，2026-10-05 授權修訂後直接執行；38 requests／預期不變。
-# 38 HTTP requests，另有 01／02／10／13 非 HTTP 操作，按 Markdown 順序。
+# Owner 核准計畫及三項補強後 Execute，隨後明確改為動態註冊／登入兩個新會員；40 requests／R9 業務預期不變。
+# 40 HTTP requests，另有 01／02／10／13 非 HTTP 操作，按 Markdown 順序。
 # 不跑 R10 Statistics；保留舊資料及本次兩張 Form／合法 Responses。
 # 先 Clear All Cookies，每 request @no-cookie-jar；只用明確 Cookie，不輸出可用 Token。
 # 所有動態值本機取得；不要複製舊 RunId／JWT／Form IDs；重跑換兩檔一致新 RunId。
@@ -11,13 +11,13 @@
 @apiBase = http://localhost:5000
 @runId = r9-acceptance-20261005-01
 @futureDeadline = 2036-10-05T00:00:00.123456Z
-@memberAEmail = <ENTER_RETAINED_ACTIVE_OWNER_EMAIL_LOCALLY>
-@memberBEmail = <ENTER_DIFFERENT_RETAINED_ACTIVE_MEMBER_EMAIL_LOCALLY>
-@testPassword = <ENTER_LOCAL_SYNTHETIC_PASSWORD>
-@memberAToken = <COPY_ONLY_ACCESS_TOKEN_VALUE_FROM_03a_LOCALLY>
-@memberBToken = <COPY_ONLY_ACCESS_TOKEN_VALUE_FROM_03b_LOCALLY>
-@memberAId = <COPY_USER_ID_FROM_03a>
-@memberBId = <COPY_DIFFERENT_USER_ID_FROM_03b>
+@memberAEmail = r9-a-r9-acceptance-20261005-01@example.com
+@memberBEmail = r9-b-r9-acceptance-20261005-01@example.com
+@testPassword = <GENERATE_RANDOM_10_TO_128_CHARACTER_PASSWORD_LOCALLY>
+@memberAToken = <COPY_ONLY_ACCESS_TOKEN_VALUE_FROM_03b_LOCALLY>
+@memberBToken = <COPY_ONLY_ACCESS_TOKEN_VALUE_FROM_03d_LOCALLY>
+@memberAId = <COPY_USER_ID_FROM_03a_AND_VERIFY_03b>
+@memberBId = <COPY_DIFFERENT_USER_ID_FROM_03c_AND_VERIFY_03d>
 @missingFormId = 00000000-0000-4000-8000-000000000009
 @mainFormId = <COPY_FRESH_FORM_ID_FROM_04a>
 @emptyFormId = <COPY_FRESH_FORM_ID_FROM_04b>
@@ -61,10 +61,22 @@ GET {{apiBase}}/health/ready
 # AI 實際：未執行（等待 Owner review）
 # 人工實際：未執行（等待 Owner review）
 
-### 03a — 登入既有 Active Owner A
-# 前置：01a／01b／02 通過；本機既有合成帳密；依 companion 相同編號記證據。
-# 預期：200 User＋access_token Cookie；記 memberAId／本機 token
-# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+### 03a — 註冊本次 Owner A
+# 前置：01a／01b／02 通過；本次 email 未存在、隨機密碼僅記憶體；依 companion 相同編號記證據。
+# 預期：201 User；active；不設定 access_token Cookie；只新增 A
+# 密碼／Cookie 僅記憶體；註冊／登入 body 的密碼與 Set-Cookie 不保存；新會員保留。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/register
+Content-Type: application/json
+
+{"email":"{{memberAEmail}}","password":"{{testPassword}}","displayName":"R9 A"}
+
+### 03b — 登入本次 Active Owner A
+# 前置：03a 成功；使用同一隨機密碼；依 companion 相同編號記證據。
+# 預期：200 User＋access_token Cookie；id 等於 03a；token 僅記憶體
+# 密碼／Cookie 僅記憶體；註冊／登入 body 的密碼與 Set-Cookie 不保存；新會員保留。
 # AI 實際：未執行（等待 Owner review）
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar
@@ -73,10 +85,22 @@ Content-Type: application/json
 
 {"email":"{{memberAEmail}}","password":"{{testPassword}}"}
 
-### 03b — 登入另一位 Active User B
-# 前置：03a；B active，token 僅留本機；依 companion 相同編號記證據。
-# 預期：200 User＋Cookie；memberBId 必須不同於 A
-# DB／Receipt／GET 無寫入核對依 Markdown；只保存非秘密證據。
+### 03c — 註冊本次 User B
+# 前置：03b；B email 未存在，與 A 不同；依 companion 相同編號記證據。
+# 預期：201 User；active；不設定 access_token Cookie；只新增 B
+# 密碼／Cookie 僅記憶體；註冊／登入 body 的密碼與 Set-Cookie 不保存；新會員保留。
+# AI 實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/register
+Content-Type: application/json
+
+{"email":"{{memberBEmail}}","password":"{{testPassword}}","displayName":"R9 B"}
+
+### 03d — 登入本次 Active User B
+# 前置：03c 成功；B 使用同一隨機密碼；依 companion 相同編號記證據。
+# 預期：200 User＋Cookie；id 等於 03c，且與 A 不同；token 僅記憶體
+# 密碼／Cookie 僅記憶體；註冊／登入 body 的密碼與 Set-Cookie 不保存；新會員保留。
 # AI 實際：未執行（等待 Owner review）
 # 人工實際：未執行（等待 Owner review）
 # @no-cookie-jar

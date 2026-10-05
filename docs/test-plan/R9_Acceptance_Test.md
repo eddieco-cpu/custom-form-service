@@ -1,14 +1,14 @@
 # R9 驗收計畫 — My Latest／Respondent Count
 
-2026-10-05；**Owner 已核准計畫並授權本次 AI Execute（2026-10-05）**。核准計畫 `17b1c2f`；Owner 指定三項局部補強後直接執行，不需再次詢問。補強僅限腳本 exit code／完整建置輸入／missing UUID 碰撞處理，38 requests 與預期不變。候選程式／測試／正式規格基準 `32bb41c2aa02600d3e1f6d10466676e3a145160a`；目前沒有另存於 repo 的 R9 review 報告，不補造審查證據。
+2026-10-05；**Owner 已核准計畫並授權本次 AI Execute（2026-10-05）**。核准計畫 `17b1c2f`；Owner 指定三項局部補強後直接執行，不需再次詢問。三項補強完成於 `f8a8026`。Owner 隨後明確指定動態註冊並登入 A/B 新會員，03 改為四個 requests；總數 40，R9 業務預期不變。候選程式／測試／正式規格基準 `32bb41c2aa02600d3e1f6d10466676e3a145160a`；目前沒有另存於 repo 的 R9 review 報告，不補造審查證據。
 
 Companion：[R9_Manual_Tests.http](R9_Manual_Tests.http)。依 [AGENTS.md](../../AGENTS.md)、[acceptance skill](../../.agents/skills/v1-acceptance-testing/SKILL.md)、[Implementation Plan](../implementation/V1_Backend_Implementation_Plan.md) R9、[核准實作計畫](../implementation/R9_Implementation_Plan.md) 與 [開發報告](../implementation/R9_Development_Report.md)。正式對照：01 SUB-06～07／STA-01；02 §10～11；03a §5～6；03b §3.6／6.1／8；03c §3.1／3.3／5～6；04 §4／5／7／9；05 §13～15／20。
 
-只驗 Latest／Count 及已實作依賴；38 個順序 HTTP requests，4 組非 HTTP 工作（01、02、10、13）。不呼叫 Statistics、不改業務程式／schema、不重建 DB、不開始 R10。所有 AI／人工結果先填 **未執行（等待 Owner review）**；歷史開發 PASS 不代填本次驗收。
+只驗 Latest／Count 及已實作依賴；40 個順序 HTTP requests，4 組非 HTTP 工作（01、02、10、13）。不呼叫 Statistics、不改業務程式／schema、不重建 DB、不開始 R10。所有 AI／人工結果先填 **未執行（等待 Owner review）**；歷史開發 PASS 不代填本次驗收。
 
 ## 共用變數、測資與執行順序
 
-兩檔使用同一新 RunId `r9-acceptance-20261005-01`（規劃值，尚未執行）；每次獨立 AI／人工 run 另取未使用的 RunId 並同步兩檔。使用既有兩位 Active 合成會員：A 擁有本次新 Form，B 為不同會員。從本機取得帳密，不能從舊文件抄可用密碼／JWT，不註冊新會員、不改舊會員 Profile／status。兩會員若合成密碼不同，03 各自在本機展開正確值，不變更登入請求語意。
+兩檔使用同一新 RunId `r9-acceptance-20261005-01`（規劃值，尚未執行）；每次獨立 AI／人工 run 另取未使用的 RunId 並同步兩檔。使用本次動態註冊的兩位 Active 合成會員：A 擁有新 Form，B 是不同會員。03a 註冊 A、03b 登入 A、03c 註冊 B、03d 登入 B；依 Owner 本 chat 明確指示追加這兩個註冊請求，並非新功能驗收。Email 為 `r9-a-r9-acceptance-20261005-01@example.com`／`r9-b-r9-acceptance-20261005-01@example.com`，碰撞時換新 RunId 並同步兩檔；密碼使用本次隨機 10～128 字元值，僅記憶體／本機臨時操作，不寫進文件、Git、log 或證據。不讀舊密碼／JWT，不改舊會員 Profile／status；新會員與其合法 fixtures 保留。
 
 ```powershell
 $RunId = 'r9-acceptance-20261005-01'
@@ -18,10 +18,10 @@ $RepoRoot = (Get-Location).Path
 $EvidenceRoot = Join-Path $RepoRoot "artifacts/r9-acceptance/$RunId"
 $DbName = '<POSTGRES_DB from local .env>'
 $DbUser = '<POSTGRES_USER from local .env>'
-# Member A／B email、password、Cookie jar 或 token 只在本機設定。
+# Member A／B email 隨本次 RunId；隨機 password、Cookie jar 或 token 只在本機設定。
 ```
 
-以 companion 為唯一 HTTP Request Body 樣本；AI 可用 `curl.exe` 或既有 Python standard-library HTTP／psql harness，必須逐一對應 case ID，不新增正式 HTTP cases。不重新序列化精確 Number token；保存原始非秘密 Response／UTC／status／Content-Type，數值比較採 JSONB 或精確表示，避免 ConvertFrom-Json／double／decimal 捨入。人工 REST Client 先 Clear All Cookies；每 request `@no-cookie-jar`，只使用明確 Cookie。登入回應的 Set-Cookie 不存入共享證據，token 僅留記憶體／本機暫存 jar；執行後全部還原 placeholders。
+以 companion 為唯一 HTTP Request Body 樣本；AI 可用 `curl.exe` 或既有 Python standard-library HTTP／psql harness，必須逐一對應 case ID，不新增正式 HTTP cases。不重新序列化精確 Number token；保存原始非秘密 Response／UTC／status／Content-Type，數值比較採 JSONB 或精確表示，避免 ConvertFrom-Json／double／decimal 捨入。人工 REST Client 先 Clear All Cookies；每 request `@no-cookie-jar`，只使用明確 Cookie。註冊／登入的請求密碼與登入回應 Set-Cookie 不存入共享證據，token 僅留記憶體／本機暫存 jar；執行後全部還原 placeholders。
 
 依 01→02→03…→13；03～12 必須 01a／01b、02 PASS。失敗即保留首次證據，依賴列 BLOCKED，不重放 POST 或重設 fixture 求 PASS；multiple transport 結果不明時先查 DB，不能盲目重試新增歷史。清理 13 不因前置失敗跳過。
 
@@ -30,7 +30,7 @@ $DbUser = '<POSTGRES_USER from local .env>'
 | mainFormId | multiple／anonymous／owner_only；optional Text sortOrder=20、Number=10；未來 Deadline。反序 answers、B 兩份歷史、A 零 Answer，deadline probe 後復原 | Closed＋Soft Delete；2 Questions／3 Responses／3 Answers |
 | emptyFormId | single／identified／public；1 optional Text。先 Draft 權限，再 Published／Closed 零資料 | Closed 未刪除；1 Question／0 Responses／0 Answers |
 
-04 只建立 **2 Forms／3 Questions／0 Options**。取本次 server UUID，Question 依 type／sortOrder 配對變數，不以 Request array index 猜 ID。03 取得 A／B ID、確認不同且 active；04 前 DB 查 RunId title 與 missingFormId 未存在，RunId title 碰撞時換新 RunId；missingFormId（初值 `00000000-0000-4000-8000-000000000009`）碰撞時以 `[guid]::NewGuid()` 產生新 UUID，再查 DB 直到不存在，同步本 Markdown 的實際值與 .http `@missingFormId` 並記錄查證結果，不能只換 RunId。不修改舊 fixtures。最終 2 Forms／3 Questions／0 Options／3 Responses／3 Answers；其他舊資料完全保留。
+04 只建立 **2 Forms／3 Questions／0 Options**。取本次 server UUID，Question 依 type／sortOrder 配對變數，不以 Request array index 猜 ID。03 取得本次 A／B ID、確認不同且 active，新增兩位 User 不影響舊列；03a 前先查兩個 email 不存在，04 前 DB 查 RunId title 與 missingFormId 未存在，RunId title 碰撞時換新 RunId；missingFormId（初值 `00000000-0000-4000-8000-000000000009`）碰撞時以 `[guid]::NewGuid()` 產生新 UUID，再查 DB 直到不存在，同步本 Markdown 的實際值與 .http `@missingFormId` 並記錄查證結果，不能只換 RunId。不修改舊 fixtures。最終新增 2 Users／2 Forms／3 Questions／0 Options／3 Responses／3 Answers；其他舊資料完全保留。
 
 ## 01 — 環境、本次 build／原生 API 身分與 baseline（非 HTTP）
 
@@ -187,9 +187,9 @@ SELECT jsonb_build_object(
 -- 03 後／04 前，psql 參數先在本機驗證 UUID／RunId：
 SELECT COUNT(*) FROM forms WHERE title IN ('R9 main '||:'runId','R9 empty '||:'runId');
 SELECT COUNT(*) FROM forms WHERE id=:'missingFormId'::uuid;
--- 兩項必須都是 0，才建立本次 fixtures。
+-- 兩項必須都是 0，才建立本次 fixtures；03a 前另外查本次 A/B email 均不存在。
 SELECT id,status FROM users WHERE id IN (:'memberAId'::uuid,:'memberBId'::uuid) ORDER BY id;
--- 必須正好兩位不同的 active 合成會員，不能臨時修改其狀態。
+-- 必須正好兩位本次新增、不同的 active 合成會員，不能修改舊會員狀態。
 ```
 
 每個 GET／錯誤請求前後取目標 Form 完整 snapshot（Form＋Questions／Options＋Responses／Answers），必須全列／timestamps 不變；這裡 formId 每次在 psql 綁定為本案 main 或 empty：
@@ -216,7 +216,7 @@ POST Submit 後 Definition／子列／timestamps 不變，Response＋有效 Answ
 
 ## 依序 HTTP 案例（Request Body 依 companion）
 
-每行目的／前置／請求／預期與 .http 同編號。AI／人工分別填寫實際結果、執行 UTC、平台與證據路徑；例 `artifacts/r9-acceptance/<RunId>/08d.json`，只保存非秘密響應及 snapshot，登入略去 Set-Cookie。03a/b 保存脫敏身分確認；每案失敗保留實際 response，不改預期。
+每行目的／前置／請求／預期與 .http 同編號。AI／人工分別填寫實際結果、執行 UTC、平台與證據路徑；例 `artifacts/r9-acceptance/<RunId>/08d.json`，只保存非秘密響應及 snapshot，登入略去 Set-Cookie。03a～d 保存新會員身分確認，註冊／登入請求密碼全部略去；每案失敗保留實際 response，不改預期。
 
 ### 01 — health/readiness
 
@@ -225,12 +225,14 @@ POST Submit 後 Definition／子列／timestamps 不變，Response＋有效 Answ
 | 01a — 本次原生 API health | `GET /health`；無 Cookie | 01 build／原生啟動與 process／DLL 身分確認 | 200；{"status":"healthy"} | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
 | 01b — 本次原生 API readiness | `GET /health/ready`；無 Cookie | 01a 成功 | 200；Healthy | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
 
-### 03 — 既有會員登入
+### 03 — 本次新會員註冊與登入
 
 | Case／目的 | 請求（companion ID）／身分 | 前置 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 03a — 登入既有 Active Owner A | `POST /api/v1/auth/login`；無 Cookie | 01a／01b／02 通過；本機既有合成帳密 | 200 User＋access_token Cookie；記 memberAId／本機 token | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 03b — 登入另一位 Active User B | `POST /api/v1/auth/login`；無 Cookie | 03a；B active，token 僅留本機 | 200 User＋Cookie；memberBId 必須不同於 A | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 03a — 註冊本次 Owner A | `POST /api/v1/auth/register`；無 Cookie | 01a／01b／02 通過；本次 email 未存在、隨機密碼僅記憶體 | 201 User；active；不設定 access_token Cookie；只新增 A | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 03b — 登入本次 Active Owner A | `POST /api/v1/auth/login`；無 Cookie | 03a 成功；使用同一隨機密碼 | 200 User＋access_token Cookie；id 等於 03a；token 僅記憶體 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 03c — 註冊本次 User B | `POST /api/v1/auth/register`；無 Cookie | 03b；B email 未存在，與 A 不同 | 201 User；active；不設定 access_token Cookie；只新增 B | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 03d — 登入本次 Active User B | `POST /api/v1/auth/login`；無 Cookie | 03c 成功；B 使用同一隨機密碼 | 200 User＋Cookie；id 等於 03c，且與 A 不同；token 僅記憶體 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
 
 ### 04 — 建立本次測資
 
@@ -339,7 +341,7 @@ UPDATE forms SET submission_deadline_at=:'originalDeadline'::timestamptz
 AI／人工均執行各自 run 的清理；失敗 run 仍記錄能確認的實際情況，不用正常成功路徑數字代填。
 
 1. 確認 10 probe 恢復；所有本輪普通 GET／錯誤查詢前後 snapshot 完整相同。重新取六表非秘密 snapshot：baseline 舊 IDs 的列完全不變，包括既有 soft-deleted Forms／歷史 Responses。不得清除舊會員、舊 fixtures 或 volume。
-2. 正常流程本次增量：2 Forms／3 Questions／0 Options／3 Responses／3 Answers，全部屬於本次 RunId／Owner A，Response 的 User 是 A/B。main 仍 closed、deleted_at 非 null，2 B 歷史＋1 A 空答案原樣保留；empty closed、未刪除、零 Response。部分失敗按真實新增列記錄並保留，不刪合法部分成果。
+2. 正常流程本次增量：2 Users／2 Forms／3 Questions／0 Options／3 Responses／3 Answers，新 Users 的 email 對應本次 RunId；Forms 皆 Owner A，Response 的 User 是 A/B。main 仍 closed、deleted_at 非 null，2 B 歷史＋1 A 空答案原樣保留；empty closed、未刪除、零 Response。部分失敗按真實新增列記錄並保留，不刪合法部分成果。
 3. SDK fallback 若使用，結束測試後 stop／rm **僅本次唯一 SDK**，回收自己 workers／臨時 sessions；不動 PostgreSQL、其他 API、未知進程。正常通過啟動的本次開發 API 保留；失敗啟動記錄真實退出／未恢復，不能宣稱服務可用。恢復臨時 environment／啟動設置，僅清除本人創建的 credential jar／usable token／秘密臨時文件，文件恢復 placeholders；非秘密 response／snapshot／日誌／TRX 保留。
 4. 比較本次 source/tests/specs 未變與 git diff；按批准 plan 逐案彙總 PASS／FAIL／BLOCKED／未執行、平台／命令／首次失敗／清理狀態。AI 與人工分開；交付“驗收結果待 Owner 確認”，不標 accepted／不進 R10。
 
@@ -349,8 +351,8 @@ AI／人工均執行各自 run 的清理；失敗 run 仍記錄能確認的實�
 
 ## 執行證據與範圍邊界
 
-執行時每行結果綁定 case ID／UTC／實際平台／HTTP 原始請求 method/path 與非秘密 body／status／response（登入不留 credentials 或 Set-Cookie）／before-after DB snapshot。非 HTTP 01 保存 build/startup identity 與 baseline；02 新 full TRX、九個方法／26 rows／四組 SELECT 事件；10 保存 probe 原值／變化／finally；13 保存保留清理彙總。將執行報告與結果回填成對文件，同一語意變更須重新 review，不修改預期求 PASS。
+執行時每行結果綁定 case ID／UTC／實際平台／HTTP 原始請求 method/path 與非秘密 body／status／response（註冊／登入不留 password 或 Set-Cookie）／before-after DB snapshot。非 HTTP 01 保存 build/startup identity 與 baseline；02 新 full TRX、九個方法／26 rows／四組 SELECT 事件；10 保存 probe 原值／變化／finally；13 保存保留清理彙總。將執行報告與結果回填成對文件，同一語意變更須重新 review，不修改預期求 PASS。
 
 HTTP 矩陣保持兩張 Form 的主流程；Auth 過期／未知 User／disabled、Identity×Visibility 六組合、跨 Form、所有五題型、完整 single/multiple 與快照競爭明確由 02 同版自動回歸承擔。Latest 同 Question sortOrder 的人工異常數據不額外構造（正式 Definition sortOrder 唯一）；01～13 不增加原生故障／大容量／生產部署／Statistics 測試。細粒度原生 HTTP 重複組合暫緩，不能據此放寬正式契約。
 
-**Prepare 静態檢查**：只核對兩檔編號／順序／38 requests／變量引用／JSON 與精確 Number token／無 GET Body／Cookie 身分／雙結果欄／SQL scope 與連結、`git diff --check`。本輪未 restore/build/start API，未發送 HTTP、未跑回歸／DB probe／清理操作；所有本次驗收結果仍 未執行（等待 Owner review）。以上為 `17b1c2f` Prepare 的歷史記錄；本次 Owner 已核准三項修訂後直接 AI Execute，另記實際結果，不改歷史 PASS。
+**Prepare 静態檢查**：只核對兩檔編號／順序／40 requests／變量引用／JSON 與精確 Number token／無 GET Body／Cookie 身分／雙結果欄／SQL scope 與連結、`git diff --check`。本輪未 restore/build/start API，未發送 HTTP、未跑回歸／DB probe／清理操作；所有本次驗收結果仍 未執行（等待 Owner review）。以上為 `17b1c2f` Prepare 的歷史記錄；本次 Owner 已核准三項修訂後直接 AI Execute，另記實際結果，不改歷史 PASS。
