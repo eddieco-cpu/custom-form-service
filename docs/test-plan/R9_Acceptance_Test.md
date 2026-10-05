@@ -1,10 +1,10 @@
 # R9 驗收計畫 — My Latest／Respondent Count
 
-2026-10-05；**Owner 已核准計畫並授權本次 AI Execute（2026-10-05）**。核准計畫 `17b1c2f`；Owner 指定三項局部補強後直接執行，不需再次詢問。三項補強完成於 `f8a8026`。Owner 隨後明確指定動態註冊並登入 A/B 新會員，03 改為四個 requests；總數 40，R9 業務預期不變。候選程式／測試／正式規格基準 `32bb41c2aa02600d3e1f6d10466676e3a145160a`；目前沒有另存於 repo 的 R9 review 報告，不補造審查證據。
+2026-10-05；**R9 驗收結果待 Owner review（2026-10-05；人工未執行，未 accepted）**。核准計畫 `17b1c2f`；Owner 指定三項局部補強後直接執行，不需再次詢問。三項補強完成於 `f8a8026`。Owner 隨後明確指定動態註冊並登入 A/B 新會員，03 改為四個 requests；總數 40，R9 業務預期不變。候選程式／測試／正式規格基準 `32bb41c2aa02600d3e1f6d10466676e3a145160a`；目前沒有另存於 repo 的 R9 review 報告，不補造審查證據。
 
 Companion：[R9_Manual_Tests.http](R9_Manual_Tests.http)。依 [AGENTS.md](../../AGENTS.md)、[acceptance skill](../../.agents/skills/v1-acceptance-testing/SKILL.md)、[Implementation Plan](../implementation/V1_Backend_Implementation_Plan.md) R9、[核准實作計畫](../implementation/R9_Implementation_Plan.md) 與 [開發報告](../implementation/R9_Development_Report.md)。正式對照：01 SUB-06～07／STA-01；02 §10～11；03a §5～6；03b §3.6／6.1／8；03c §3.1／3.3／5～6；04 §4／5／7／9；05 §13～15／20。
 
-只驗 Latest／Count 及已實作依賴；40 個順序 HTTP requests，4 組非 HTTP 工作（01、02、10、13）。不呼叫 Statistics、不改業務程式／schema、不重建 DB、不開始 R10。所有 AI／人工結果先填 **未執行（等待 Owner review）**；歷史開發 PASS 不代填本次驗收。
+只驗 Latest／Count 及已實作依賴；40 個順序 HTTP requests，4 組非 HTTP 工作（01、02、10、13）。不呼叫 Statistics、不改業務程式／schema、不重建 DB、不開始 R10。本次 -02 AI 結果按實際證據回填；人工全部 **未執行**。首次 -01 FAIL／BLOCKED 保留歷史，歷史開發 PASS 不代填本次驗收。
 
 ## 共用變數、測資與執行順序
 
@@ -85,7 +85,7 @@ Get-FileHash src/CustomFormService.Api/bin/Debug/net10.0/CustomFormService.Api.d
 
 | 非 HTTP 工作 | 預期與證據 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| 01 | 候選版本一致，restore/build exit 0；同 repo 本次 DLL 的原生 API；DB host binding／連接與 baseline；manifest/log | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 01 | 候選版本一致，restore/build exit 0；同 repo 本次 DLL 的原生 API；DB host binding／連接與 baseline；manifest/log | PASS（-02，2026-10-05T13:16:33.808499+00:00；本次證據已核對；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/same-build-reference.json`） | 未執行（本次僅 AI） |
 
 ## 02 — 同版本完整回歸與承接案例（非 HTTP）
 
@@ -168,7 +168,7 @@ run_stage full dotnet test CustomFormService.sln --no-build --no-restore --confi
 
 | 非 HTTP 工作 | 預期與證據 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| 02 | full 當前 306／R9 26 全 PASS；上述名稱／rows／四組實際 SELECT StdOut 齊全；舊列不變，平台明確 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 02 | full 當前 306／R9 26 全 PASS；上述名稱／rows／四組實際 SELECT StdOut 齊全；舊列不變，平台明確 | PASS（-02，2026-10-05T13:16:33.810499+00:00；本次證據已核對；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/regression-summary.json`） | 未執行（本次僅 AI） |
 
 ## DB 與 Receipt 證據方法（01～13）
 
@@ -222,96 +222,96 @@ POST Submit 後 Definition／子列／timestamps 不變，Response＋有效 Answ
 
 | Case／目的 | 請求（companion ID）／身分 | 前置 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 01a — 本次原生 API health | `GET /health`；無 Cookie | 01 build／原生啟動與 process／DLL 身分確認 | 200；{"status":"healthy"} | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 01b — 本次原生 API readiness | `GET /health/ready`；無 Cookie | 01a 成功 | 200；Healthy | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 01a — 本次原生 API health | `GET /health`；無 Cookie | 01 build／原生啟動與 process／DLL 身分確認 | 200；{"status":"healthy"} | PASS（-02，2026-10-05T13:15:00.459760+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/01a.json`） | 未執行（本次僅 AI） |
+| 01b — 本次原生 API readiness | `GET /health/ready`；無 Cookie | 01a 成功 | 200；Healthy | PASS（-02，2026-10-05T13:15:00.508526+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/01b.json`） | 未執行（本次僅 AI） |
 
 ### 03 — 本次新會員註冊與登入
 
 | Case／目的 | 請求（companion ID）／身分 | 前置 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 03a — 註冊本次 Owner A | `POST /api/v1/auth/register`；無 Cookie | 01a／01b／02 通過；本次 email 未存在、隨機密碼僅記憶體 | 201 User；active；不設定 access_token Cookie；只新增 A | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 03b — 登入本次 Active Owner A | `POST /api/v1/auth/login`；無 Cookie | 03a 成功；使用同一隨機密碼 | 200 User＋access_token Cookie；id 等於 03a；token 僅記憶體 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 03c — 註冊本次 User B | `POST /api/v1/auth/register`；無 Cookie | 03b；B email 未存在，與 A 不同 | 201 User；active；不設定 access_token Cookie；只新增 B | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 03d — 登入本次 Active User B | `POST /api/v1/auth/login`；無 Cookie | 03c 成功；B 使用同一隨機密碼 | 200 User＋Cookie；id 等於 03c，且與 A 不同；token 僅記憶體 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 03a — 註冊本次 Owner A | `POST /api/v1/auth/register`；無 Cookie | 01a／01b／02 通過；本次 email 未存在、隨機密碼僅記憶體 | 201 User；active；不設定 access_token Cookie；只新增 A | PASS（-02，2026-10-05T13:16:38.700615+00:00；HTTP 201；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/03a.json`） | 未執行（本次僅 AI） |
+| 03b — 登入本次 Active Owner A | `POST /api/v1/auth/login`；無 Cookie | 03a 成功；使用同一隨機密碼 | 200 User＋access_token Cookie；id 等於 03a；token 僅記憶體 | PASS（-02，2026-10-05T13:16:40.312921+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/03b.json`） | 未執行（本次僅 AI） |
+| 03c — 註冊本次 User B | `POST /api/v1/auth/register`；無 Cookie | 03b；B email 未存在，與 A 不同 | 201 User；active；不設定 access_token Cookie；只新增 B | PASS（-02，2026-10-05T13:16:43.342955+00:00；HTTP 201；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/03c.json`） | 未執行（本次僅 AI） |
+| 03d — 登入本次 Active User B | `POST /api/v1/auth/login`；無 Cookie | 03c 成功；B 使用同一隨機密碼 | 200 User＋Cookie；id 等於 03c，且與 A 不同；token 僅記憶體 | PASS（-02，2026-10-05T13:16:44.953861+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/03d.json`） | 未執行（本次僅 AI） |
 
 ### 04 — 建立本次測資
 
 | Case／目的 | 請求（companion ID）／身分 | 前置 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 04a — 建立 multiple 主 Form | `POST /api/v1/forms`；A | 03 完成、RunId／missing ID 碰撞檢查為零 | 201 Draft；2 optional Questions，qMainNumber sortOrder=10／qMainText=20 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 04b — 建立空資料／Draft Form | `POST /api/v1/forms`；A | 04a；記 emptyFormId | 201 Draft；1 optional Text，無 Response | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 04a — 建立 multiple 主 Form | `POST /api/v1/forms`；A | 03 完成、RunId／missing ID 碰撞檢查為零 | 201 Draft；2 optional Questions，qMainNumber sortOrder=10／qMainText=20 | PASS（-02，2026-10-05T13:16:47.225056+00:00；HTTP 201；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/04a.json`） | 未執行（本次僅 AI） |
+| 04b — 建立空資料／Draft Form | `POST /api/v1/forms`；A | 04a；記 emptyFormId | 201 Draft；1 optional Text，無 Response | PASS（-02，2026-10-05T13:16:49.327574+00:00；HTTP 201；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/04b.json`） | 未執行（本次僅 AI） |
 
 ### 05 — Draft 權限／空資料
 
 | Case／目的 | 請求（companion ID）／身分 | 前置 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 05a — Owner 查 Draft Latest | `GET /api/v1/forms/{{emptyFormId}}/responses/me/latest`；A | 04b；empty 保持 Draft | 404 RESPONSE_NOT_FOUND | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 05b — 非 Owner 查 Draft Latest | `GET /api/v1/forms/{{emptyFormId}}/responses/me/latest`；B | 05a；相同 Draft | 404 FORM_NOT_FOUND | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 05c — Owner 查 Draft Count | `GET /api/v1/forms/{{emptyFormId}}/respondent-count`；A | 05b；相同 Draft | 200；count=0 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 05d — 非 Owner 查 Draft Count | `GET /api/v1/forms/{{emptyFormId}}/respondent-count`；B | 05c；相同 Draft | 403 FORM_ACCESS_DENIED | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 05a — Owner 查 Draft Latest | `GET /api/v1/forms/{{emptyFormId}}/responses/me/latest`；A | 04b；empty 保持 Draft | 404 RESPONSE_NOT_FOUND | PASS（-02，2026-10-05T13:16:51.575888+00:00；HTTP 404；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/05a.json`） | 未執行（本次僅 AI） |
+| 05b — 非 Owner 查 Draft Latest | `GET /api/v1/forms/{{emptyFormId}}/responses/me/latest`；B | 05a；相同 Draft | 404 FORM_NOT_FOUND | PASS（-02，2026-10-05T13:16:52.919323+00:00；HTTP 404；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/05b.json`） | 未執行（本次僅 AI） |
+| 05c — Owner 查 Draft Count | `GET /api/v1/forms/{{emptyFormId}}/respondent-count`；A | 05b；相同 Draft | 200；count=0 | PASS（-02，2026-10-05T13:16:54.453283+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/05c.json`） | 未執行（本次僅 AI） |
+| 05d — 非 Owner 查 Draft Count | `GET /api/v1/forms/{{emptyFormId}}/respondent-count`；B | 05c；相同 Draft | 403 FORM_ACCESS_DENIED | PASS（-02，2026-10-05T13:16:55.876853+00:00；HTTP 403；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/05d.json`） | 未執行（本次僅 AI） |
 
 ### 06 — 代表性錯誤優先序
 
 | Case／目的 | 請求（companion ID）／身分 | 前置 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 06a — 未登入＋壞 UUID | `GET /api/v1/forms/not-a-uuid/responses/me/latest`；無 Cookie | 05；Clear All Cookies／不附 Cookie | 401 AUTH_REQUIRED，先於 UUID 驗證 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 06b — 壞 Cookie＋壞 UUID | `GET /api/v1/forms/not-a-uuid/respondent-count`；刻意無效 Cookie | 06a；只附刻意無效 Cookie | 401 AUTH_TOKEN_INVALID，先於 UUID 驗證 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 06c — Active User＋壞 UUID | `GET /api/v1/forms/not-a-uuid/responses/me/latest`；A | 06b；有效 A Cookie | 400 VALIDATION_ERROR；details path=formId／code=INVALID_VALUE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 06d — 非 Owner＋不存在 Form | `GET /api/v1/forms/{{missingFormId}}/respondent-count`；B | 06c；missingFormId 已查證不存在 | 404 FORM_NOT_FOUND，先於 Owner 判定 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 06a — 未登入＋壞 UUID | `GET /api/v1/forms/not-a-uuid/responses/me/latest`；無 Cookie | 05；Clear All Cookies／不附 Cookie | 401 AUTH_REQUIRED，先於 UUID 驗證 | PASS（-02，2026-10-05T13:16:57.230180+00:00；HTTP 401；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/06a.json`） | 未執行（本次僅 AI） |
+| 06b — 壞 Cookie＋壞 UUID | `GET /api/v1/forms/not-a-uuid/respondent-count`；刻意無效 Cookie | 06a；只附刻意無效 Cookie | 401 AUTH_TOKEN_INVALID，先於 UUID 驗證 | PASS（-02，2026-10-05T13:16:58.669832+00:00；HTTP 401；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/06b.json`） | 未執行（本次僅 AI） |
+| 06c — Active User＋壞 UUID | `GET /api/v1/forms/not-a-uuid/responses/me/latest`；A | 06b；有效 A Cookie | 400 VALIDATION_ERROR；details path=formId／code=INVALID_VALUE | PASS（-02，2026-10-05T13:17:00.146850+00:00；HTTP 400；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/06c.json`） | 未執行（本次僅 AI） |
+| 06d — 非 Owner＋不存在 Form | `GET /api/v1/forms/{{missingFormId}}/respondent-count`；B | 06c；missingFormId 已查證不存在 | 404 FORM_NOT_FOUND，先於 Owner 判定 | PASS（-02，2026-10-05T13:17:01.521764+00:00；HTTP 404；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/06d.json`） | 未執行（本次僅 AI） |
 
 ### 07 — Publish／Published 空資料
 
 | Case／目的 | 請求（companion ID）／身分 | 前置 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 07a — Publish multiple 主 Form | `POST /api/v1/forms/{{mainFormId}}/publish`；A | 04a Draft；futureDeadline 尚晚於 Server UTC | 200 FormDetail；status=published | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07b — Publish 空資料 Form | `POST /api/v1/forms/{{emptyFormId}}/publish`；A | 05 完成；1 optional Text 足以 Publish | 200 FormDetail；status=published | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07c — Published 無本人 Response | `GET /api/v1/forms/{{emptyFormId}}/responses/me/latest`；B | 07b；此 Form 無任何提交 | 404 RESPONSE_NOT_FOUND | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07d — Published 零 Respondent | `GET /api/v1/forms/{{emptyFormId}}/respondent-count`；A | 07c；此 Form 無任何提交 | 200；count=0 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 07a — Publish multiple 主 Form | `POST /api/v1/forms/{{mainFormId}}/publish`；A | 04a Draft；futureDeadline 尚晚於 Server UTC | 200 FormDetail；status=published | PASS（-02，2026-10-05T13:17:03.213490+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/07a.json`） | 未執行（本次僅 AI） |
+| 07b — Publish 空資料 Form | `POST /api/v1/forms/{{emptyFormId}}/publish`；A | 05 完成；1 optional Text 足以 Publish | 200 FormDetail；status=published | PASS（-02，2026-10-05T13:17:04.622946+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/07b.json`） | 未執行（本次僅 AI） |
+| 07c — Published 無本人 Response | `GET /api/v1/forms/{{emptyFormId}}/responses/me/latest`；B | 07b；此 Form 無任何提交 | 404 RESPONSE_NOT_FOUND | PASS（-02，2026-10-05T13:17:06.021340+00:00；HTTP 404；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/07c.json`） | 未執行（本次僅 AI） |
+| 07d — Published 零 Respondent | `GET /api/v1/forms/{{emptyFormId}}/respondent-count`；A | 07c；此 Form 無任何提交 | 200；count=0 | PASS（-02，2026-10-05T13:17:07.504725+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/07d.json`） | 未執行（本次僅 AI） |
 
 ### 08 — Latest 整份選擇／排序／Count 去重
 
 | Case／目的 | 請求（companion ID）／身分 | 前置 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 08a — B 第一份完整回覆 | `POST /api/v1/forms/{{mainFormId}}/responses`；B | 07a；反序送 answers；main 初始 0 Response | 201 Receipt；記 bResponse1Id；Answers 順序 Number→Text，Text=Old 😀，Number 精確保存 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 08b — B 查最新完整 Receipt 與排序 | `GET /api/v1/forms/{{mainFormId}}/responses/me/latest`；B | 08a 成功；取 main 完整 DB snapshot | 200；id=bResponse1Id；2 Answers，內容／時間／排序等於實際保存的 08a Receipt | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 08c — B 較新回覆略過 optional Text | `POST /api/v1/forms/{{mainFormId}}/responses`；B | 08b；multiple；保存兩次實際 UTC timestamp | 201 Receipt；記 bResponse2Id；只有 Number，submittedAt 嚴格晚於第一份 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 08d — Latest 不補舊 Text | `GET /api/v1/forms/{{mainFormId}}/responses/me/latest`；B | 08c；DB 按 submitted_at DESC／id DESC 核對 | 200；id=bResponse2Id；answers 僅 Number=1，無 Text／null | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 08e — 同人兩份 Count 去重 | `GET /api/v1/forms/{{mainFormId}}/respondent-count`；A | 08d；A 尚未提交 | 200；count=1；DB 2 Responses／3 Answers／1 distinct User | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 08a — B 第一份完整回覆 | `POST /api/v1/forms/{{mainFormId}}/responses`；B | 07a；反序送 answers；main 初始 0 Response | 201 Receipt；記 bResponse1Id；Answers 順序 Number→Text，Text=Old 😀，Number 精確保存 | PASS（-02，2026-10-05T13:17:09.078372+00:00；HTTP 201；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/08a.json`） | 未執行（本次僅 AI） |
+| 08b — B 查最新完整 Receipt 與排序 | `GET /api/v1/forms/{{mainFormId}}/responses/me/latest`；B | 08a 成功；取 main 完整 DB snapshot | 200；id=bResponse1Id；2 Answers，內容／時間／排序等於實際保存的 08a Receipt | PASS（-02，2026-10-05T13:17:11.695101+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/08b.json`） | 未執行（本次僅 AI） |
+| 08c — B 較新回覆略過 optional Text | `POST /api/v1/forms/{{mainFormId}}/responses`；B | 08b；multiple；保存兩次實際 UTC timestamp | 201 Receipt；記 bResponse2Id；只有 Number，submittedAt 嚴格晚於第一份 | PASS（-02，2026-10-05T13:17:12.966780+00:00；HTTP 201；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/08c.json`） | 未執行（本次僅 AI） |
+| 08d — Latest 不補舊 Text | `GET /api/v1/forms/{{mainFormId}}/responses/me/latest`；B | 08c；DB 按 submitted_at DESC／id DESC 核對 | 200；id=bResponse2Id；answers 僅 Number=1，無 Text／null | PASS（-02，2026-10-05T13:17:15.500573+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/08d.json`） | 未執行（本次僅 AI） |
+| 08e — 同人兩份 Count 去重 | `GET /api/v1/forms/{{mainFormId}}/respondent-count`；A | 08d；A 尚未提交 | 200；count=1；DB 2 Responses／3 Answers／1 distinct User | PASS（-02，2026-10-05T13:17:16.725970+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/08e.json`） | 未執行（本次僅 AI） |
 
 ### 09 — Owner 自己／零 Answer／Count 權限
 
 | Case／目的 | 請求（companion ID）／身分 | 前置 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 09a — Owner 自己提交整份零 Answer | `POST /api/v1/forms/{{mainFormId}}/responses`；A | 08e；所有 Questions optional | 201 Receipt；記 aResponseId；answers=[]；DB 3 Responses／3 Answers | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 09b — Owner Latest 僅自己的零 Answer 回覆 | `GET /api/v1/forms/{{mainFormId}}/responses/me/latest`；A | 09a；A 與 B 身分不同 | 200；id=aResponseId；answers=[]，不取得 B 的 Answers | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 09c — Count 包含 Owner 與零 Answer | `GET /api/v1/forms/{{mainFormId}}/respondent-count`；A | 09b；DB 3 Responses／3 Answers／2 distinct Users | 200；count=2，不是歷史 Response 數 3 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 09d — Respondent 仍無 Count 權限 | `GET /api/v1/forms/{{mainFormId}}/respondent-count`；B | 09c；B 曾成功提交但非 Owner | 403 FORM_ACCESS_DENIED；不回 count／Answers | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 09a — Owner 自己提交整份零 Answer | `POST /api/v1/forms/{{mainFormId}}/responses`；A | 08e；所有 Questions optional | 201 Receipt；記 aResponseId；answers=[]；DB 3 Responses／3 Answers | PASS（-02，2026-10-05T13:17:17.968311+00:00；HTTP 201；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/09a.json`） | 未執行（本次僅 AI） |
+| 09b — Owner Latest 僅自己的零 Answer 回覆 | `GET /api/v1/forms/{{mainFormId}}/responses/me/latest`；A | 09a；A 與 B 身分不同 | 200；id=aResponseId；answers=[]，不取得 B 的 Answers | PASS（-02，2026-10-05T13:17:19.914258+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/09b.json`） | 未執行（本次僅 AI） |
+| 09c — Count 包含 Owner 與零 Answer | `GET /api/v1/forms/{{mainFormId}}/respondent-count`；A | 09b；DB 3 Responses／3 Answers／2 distinct Users | 200；count=2，不是歷史 Response 數 3 | PASS（-02，2026-10-05T13:17:21.260921+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/09c.json`） | 未執行（本次僅 AI） |
+| 09d — Respondent 仍無 Count 權限 | `GET /api/v1/forms/{{mainFormId}}/respondent-count`；B | 09c；B 曾成功提交但非 Owner | 403 FORM_ACCESS_DENIED；不回 count／Answers | PASS（-02，2026-10-05T13:17:22.669555+00:00；HTTP 403；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/09d.json`） | 未執行（本次僅 AI） |
 
 ### 10 — 截止後讀取（先執行下方 probe）
 
 | Case／目的 | 請求（companion ID）／身分 | 前置 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 10a — 截止後 Published 仍可讀 Latest | `GET /api/v1/forms/{{mainFormId}}/responses/me/latest`；B | Markdown 10 probe：備份並只暫設本次 main deadline 為過去 | 200；仍為 bResponse2Id，僅 Number=1；Form 仍 published | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 10b — 截止後 Published 仍可讀 Count | `GET /api/v1/forms/{{mainFormId}}/respondent-count`；A | 10a；仍為過期 deadline；完成後必做 Markdown 10 finally 復原 | 200；count=2；GET 無寫入 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 10a — 截止後 Published 仍可讀 Latest | `GET /api/v1/forms/{{mainFormId}}/responses/me/latest`；B | Markdown 10 probe：備份並只暫設本次 main deadline 為過去 | 200；仍為 bResponse2Id，僅 Number=1；Form 仍 published | PASS（-02，2026-10-05T13:17:27.009409+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/10a.json`） | 未執行（本次僅 AI） |
+| 10b — 截止後 Published 仍可讀 Count | `GET /api/v1/forms/{{mainFormId}}/respondent-count`；A | 10a；仍為過期 deadline；完成後必做 Markdown 10 finally 復原 | 200；count=2；GET 無寫入 | PASS（-02，2026-10-05T13:17:28.585195+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/10b.json`） | 未執行（本次僅 AI） |
 
 ### 11 — Closed 與零資料
 
 | Case／目的 | 請求（companion ID）／身分 | 前置 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 11a — Close 主 Form | `POST /api/v1/forms/{{mainFormId}}/close`；A | 10 deadline 已成功復原、全列快照相等 | 200 FormDetail；status=closed；保留全部 Responses／Answers | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 11b — Close 零資料 Form | `POST /api/v1/forms/{{emptyFormId}}/close`；A | 11a；empty 從未提交 | 200 FormDetail；status=closed；0 Responses／Answers | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 11c — Closed Latest 可讀本人歷史 | `GET /api/v1/forms/{{mainFormId}}/responses/me/latest`；B | 11a；不受 owner_only／anonymous 影響 | 200；仍為 bResponse2Id，只含 Number=1 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 11d — Closed Owner Count | `GET /api/v1/forms/{{mainFormId}}/respondent-count`；A | 11c；3 歷史 Responses 仍保留 | 200；count=2 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 11e — Closed 無 Response | `GET /api/v1/forms/{{emptyFormId}}/responses/me/latest`；A | 11b；empty 保持零資料 | 404 RESPONSE_NOT_FOUND | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 11f — Closed Count 空資料 | `GET /api/v1/forms/{{emptyFormId}}/respondent-count`；A | 11e；public／identified 不改 Owner Count | 200；count=0 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 11a — Close 主 Form | `POST /api/v1/forms/{{mainFormId}}/close`；A | 10 deadline 已成功復原、全列快照相等 | 200 FormDetail；status=closed；保留全部 Responses／Answers | PASS（-02，2026-10-05T13:17:31.152919+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/11a.json`） | 未執行（本次僅 AI） |
+| 11b — Close 零資料 Form | `POST /api/v1/forms/{{emptyFormId}}/close`；A | 11a；empty 從未提交 | 200 FormDetail；status=closed；0 Responses／Answers | PASS（-02，2026-10-05T13:17:32.611148+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/11b.json`） | 未執行（本次僅 AI） |
+| 11c — Closed Latest 可讀本人歷史 | `GET /api/v1/forms/{{mainFormId}}/responses/me/latest`；B | 11a；不受 owner_only／anonymous 影響 | 200；仍為 bResponse2Id，只含 Number=1 | PASS（-02，2026-10-05T13:17:34.781704+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/11c.json`） | 未執行（本次僅 AI） |
+| 11d — Closed Owner Count | `GET /api/v1/forms/{{mainFormId}}/respondent-count`；A | 11c；3 歷史 Responses 仍保留 | 200；count=2 | PASS（-02，2026-10-05T13:17:36.275565+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/11d.json`） | 未執行（本次僅 AI） |
+| 11e — Closed 無 Response | `GET /api/v1/forms/{{emptyFormId}}/responses/me/latest`；A | 11b；empty 保持零資料 | 404 RESPONSE_NOT_FOUND | PASS（-02，2026-10-05T13:17:37.754546+00:00；HTTP 404；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/11e.json`） | 未執行（本次僅 AI） |
+| 11f — Closed Count 空資料 | `GET /api/v1/forms/{{emptyFormId}}/respondent-count`；A | 11e；public／identified 不改 Owner Count | 200；count=0 | PASS（-02，2026-10-05T13:17:39.231726+00:00；HTTP 200；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/11f.json`） | 未執行（本次僅 AI） |
 
 ### 12 — Soft Delete／存在性優先
 
 | Case／目的 | 請求（companion ID）／身分 | 前置 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 12a — Soft Delete 主 Form | `DELETE /api/v1/forms/{{mainFormId}}`；A | 11 全部完成；保存 main-before-delete 全列 snapshot | 204；deleted_at 非 null、status 仍 closed；子列與回覆全部保留 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 12b — Deleted Latest 不繞過保留回覆 | `GET /api/v1/forms/{{mainFormId}}/responses/me/latest`；B | 12a；DB 仍有 B 的歷史 Responses | 404 FORM_NOT_FOUND，不是 RESPONSE_NOT_FOUND | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 12c — Deleted Count 存在性先於 Owner | `GET /api/v1/forms/{{mainFormId}}/respondent-count`；B | 12b；原先 B 是 403；子列保留 | 404 FORM_NOT_FOUND，不是 FORM_ACCESS_DENIED | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 12a — Soft Delete 主 Form | `DELETE /api/v1/forms/{{mainFormId}}`；A | 11 全部完成；保存 main-before-delete 全列 snapshot | 204；deleted_at 非 null、status 仍 closed；子列與回覆全部保留 | PASS（-02，2026-10-05T13:17:40.765541+00:00；HTTP 204；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/12a.json`） | 未執行（本次僅 AI） |
+| 12b — Deleted Latest 不繞過保留回覆 | `GET /api/v1/forms/{{mainFormId}}/responses/me/latest`；B | 12a；DB 仍有 B 的歷史 Responses | 404 FORM_NOT_FOUND，不是 RESPONSE_NOT_FOUND | PASS（-02，2026-10-05T13:17:42.283519+00:00；HTTP 404；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/12b.json`） | 未執行（本次僅 AI） |
+| 12c — Deleted Count 存在性先於 Owner | `GET /api/v1/forms/{{mainFormId}}/respondent-count`；B | 12b；原先 B 是 403；子列保留 | 404 FORM_NOT_FOUND，不是 FORM_ACCESS_DENIED | PASS（-02，2026-10-05T13:17:43.653268+00:00；HTTP 404；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/12c.json`） | 未執行（本次僅 AI） |
 
 ## 10 — deadline probe 與 finally（非 HTTP）
 
@@ -334,7 +334,7 @@ UPDATE forms SET submission_deadline_at=:'originalDeadline'::timestamptz
 
 | 非 HTTP 工作 | 預期與證據 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| 10 probe／10z finally | 僅本次 main deadline 暫變、截止後 GET 正確；原值／全列精確復原，舊 fixtures 不動 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 10 probe／10z finally | 僅本次 main deadline 暫變、截止後 GET 正確；原值／全列精確復原，舊 fixtures 不動 | PASS（-02，2026-10-05T13:17:30.013576+00:00；本次證據已核對；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/10z-restored.json`） | 未執行（本次僅 AI） |
 
 ## 13 — 最終保留資料、證據與清理（非 HTTP）
 
@@ -347,7 +347,7 @@ AI／人工均執行各自 run 的清理；失敗 run 仍記錄能確認的實�
 
 | 非 HTTP 工作 | 預期與證據 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| 13 | 舊列不變；新合法 fixtures／歷史保留；probe／worker／SDK／credentials 清理完成或明確未完成；manifest／比對摘要 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 13 | 舊列不變；新合法 fixtures／歷史保留；probe／worker／SDK／credentials 清理完成或明確未完成；manifest／比對摘要 | PASS（-02，2026-10-05T13:17:45.833977+00:00；本次證據已核對；證據 `artifacts/r9-acceptance/r9-acceptance-20261005-02/retention-cleanup-summary.json`） | 未執行（本次僅 AI） |
 
 ## 執行證據與範圍邊界
 
@@ -355,7 +355,7 @@ AI／人工均執行各自 run 的清理；失敗 run 仍記錄能確認的實�
 
 HTTP 矩陣保持兩張 Form 的主流程；Auth 過期／未知 User／disabled、Identity×Visibility 六組合、跨 Form、所有五題型、完整 single/multiple 與快照競爭明確由 02 同版自動回歸承擔。Latest 同 Question sortOrder 的人工異常數據不額外構造（正式 Definition sortOrder 唯一）；01～13 不增加原生故障／大容量／生產部署／Statistics 測試。細粒度原生 HTTP 重複組合暫緩，不能據此放寬正式契約。
 
-**Prepare 静態檢查**：只核對兩檔編號／順序／40 requests／變量引用／JSON 與精確 Number token／無 GET Body／Cookie 身分／雙結果欄／SQL scope 與連結、`git diff --check`。本輪未 restore/build/start API，未發送 HTTP、未跑回歸／DB probe／清理操作；所有本次驗收結果仍 未執行（等待 Owner review）。以上為 `17b1c2f` Prepare 的歷史記錄；本次 Owner 已核准三項修訂後直接 AI Execute，另記實際結果，不改歷史 PASS。
+**Prepare 靜態檢查（歷史 17b1c2f，38 requests；後續新會員修訂為 40）**：只核對兩檔編號／順序／requests／變量引用／JSON 與精確 Number token／無 GET Body／Cookie 身分／雙結果欄／SQL scope 與連結、`git diff --check`。本輪未 restore/build/start API，未發送 HTTP、未跑回歸／DB probe／清理操作；所有本次驗收結果仍 未執行（等待 Owner review）。以上為 `17b1c2f` Prepare 的歷史記錄；本次 Owner 已核准三項修訂後直接 AI Execute，另記實際結果，不改歷史 PASS。
 
 
 ## 首次執行歷史（保留，不作補驗 PASS）
@@ -363,3 +363,11 @@ HTTP 矩陣保持兩張 Form 的主流程；Auth 過期／未知 User／disabled
 RunId `r9-acceptance-20261005-01`；Windows build／原生 API／health/readiness PASS；full 兩次 306/306（首次早於 health，第二次依序執行），R9 26/26。HTTP 6 PASS／04a FAIL／33 BLOCKED。04a 已 201 建立 main Draft，之後 harness 誤用不存在的 is_required（正式欄位 required）中止；未建立 empty／未送 R9 業務 GET。13 初次 FAIL 是 baseline JSON 的小數精度損失造成誤報；[精確復核](../../artifacts/r9-acceptance/r9-acceptance-20261005-01/retention-correction.json)確認舊六表全列相同，新增 2 Users／1 Draft Form／2 Questions 保留，無 Responses／Answers。未執行 deadline probe；密碼與 Cookie 只在已退出進程記憶體。另保留環境 harness 首次 cp950 讀檔失敗，之後 UTF-8 接續。均屬臨時工具缺陷，不改產品或預期；[首次結果](../../artifacts/r9-acceptance/r9-acceptance-20261005-01/results.json)／[首次 HTTP log](../../artifacts/r9-acceptance/r9-acceptance-20261005-01/http-first.log)／[首次失敗](../../artifacts/r9-acceptance/r9-acceptance-20261005-01/first-http-failure.json)不覆寫。人工全部未執行。
 
 補驗 -02 使用新的 A/B 及兩張 Form，包含首次新增的合法 fixtures 在新的 baseline；沿用同一次授權執行中已驗證的 repo build／原生 PID 34980（source 與 DLL hash 必須相同）、再送 01a/b 並在其後跑本次新 full，所有結果另記；未改程式，不啟動 Linux fallback。
+
+## 本次 AI 補驗結果（-02）
+
+RunId `r9-acceptance-20261005-02`，執行 HEAD `2644eb33168357eafd36ba6404ad77c0d47016dd`；source/tests/specs 與 `32bb41c` 相同。**40 HTTP／4 組非 HTTP 全部 PASS**，Windows 本次 full **306/306**、R9 **26/26**；四組 ReaderExecutedAsync 實際 Form SELECT＋RepeatableRead＋另一 writer commit StdOut 齊全。沿用同次授權執行的本 repo build（0 warnings/errors，DLL hash 不變）、native API PID 34980，補驗先 health/readiness 再 full 與業務 HTTP；Linux 未執行，未改 application-control policy。missingFormId 查證未存在，沒有碰撞，故值不需改動。
+
+兩位新會員註冊與登入、兩張 Form、整份 Latest／omission／排序／空 Answer、Count 去重／Owner、Draft／Published／Closed／Deleted／空資料／代表性錯誤均依序核對。Deadline probe 只改本次 main，一列精確原值還原；所有 GET／錯誤查詢前後完整快照相同。舊資料及首次合法 fixtures 全列相同，-02 增量 2 Users／2 Forms／3 Questions／0 Options／3 Responses／3 Answers 保留。兩輪合計新增 4 Users／3 Forms／5 Questions／3 Responses／3 Answers；最終 8 Users／22 Forms／47 Questions／18 Options／20 Responses／23 Answers。原生 API 保留；無 SDK 容器／背景測試 workers；密碼與 token 僅記憶體且已退出清除，未新增秘密檔案。
+
+[執行報告](../implementation/R9_Acceptance_Execution_Report.md)／[補驗結果](../../artifacts/r9-acceptance/r9-acceptance-20261005-02/results.json)／[本次 full 與 SELECT 證據](../../artifacts/r9-acceptance/r9-acceptance-20261005-02/regression-summary.json)／[兩輪資料保留](../../artifacts/r9-acceptance/r9-acceptance-20261005-02/combined-retention.json)。首次工具失敗仍見上節，未改產品或預期。**人工全部未執行；R9 驗收結果待 Owner review，未自行 accepted，未開始 R10。**
