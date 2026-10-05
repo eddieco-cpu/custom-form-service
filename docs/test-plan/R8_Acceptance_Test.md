@@ -1,8 +1,12 @@
 # R8 驗收測試：Submit／Response／Answer
 
+**2026-10-05 本次重驗完成，驗收結果待 Owner review。** RunId `r8-acceptance-20261005-02`，測試 HEAD `d4d93e75ce35947015280f77794527ff8c9b5631`；核准計畫 `8680ccc`，source/tests/specs 與候選相同、請求／預期未改。Windows restore/build 0 warnings/errors，本次 native health/readiness PASS；全套 **280/280 PASS**、**54 HTTP／4 非 HTTP 全部 PASS**。四組 native race 各確認兩 waiter 後釋放 barrier；deadline／workers／barriers 清理完成，舊列完整不變、新五張 fixtures 與合法歷史保留。所有前次 FAIL／BLOCKED 與 PASS 保留歷史；人工未執行。詳見 [本次重驗報告](../implementation/R8_Acceptance_Rerun_20261005_Report.md)。未 accepted、未進 R9。 [本次逐案證據](../../artifacts/r8-acceptance/r8-acceptance-20261005-02/results.json)。
+
+**以下前次狀態保留為歷史；表格 AI 欄已更新為本次重驗結果。**
+
 2026-10-05；**本次 AI 驗收 BLOCKED，驗收結果待 Owner review**。RunId `r8-acceptance-20261005-01`，HEAD `0bb78428226104890b8c9ec73e7bb6ae2fbf68f1`；獨立 review 未發現具體 R8 產品／計畫缺陷，source/tests 與 `d3f75b3` 相同、54 請求與核准 `8680ccc` 相同。本次 build 0 warnings/errors、native API 01a PASS；01b 首次 503 Unhealthy FAIL，PostgreSQL 實際 host binding 空。54 HTTP 為 **1 PASS／1 FAIL／52 BLOCKED**，非 HTTP 01 FAIL、02／13／14 BLOCKED；本次全套與後續驗收未執行。原資料完整相同、無新增 fixture；人工全部未執行，未 accepted、未進 R9。詳見 [獨立 review／本次執行報告](../implementation/R8_Independent_Review_Acceptance_Report.md)及[本次結果](../../artifacts/r8-acceptance/r8-acceptance-20261005-01/results.json)。
 
-**以下 2026-10-04 開頭段落保留為第二次歷史結果；表格 AI 欄為 2026-10-05 本次結果。**
+**以下 2026-10-04 開頭段落保留為第二次歷史結果；表格 AI 欄現為最新重驗結果。**
 
 2026-10-04；**Execute 補驗：正式補驗完成，待 Owner review**。Owner 持續授權核准計畫 `8680cccd17e98646a6f257757dfa65654c039153`，本次新 RunId `r8-acceptance-20261004-02`：Windows restore/build 0 warnings/errors、同版 API health/readiness PASS、當前全套實際 280/280 PASS；54 HTTP requests 與 01／02／13／14 非 HTTP 檢查全部 PASS。首次 run `r8-acceptance-20261004-01` 的 1 PASS／1 FAIL／52 BLOCKED 與原始證據保留，沒有覆寫。詳見 [正式補驗報告](../implementation/R8_Acceptance_Reexecution_Report.md)及[本次逐案證據](../../artifacts/r8-acceptance/r8-acceptance-20261004-02/results.json)。本輪採 AI 執行驗收＋Owner 審核證據；人工全部未執行，依 Owner 指示不作為本輪 accepted 必要條件。仍須 Owner 明確確認 R8 accepted，才可進入 R9。
 
@@ -12,10 +16,10 @@ Companion：[R8_Manual_Tests.http](R8_Manual_Tests.http)。業務版本 `14aac30
 
 ## 變數、順序與保留資料
 
-本次 AI 使用兩檔相同新 RunId `r8-acceptance-20261005-01`；readiness 失敗，沒有建立本次 fixtures。2026-10-04 五張 fixtures 與所有歷史結果保留，不能重放其 single／已刪除資料。獨立 AI／人工 run 必須另取唯一 RunId。使用既有兩位 Active 合成會員：A 是新 Form Owner，B 是另一會員；從本機取得其 email／合成 password，不能照抄舊執行 JWT、Cookie、已建立的 Form／Question IDs 或舊結果。不要註冊新會員／改舊會員 Profile／status。
+本次 AI 使用兩檔相同新 RunId `r8-acceptance-20261005-02`；已建立並保留本次五張新 fixtures。前次 readiness 失敗與 2026-10-04 五張 fixtures／歷史結果保留，不能重放舊 single／已刪除資料。獨立 AI／人工 run 必須另取唯一 RunId。使用既有兩位 Active 合成會員：A 是新 Form Owner，B 是另一會員；從本機取得其 email／合成 password，不能照抄舊執行 JWT、Cookie、已建立的 Form／Question IDs 或舊結果。不要註冊新會員／改舊會員 Profile／status。
 
 ```powershell
-$RunId = 'r8-acceptance-20261005-01'
+$RunId = 'r8-acceptance-20261005-02'
 $ApiBase = 'http://localhost:5000'
 $FutureDeadline = '2036-10-04T00:00:00.123456Z'
 $MemberAEmail = '<ENTER_RETAINED_ACTIVE_OWNER_EMAIL_LOCALLY>'
@@ -81,15 +85,15 @@ SELECT COUNT(*) FROM forms WHERE id=:'missingFormId'::uuid;
 
 | 非 HTTP 檢查 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| 01 build／原生啟動／baseline | restore/build exit 0，0 errors；此版本 Windows native API；DB healthy；保留原有 IDs／完整列 | FAIL：本次 restore/build 0 errors、native startup 成功；01b readiness 503；唯讀舊資料相同 | 未執行（等待 Owner review） |
+| 01 build／原生啟動／baseline | restore/build exit 0，0 errors；此版本 Windows native API；DB healthy；保留原有 IDs／完整列 | PASS：restore/build 0 errors; native API/health/readiness; baseline and collision checks | 未執行（等待 Owner review） |
 
 
 ### 01 HTTP readiness
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 01a — 本次原生 API health | `GET /health` | 無 Cookie | 200；status=healthy | PASS：本次首次 HTTP 200；status=healthy | 未執行（等待 Owner review） |
-| 01b — 本次原生 API readiness | `GET /health/ready` | 無 Cookie | 200；Healthy | FAIL：本次首次 HTTP 503 Unhealthy；PostgreSQL host binding 空；原預期 200 Healthy | 未執行（等待 Owner review） |
+| 01a — 本次原生 API health | `GET /health` | 無 Cookie | 200；status=healthy | PASS：HTTP 200; {'status': 'healthy'} | 未執行（等待 Owner review） |
+| 01b — 本次原生 API readiness | `GET /health/ready` | 無 Cookie | 200；Healthy | PASS：HTTP 200; Healthy | 未執行（等待 Owner review） |
 
 
 ## 02 — 同版完整回歸、Clock／原子性／cleanup 證據（非 HTTP）
@@ -117,7 +121,7 @@ dotnet test CustomFormService.sln --no-build --no-restore --configuration Debug 
 
 | 非 HTTP 檢查 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| 02 full／名稱核對／當次故障與 Clock／資料比較 | 當前全套（預計 280）全部 PASS、0 skipped；每項對应 TRX；原有資料不變 | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
+| 02 full／名稱核對／當次故障與 Clock／資料比較 | 當前全套（預計 280）全部 PASS、0 skipped；每項對应 TRX；原有資料不變 | PASS：280/280 Windows full; required names/TRX; 12 actual waiters; 4 precommit faults; complete baseline unchanged | 未執行（等待 Owner review） |
 
 ## DB 與 Receipt 核對方法（04～14）
 
@@ -167,8 +171,8 @@ Receipt root 僅 id／formId／submittedAt／answers；每 Answer 僅 questionId
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 03a — 登入現有 Active Owner A | `POST /api/v1/auth/login` | 無 Cookie | 200 User＋Cookie | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 03b — 登入另一位 Active User B | `POST /api/v1/auth/login` | 無 Cookie | 200 User＋Cookie | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
+| 03a — 登入現有 Active Owner A | `POST /api/v1/auth/login` | 無 Cookie | 200 User＋Cookie | PASS：HTTP 200; retained Active user identity confirmed; fresh Cookie kept only in memory | 未執行（等待 Owner review） |
+| 03b — 登入另一位 Active User B | `POST /api/v1/auth/login` | 無 Cookie | 200 User＋Cookie | PASS：HTTP 200; retained Active user identity confirmed; fresh Cookie kept only in memory | 未執行（等待 Owner review） |
 
 - **03a**：將 id 記為 memberAId，只抄 access_token 的 value 到 memberAToken；不記錄可用 JWT。
 - **03b**：將 id 記為 memberBId（須不同於 A），只抄 token value 到 memberBToken。
@@ -181,15 +185,15 @@ Receipt root 僅 id／formId／submittedAt／answers；每 Answer 僅 questionId
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 04a — 建立 main single／五題型 | `POST /api/v1/forms` | A | 201 Draft FormDetail；5 Questions／3 Options | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 04b — Publish main | `POST /api/v1/forms/{{mainFormId}}/publish` | A | 200；Published | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 04c — 建立另一張 foreign Draft（保持 Draft） | `POST /api/v1/forms` | A | 201 Draft；1 真實 Question | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 04d — 建立 multiple／identified | `POST /api/v1/forms` | A | 201 Draft；2 Optional Questions | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 04e — Publish multiple | `POST /api/v1/forms/{{multipleFormId}}/publish` | A | 200；Published | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 04f — 建立 deadline single | `POST /api/v1/forms` | A | 201 Draft；futureDeadline 為未來 UTC Z | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 04g — Publish deadline | `POST /api/v1/forms/{{deadlineFormId}}/publish` | A | 200；Published | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 04h — 建立 single race | `POST /api/v1/forms` | A | 201 Draft；1 Optional Question | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 04i — Publish single race | `POST /api/v1/forms/{{singleRaceFormId}}/publish` | A | 200；Published | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
+| 04a — 建立 main single／五題型 | `POST /api/v1/forms` | A | 201 Draft FormDetail；5 Questions／3 Options | PASS：HTTP 201; fresh server IDs; FormDetail equals DB; Draft and zero submissions | 未執行（等待 Owner review） |
+| 04b — Publish main | `POST /api/v1/forms/{{mainFormId}}/publish` | A | 200；Published | PASS：HTTP 200; approved body; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 04c — 建立另一張 foreign Draft（保持 Draft） | `POST /api/v1/forms` | A | 201 Draft；1 真實 Question | PASS：HTTP 201; fresh server IDs; FormDetail equals DB; Draft and zero submissions | 未執行（等待 Owner review） |
+| 04d — 建立 multiple／identified | `POST /api/v1/forms` | A | 201 Draft；2 Optional Questions | PASS：HTTP 201; fresh server IDs; FormDetail equals DB; Draft and zero submissions | 未執行（等待 Owner review） |
+| 04e — Publish multiple | `POST /api/v1/forms/{{multipleFormId}}/publish` | A | 200；Published | PASS：HTTP 200; approved body; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 04f — 建立 deadline single | `POST /api/v1/forms` | A | 201 Draft；futureDeadline 為未來 UTC Z | PASS：HTTP 201; fresh server IDs; FormDetail equals DB; Draft and zero submissions | 未執行（等待 Owner review） |
+| 04g — Publish deadline | `POST /api/v1/forms/{{deadlineFormId}}/publish` | A | 200；Published | PASS：HTTP 200; approved body; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 04h — 建立 single race | `POST /api/v1/forms` | A | 201 Draft；1 Optional Question | PASS：HTTP 201; fresh server IDs; FormDetail equals DB; Draft and zero submissions | 未執行（等待 Owner review） |
+| 04i — Publish single race | `POST /api/v1/forms/{{singleRaceFormId}}/publish` | A | 200；Published | PASS：HTTP 200; approved body; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
 
 - **04a**：保存 mainFormId；以 type／sortOrder 配對 qMainText／Number／Single／Multiple／Rating、oMainSingle、oMainMultipleOne／Two；記完整 Definition snapshot。
 - **04b**：無 Body／Content-Type；取新的 main-before-submit snapshot（包含 Publish 的 timestamps）。
@@ -207,12 +211,12 @@ Receipt root 僅 id／formId／submittedAt／answers；每 Answer 僅 questionId
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 05a — 未登入＋壞 JSON | `POST /api/v1/forms/{{mainFormId}}/responses` | 無 Cookie | 401 AUTH_REQUIRED；Auth 優先 | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 05b — 無效 formId | `POST /api/v1/forms/not-a-uuid/responses` | B | 400 VALIDATION_ERROR；formId INVALID_VALUE | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 05c — 不存在 Form＋未知／唯讀欄位 | `POST /api/v1/forms/{{missingFormId}}/responses` | B | 400 VALIDATION_ERROR；userId INVALID_VALUE | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 05d — 不存在 Form＋合法 Envelope | `POST /api/v1/forms/{{missingFormId}}/responses` | B | 404 FORM_NOT_FOUND | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 05e — application/json＋空 Body | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 400 VALIDATION_ERROR；body INVALID_VALUE | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 05f — 錯誤 Content-Type | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 400 VALIDATION_ERROR；body INVALID_VALUE | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
+| 05a — 未登入＋壞 JSON | `POST /api/v1/forms/{{mainFormId}}/responses` | 無 Cookie | 401 AUTH_REQUIRED；Auth 優先 | PASS：HTTP 401; AUTH_REQUIRED; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 05b — 無效 formId | `POST /api/v1/forms/not-a-uuid/responses` | B | 400 VALIDATION_ERROR；formId INVALID_VALUE | PASS：HTTP 400; VALIDATION_ERROR; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 05c — 不存在 Form＋未知／唯讀欄位 | `POST /api/v1/forms/{{missingFormId}}/responses` | B | 400 VALIDATION_ERROR；userId INVALID_VALUE | PASS：HTTP 400; VALIDATION_ERROR; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 05d — 不存在 Form＋合法 Envelope | `POST /api/v1/forms/{{missingFormId}}/responses` | B | 404 FORM_NOT_FOUND | PASS：HTTP 404; FORM_NOT_FOUND; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 05e — application/json＋空 Body | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 400 VALIDATION_ERROR；body INVALID_VALUE | PASS：HTTP 400; VALIDATION_ERROR; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 05f — 錯誤 Content-Type | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 400 VALIDATION_ERROR；body INVALID_VALUE | PASS：HTTP 400; VALIDATION_ERROR; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
 
 - **05a**：main 與所有新 Forms 的 Response／Answers 零新增。
 - **05c**：先確認 missingFormId 在 DB 不存在；parse／Envelope 優先於 404。
@@ -226,9 +230,9 @@ Owner 指定的三個重點之一：Active 非 Owner B Submit 他人 Draft 是 4
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 06a — 非 Owner Submit 他人 Draft＋缺 answers | `POST /api/v1/forms/{{foreignFormId}}/responses` | B | 409 FORM_NOT_SUBMITTABLE | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 06b — 相同 B 讀他人 Draft Detail | `GET /api/v1/forms/{{foreignFormId}}` | B | 404 FORM_NOT_FOUND | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 06c — Main 使用另一張 Form 的真實 Question ID | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].questionId QUESTION_NOT_FOUND | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
+| 06a — 非 Owner Submit 他人 Draft＋缺 answers | `POST /api/v1/forms/{{foreignFormId}}/responses` | B | 409 FORM_NOT_SUBMITTABLE | PASS：HTTP 409; FORM_NOT_SUBMITTABLE; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 06b — 相同 B 讀他人 Draft Detail | `GET /api/v1/forms/{{foreignFormId}}` | B | 404 FORM_NOT_FOUND | PASS：HTTP 404; FORM_NOT_FOUND; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 06c — Main 使用另一張 Form 的真實 Question ID | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].questionId QUESTION_NOT_FOUND | PASS：HTTP 400; VALIDATION_ERROR; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
 
 - **06a**：必須 Active B≠Owner A；foreign 與 main Response／Answers 仍全 0。
 - **06b**：與 06a 區分：Detail 有 Draft 隱藏，Submit 正式 Published gate 回 409。
@@ -242,16 +246,16 @@ Owner 指定的三個重點之一：Active 非 Owner B Submit 他人 Draft 是 4
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 07a — Published 缺 answers | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers REQUIRED_FIELD | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 07b — Required 完全缺題 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；questions.&lt;qMainText&gt; REQUIRED_FIELD | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 07c — Required 合法空文字 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].value REQUIRED_FIELD | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 07d — 明確 value:null | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].value INVALID_VALUE | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 07e — 非空 Text 短於 minLength | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].value INVALID_VALUE | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 07f — Number String 拒絕 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[1].value INVALID_VALUE | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 07g — Rating 5.0 沿用 Integer 判定 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[1].value INVALID_VALUE | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 07h — Option 屬於另一個 Question | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[1].value OPTION_NOT_FOUND | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 07i — Multiple Choice 重複 ID | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[1].value[1] INVALID_VALUE | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 07j — NUL 受控拒絕 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].value INVALID_VALUE | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
+| 07a — Published 缺 answers | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers REQUIRED_FIELD | PASS：HTTP 400; VALIDATION_ERROR; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 07b — Required 完全缺題 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；questions.&lt;qMainText&gt; REQUIRED_FIELD | PASS：HTTP 400; VALIDATION_ERROR; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 07c — Required 合法空文字 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].value REQUIRED_FIELD | PASS：HTTP 400; VALIDATION_ERROR; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 07d — 明確 value:null | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].value INVALID_VALUE | PASS：HTTP 400; VALIDATION_ERROR; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 07e — 非空 Text 短於 minLength | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].value INVALID_VALUE | PASS：HTTP 400; VALIDATION_ERROR; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 07f — Number String 拒絕 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[1].value INVALID_VALUE | PASS：HTTP 400; VALIDATION_ERROR; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 07g — Rating 5.0 沿用 Integer 判定 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[1].value INVALID_VALUE | PASS：HTTP 400; VALIDATION_ERROR; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 07h — Option 屬於另一個 Question | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[1].value OPTION_NOT_FOUND | PASS：HTTP 400; VALIDATION_ERROR; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 07i — Multiple Choice 重複 ID | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[1].value[1] INVALID_VALUE | PASS：HTTP 400; VALIDATION_ERROR; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 07j — NUL 受控拒絕 | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 400 VALIDATION_ERROR；answers[0].value INVALID_VALUE | PASS：HTTP 400; VALIDATION_ERROR; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
 
 - **07e**：trim 後 1 Code Point、不是 omission。
 - **07g**：保留 raw 5.0 token；08a 的 5 正常接受，5e0／超大值由 02 同版自動測試涵蓋。
@@ -265,9 +269,9 @@ Owner 指定的三個重點之一：Active 非 Owner B Submit 他人 Draft 是 4
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 08a — Owner 全題型反序 Submit | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 201 ResponseReceipt；排序 Text／Number／Single／Multiple／Rating | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 08b — single 重送＋缺 answers | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 409 RESPONSE_ALREADY_SUBMITTED | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 08c — 非 Owner B 同一 single Form 可一次；Optional omission | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 201；Receipt 只有 qMainText="B answer" | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
+| 08a — Owner 全題型反序 Submit | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 201 ResponseReceipt；排序 Text／Number／Single／Multiple／Rating | PASS：HTTP 201; approved body; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 08b — single 重送＋缺 answers | `POST /api/v1/forms/{{mainFormId}}/responses` | A | 409 RESPONSE_ALREADY_SUBMITTED | PASS：HTTP 409; RESPONSE_ALREADY_SUBMITTED; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 08c — 非 Owner B 同一 single Form 可一次；Optional omission | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 201；Receipt 只有 qMainText="B answer" | PASS：HTTP 201; approved body; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
 
 - **08a**：保存 mainResponseAId。Root 僅 id／formId／submittedAt／answers；Answer 僅 questionId／value。DB 1 Response／5 Answers；user_id=A；Definition／timestamps 不變；比對保存數值及 timestamp。
 - **08b**：Response 限制先於 answers；DB 仍 1／5。
@@ -283,8 +287,8 @@ Owner 指定的三個重點之一：Active 非 Owner B Submit 他人 Draft 是 4
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 09a — multiple 第一次 identified Submit | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 201；2 Answers 按 Question 排序 | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 09b — multiple 新完整 Response 略過全部 Optional | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 201；新的 ID、answers=[] | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
+| 09a — multiple 第一次 identified Submit | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 201；2 Answers 按 Question 排序 | PASS：HTTP 201; approved body; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 09b — multiple 新完整 Response 略過全部 Optional | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 201；新的 ID、answers=[] | PASS：HTTP 201; approved body; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
 
 - **09a**：保存 multipleResponse1Id；Receipt 不含 userId／Answer ID，即使 identified；數值等值與 DB 實際表示為準，不承諾 1e0 原 token。
 - **09b**：保存 multipleResponse2Id；DB 2 Responses／2 Answers；舊 09a 的 2 Answers 保留，新 Response 0 Answers，不從舊 Response 補答案；不用 R9 Latest。
@@ -297,9 +301,9 @@ Owner 指定的三個重點之一：Active 非 Owner B Submit 他人 Draft 是 4
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 10a — deadline 前 Owner Submit | `POST /api/v1/forms/{{deadlineFormId}}/responses` | A | 201；answers=[] | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 10b — 過期 deadline 優先於 single／缺 answers | `POST /api/v1/forms/{{deadlineFormId}}/responses` | A | 409 SUBMISSION_DEADLINE_EXCEEDED | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 10c — deadline 不自動 Close | `GET /api/v1/forms/{{deadlineFormId}}` | B | 200 FormDetail；status=published | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
+| 10a — deadline 前 Owner Submit | `POST /api/v1/forms/{{deadlineFormId}}/responses` | A | 201；answers=[] | PASS：HTTP 201; approved body; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 10b — 過期 deadline 優先於 single／缺 answers | `POST /api/v1/forms/{{deadlineFormId}}/responses` | A | 409 SUBMISSION_DEADLINE_EXCEEDED | PASS：HTTP 409; SUBMISSION_DEADLINE_EXCEEDED; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 10c — deadline 不自動 Close | `GET /api/v1/forms/{{deadlineFormId}}` | B | 200 FormDetail；status=published | PASS：HTTP 200; approved body; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
 
 - **10a**：保存 deadlineResponseAId；DB deadline 1 Response／0 Answers；先完成此案才進行 10 SQL probe。
 - **10b**：必須先依 Markdown 10 將這張新 Form deadline 暫改為過去；零新增，舊 Response 保留。
@@ -333,8 +337,8 @@ finally 復原後完整 snapshot 須等於 10a 後／probe 前：1 Response／0 
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 11a — Close 已提交 main | `POST /api/v1/forms/{{mainFormId}}/close` | A | 200；Closed；兩個 Responses／6 Answers 保留 | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 11b — Closed＋缺 answers | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 409 FORM_NOT_SUBMITTABLE | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
+| 11a — Close 已提交 main | `POST /api/v1/forms/{{mainFormId}}/close` | A | 200；Closed；兩個 Responses／6 Answers 保留 | PASS：HTTP 200; approved body; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 11b — Closed＋缺 answers | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 409 FORM_NOT_SUBMITTABLE | PASS：HTTP 409; FORM_NOT_SUBMITTABLE; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
 
 - **11a**：只有 status／updated_at 可變，Definition 子列不變。
 - **11b**：即使 B 已成功 single，Published gate 仍先於 single／answers；零新增。
@@ -347,10 +351,10 @@ finally 復原後完整 snapshot 須等於 10a 後／probe 前：1 Response／0 
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 12a — 非 Owner Delete main | `DELETE /api/v1/forms/{{mainFormId}}` | B | 403 FORM_ACCESS_DENIED | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 12b — Owner Soft Delete main | `DELETE /api/v1/forms/{{mainFormId}}` | A | 204；Form／Questions／Options／Responses／Answers 保留 | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 12c — Owner Delete 重試 | `DELETE /api/v1/forms/{{mainFormId}}` | A | 404 FORM_NOT_FOUND | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 12d — 已刪除 Submit | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 404 FORM_NOT_FOUND | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
+| 12a — 非 Owner Delete main | `DELETE /api/v1/forms/{{mainFormId}}` | B | 403 FORM_ACCESS_DENIED | PASS：HTTP 403; FORM_ACCESS_DENIED; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 12b — Owner Soft Delete main | `DELETE /api/v1/forms/{{mainFormId}}` | A | 204；Form／Questions／Options／Responses／Answers 保留 | PASS：HTTP 204; approved body; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 12c — Owner Delete 重試 | `DELETE /api/v1/forms/{{mainFormId}}` | A | 404 FORM_NOT_FOUND | PASS：HTTP 404; FORM_NOT_FOUND; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
+| 12d — 已刪除 Submit | `POST /api/v1/forms/{{mainFormId}}/responses` | B | 404 FORM_NOT_FOUND | PASS：HTTP 404; FORM_NOT_FOUND; complete DB snapshot/history/Receipt checked | 未執行（等待 Owner review） |
 
 - **12a**：完整資料不變。
 - **12b**：只變 deleted_at／updated_at，status 仍 closed，Response=2／Answers=6。
@@ -365,14 +369,14 @@ finally 復原後完整 snapshot 須等於 10a 後／probe 前：1 Response／0 
 
 | Case／目的 | Companion request | 身分 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- | --- | --- |
-| 13a — single race worker 1 | `POST /api/v1/forms/{{singleRaceFormId}}/responses` | A | 與 13b 合併：恰一個 201／一個 409 RESPONSE_ALREADY_SUBMITTED | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 13b — single race worker 2 | `POST /api/v1/forms/{{singleRaceFormId}}/responses` | A | 與 13a 合併：總 1 Response／1 Answer | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 13c — multiple race worker 1 | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 與 13d：兩個 201；delta 2 Responses／1 Answer | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 13d — multiple race worker 2 | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 201；answers=[]；13c/d 後總 4 Responses／3 Answers | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 13e — Submit／Close race 的 Submit | `POST /api/v1/forms/{{deadlineFormId}}/responses` | B | 201 或 409 FORM_NOT_SUBMITTABLE（與 13f 配對） | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 13f — Submit／Close race 的 Close | `POST /api/v1/forms/{{deadlineFormId}}/close` | A | 200；Closed；paired DB delta=1 或 0 Response／0 Answers | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 13g — Submit／Delete race 的 Submit | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 201 或 404 FORM_NOT_FOUND（與 13h 配對） | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
-| 13h — Submit／Delete race 的 Delete | `DELETE /api/v1/forms/{{multipleFormId}}` | A | 204；paired DB delta=1 或 0 Response／0 Answers | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
+| 13a — single race worker 1 | `POST /api/v1/forms/{{singleRaceFormId}}/responses` | A | 與 13b 合併：恰一個 201／一個 409 RESPONSE_ALREADY_SUBMITTED | PASS：HTTP 409; two real waiters; single winner 13b; full DB/history/Receipt checks; finally cleanup complete | 未執行（等待 Owner review） |
+| 13b — single race worker 2 | `POST /api/v1/forms/{{singleRaceFormId}}/responses` | A | 與 13a 合併：總 1 Response／1 Answer | PASS：HTTP 201; two real waiters; single winner 13b; full DB/history/Receipt checks; finally cleanup complete | 未執行（等待 Owner review） |
+| 13c — multiple race worker 1 | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 與 13d：兩個 201；delta 2 Responses／1 Answer | PASS：HTTP 201; two real waiters; multiple both committed; omission preserved; full DB/history/Receipt checks; finally cleanup complete | 未執行（等待 Owner review） |
+| 13d — multiple race worker 2 | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 201；answers=[]；13c/d 後總 4 Responses／3 Answers | PASS：HTTP 201; two real waiters; multiple both committed; omission preserved; full DB/history/Receipt checks; finally cleanup complete | 未執行（等待 Owner review） |
+| 13e — Submit／Close race 的 Submit | `POST /api/v1/forms/{{deadlineFormId}}/responses` | B | 201 或 409 FORM_NOT_SUBMITTABLE（與 13f 配對） | PASS：HTTP 409; two real waiters; close first; full DB/history/Receipt checks; finally cleanup complete | 未執行（等待 Owner review） |
+| 13f — Submit／Close race 的 Close | `POST /api/v1/forms/{{deadlineFormId}}/close` | A | 200；Closed；paired DB delta=1 或 0 Response／0 Answers | PASS：HTTP 200; two real waiters; close first; full DB/history/Receipt checks; finally cleanup complete | 未執行（等待 Owner review） |
+| 13g — Submit／Delete race 的 Submit | `POST /api/v1/forms/{{multipleFormId}}/responses` | B | 201 或 404 FORM_NOT_FOUND（與 13h 配對） | PASS：HTTP 404; two real waiters; delete first; full DB/history/Receipt checks; finally cleanup complete | 未執行（等待 Owner review） |
+| 13h — Submit／Delete race 的 Delete | `DELETE /api/v1/forms/{{multipleFormId}}` | A | 204；paired DB delta=1 或 0 Response／0 Answers | PASS：HTTP 204; two real waiters; delete first; full DB/history/Receipt checks; finally cleanup complete | 未執行（等待 Owner review） |
 
 - **13a**：只可依 Markdown 13 barrier harness 與 13b 同時執行；確認兩個實際 DB waiters 後釋放，不能按 REST Client 順序單送求並行 PASS。
 - **13b**：兩個 worker 相同 A；成功 Receipt value 必須對應 winner 的 Request，Definition 不变。
@@ -408,7 +412,7 @@ SELECT pid,application_name,wait_event_type,wait_event,pg_blocking_pids(pid),que
 
 | 非 HTTP 檢查 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| 13 每組 barrier／兩 waiter／finally／資料核對 | 四組均有本次實際重疊證據、合法配對與零殘留 cleanup；原有資料不變 | BLOCKED：01b readiness gate 失敗；本次未執行；歷史 PASS 不代填 | 未執行（等待 Owner review） |
+| 13 每組 barrier／兩 waiter／finally／資料核對 | 四組均有本次實際重疊證據、合法配對與零殘留 cleanup；原有資料不變 | PASS：Four native HTTP pairs; two real waiters per pair within shared 10 seconds; approved status/DB outcomes; bounded finally cleanup | 未執行（等待 Owner review） |
 
 ## 14 — 保留資料、復原、秘密清理與交付（非 HTTP）
 
@@ -422,7 +426,7 @@ SELECT pid,application_name,wait_event_type,wait_event,pg_blocking_pids(pid),que
 
 | 非 HTTP 檢查 | 預期 | AI 實際 | 人工實際 |
 | --- | --- | --- | --- |
-| 14 舊資料比對／probe 復原／worker 清理／秘密／保留資料／Git | 全部實際完成並有證據；本次合法 fixtures 保留、舊列不變 | BLOCKED：完整成功路徑未執行；另完成唯讀資料保留比對、無新增 fixture／secret／probe／worker | 未執行（等待 Owner review） |
+| 14 舊資料比對／probe 復原／worker 清理／秘密／保留資料／Git | 全部實際完成並有證據；本次合法 fixtures 保留、舊列不變 | PASS：All old non-secret rows identical; five fixtures/history retained; deadline restored; all barrier sessions/workers reclaimed; memory credentials cleared | 未執行（等待 Owner review） |
 
 ## 覆蓋限制與 Prepare 歷史
 
@@ -447,3 +451,9 @@ Prepare 歷史：`8680ccc` 交付時只做原始文件靜態核對，曾停止�
 本輪採 AI 執行驗收＋Owner 審核證據；人工全部未執行，依 Owner 指示不作為本輪 accepted 必要條件。仍須 Owner 明確確認 R8 accepted，才可進入 R9。
 
 本次 54 HTTP／4 非 HTTP 全部 PASS；Windows 全套實際 discovery／TRX 280/280，0 failed／notExecuted。四組 native HTTP 都在各組共用 10 秒內確認兩個真 DB waiter 後才釋放 barrier；Submit→Close 201／200、Delete→Submit 404／204，其他方向由本次 02 deterministic tests 覆蓋。deadline 已完整復原，全部 barrier／workers 回收；旧資料完整列不變。本次五張新 Forms／10 Questions／3 Options／9 Responses／10 Answers 保留，人工未執行。測試細節、fixture IDs、fault／Clock／EF 證據與限制見 [正式補驗報告](../implementation/R8_Acceptance_Reexecution_Report.md)。停止於 **「正式補驗完成，待 Owner review」**，未 accepted、未進 R9。
+
+## 本次重驗結果（r8-acceptance-20261005-02）
+
+**2026-10-05 本次重驗完成，驗收結果待 Owner review。** RunId `r8-acceptance-20261005-02`，測試 HEAD `d4d93e75ce35947015280f77794527ff8c9b5631`；核准計畫 `8680ccc`，source/tests/specs 與候選相同、請求／預期未改。Windows restore/build 0 warnings/errors，本次 native health/readiness PASS；全套 **280/280 PASS**、**54 HTTP／4 非 HTTP 全部 PASS**。四組 native race 各確認兩 waiter 後釋放 barrier；deadline／workers／barriers 清理完成，舊列完整不變、新五張 fixtures 與合法歷史保留。所有前次 FAIL／BLOCKED 與 PASS 保留歷史；人工未執行。詳見 [本次重驗報告](../implementation/R8_Acceptance_Rerun_20261005_Report.md)。未 accepted、未進 R9。 [本次逐案證據](../../artifacts/r8-acceptance/r8-acceptance-20261005-02/results.json)。
+
+本次全套／HTTP／DB／並行實際重新執行，非沿用歷史 PASS。前次完整 58 欄 snapshot 保存於本次 evidence 的 approved-before.md／approved-before.http；首次失敗證據均保留。人工欄未代填，仍待 Owner 明確確認。
