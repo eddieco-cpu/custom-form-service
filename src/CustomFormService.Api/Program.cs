@@ -3,6 +3,7 @@ using CustomFormService.Api.Authentication;
 using CustomFormService.Api.Contracts.Errors;
 using CustomFormService.Api.Infrastructure.Persistence;
 using CustomFormService.Api.Middleware;
+using CustomFormService.Api.Validation;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,7 @@ using Microsoft.Extensions.Options;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
-    .AddControllers()
+    .AddControllers(options => options.Filters.Add(new UnsupportedJsonContentTypeFilter()))
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow;

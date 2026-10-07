@@ -342,13 +342,13 @@ public static class DraftDefinitionDelta
         }
         if (properties.TryGetValue("title", out var titleElement))
         {
-            if (titleElement.ValueKind != JsonValueKind.String)
+            if (!RequestJson.TryReadString(titleElement, out var rawTitle))
             {
                 errors.Add(Invalid($"{path}.title", "Title must be a non-null string."));
             }
             else
             {
-                title = titleElement.GetString()!;
+                title = rawTitle;
             }
         }
         if (properties.TryGetValue("description", out var descriptionElement))
@@ -357,9 +357,9 @@ public static class DraftDefinitionDelta
             {
                 description = null;
             }
-            else if (descriptionElement.ValueKind == JsonValueKind.String)
+            else if (RequestJson.TryReadString(descriptionElement, out var rawDescription))
             {
-                description = descriptionElement.GetString();
+                description = rawDescription;
             }
             else
             {
@@ -392,7 +392,8 @@ public static class DraftDefinitionDelta
             }
             else
             {
-                if (!JsonElement.DeepEquals(config, configElement)) config = configElement.Clone();
+                // Validate/normalize config before comparing decoded content in the change set.
+                config = configElement.Clone();
             }
         }
         if (properties.TryGetValue("options", out var optionsElement))
@@ -429,18 +430,18 @@ public static class DraftDefinitionDelta
         var sortOrder = existing?.SortOrder ?? 0;
         if (properties.TryGetValue("label", out var labelElement))
         {
-            if (labelElement.ValueKind != JsonValueKind.String)
+            if (!RequestJson.TryReadString(labelElement, out var rawLabel))
             {
                 errors.Add(Invalid($"{path}.label", "Label must be a non-null string."));
             }
             else
             {
-                label = labelElement.GetString()!;
+                label = rawLabel;
             }
         }
         if (properties.TryGetValue("value", out var valueElement))
         {
-            if (valueElement.ValueKind != JsonValueKind.String)
+            if (!RequestJson.TryReadString(valueElement, out var rawValue))
             {
                 errors.Add(Invalid($"{path}.value", "Value must be a non-null string."));
             }
@@ -448,7 +449,7 @@ public static class DraftDefinitionDelta
             {
                 // Establish the normalized alternate key before tracking a new Option
                 // or deciding whether an existing key needs a same-ID replacement.
-                value = TextRules.Trim(valueElement.GetString()!);
+                value = TextRules.Trim(rawValue);
             }
         }
         if (properties.TryGetValue("sortOrder", out var sortOrderElement) &&
@@ -477,12 +478,17 @@ public static class DraftDefinitionDelta
 
         foreach (var property in element.EnumerateObject())
         {
-            var propertyPath = $"{path}.{property.Name}";
-            if (!allowed.Contains(property.Name))
+            if (!RequestJson.TryReadPropertyName(property, out var name))
+            {
+                errors.Add(Invalid(path, "The object contains an invalid JSON property name."));
+                continue;
+            }
+            var propertyPath = $"{path}.{name}";
+            if (!allowed.Contains(name))
             {
                 errors.Add(Invalid(propertyPath, "This field is not allowed."));
             }
-            else if (!properties.TryAdd(property.Name, property.Value))
+            else if (!properties.TryAdd(name, property.Value))
             {
                 errors.Add(Invalid(propertyPath, "This field must not be repeated."));
             }
@@ -504,7 +510,7 @@ public static class DraftDefinitionDelta
 
     private static bool TryReadId(JsonElement element, string path, List<ApiErrorDetail> errors, out Guid id)
     {
-        if (element.ValueKind == JsonValueKind.String && Guid.TryParse(element.GetString(), out id))
+        if (RequestJson.TryReadString(element, out var value) && Guid.TryParse(value, out id))
         {
             return true;
         }
@@ -516,8 +522,9 @@ public static class DraftDefinitionDelta
 
     private static bool TryReadQuestionType(JsonElement element, string path, List<ApiErrorDetail> errors, out QuestionType type)
     {
-        type = element.ValueKind == JsonValueKind.String
-            ? element.GetString() switch
+        var decoded = RequestJson.TryReadString(element, out var value);
+        type = decoded
+            ? value switch
             {
                 "text" => QuestionType.Text,
                 "number" => QuestionType.Number,
@@ -527,7 +534,7 @@ public static class DraftDefinitionDelta
                 _ => default
             }
             : default;
-        if (element.ValueKind == JsonValueKind.String && element.GetString() is "text" or "number" or "rating" or "single_choice" or "multiple_choice")
+        if (decoded && value is "text" or "number" or "rating" or "single_choice" or "multiple_choice")
         {
             return true;
         }

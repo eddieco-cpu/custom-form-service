@@ -173,10 +173,15 @@ public sealed class FormsController(
         }
 
         var totalItems = await forms.CountAsync(cancellationToken);
+        var offset = (long)(query.Page - 1) * query.PageSize;
+        var totalPages = totalItems == 0 ? 0 : (int)Math.Ceiling(totalItems / (double)query.PageSize);
+        if (offset >= totalItems)
+            return Ok(new FormListResponse([], new FormPaginationResponse(query.Page, query.PageSize, totalItems, totalPages)));
+
         var rows = await forms
             .OrderByDescending(form => form.UpdatedAt)
             .ThenByDescending(form => form.Id)
-            .Skip((query.Page - 1) * query.PageSize)
+            .Skip((int)offset) // offset < totalItems (int), so this conversion cannot overflow.
             .Take(query.PageSize)
             .Select(form => new
             {
@@ -206,9 +211,6 @@ public sealed class FormsController(
                 form.UpdatedAt))
             .ToArray();
 
-        var totalPages = totalItems == 0
-            ? 0
-            : (int)Math.Ceiling(totalItems / (double)query.PageSize);
         return Ok(new FormListResponse(items, new FormPaginationResponse(
             query.Page,
             query.PageSize,
@@ -250,13 +252,16 @@ public sealed class FormsController(
             return ApiErrors.Validation([validationError]);
         }
 
+        await using var transaction = await database.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
         var form = await LoadAvailableFormAsync(id, cancellationToken);
         if (form is null || (form.Status == FormStatus.Draft && form.UserId != RequiredCurrentUser().Id))
         {
             return FormNotFound();
         }
 
-        return Ok(FormDetailResponse.From(form));
+        var response = FormDetailResponse.From(form);
+        await transaction.CommitAsync(cancellationToken);
+        return Ok(response);
     }
 
     [HttpPatch("{formId}")]
@@ -652,13 +657,13 @@ public sealed class FormsController(
         var validationErrors = new List<ApiErrorDetail>();
         if (properties.TryGetValue("title", out var titleElement))
         {
-            if (titleElement.ValueKind != JsonValueKind.String)
+            if (!RequestJson.TryReadString(titleElement, out var rawTitle))
             {
                 validationErrors.Add(RequestJson.Invalid("title", "Title must be a non-null string."));
             }
             else
             {
-                var title = TextRules.Trim(titleElement.GetString()!);
+                var title = TextRules.Trim(rawTitle);
                 if (TextRules.CodePointCount(title) is 0 or > 200)
                 {
                     validationErrors.Add(RequestJson.Invalid("title", "Title must contain 1 to 200 characters."));
@@ -676,9 +681,9 @@ public sealed class FormsController(
             {
                 form.Description = null;
             }
-            else if (descriptionElement.ValueKind == JsonValueKind.String)
+            else if (RequestJson.TryReadString(descriptionElement, out var rawDescription))
             {
-                var description = TextRules.Trim(descriptionElement.GetString()!);
+                var description = TextRules.Trim(rawDescription);
                 form.Description = description.Length == 0 ? null : description;
             }
             else
@@ -689,8 +694,8 @@ public sealed class FormsController(
 
         if (properties.TryGetValue("responseMode", out var responseModeElement))
         {
-            form.ResponseMode = responseModeElement.ValueKind == JsonValueKind.String
-                ? responseModeElement.GetString() switch
+            form.ResponseMode = RequestJson.TryReadString(responseModeElement, out var mode)
+                ? mode switch
                 {
                     "single" => ResponseMode.Single,
                     "multiple" => ResponseMode.Multiple,
@@ -705,8 +710,8 @@ public sealed class FormsController(
 
         if (properties.TryGetValue("responseIdentity", out var responseIdentityElement))
         {
-            form.ResponseIdentity = responseIdentityElement.ValueKind == JsonValueKind.String
-                ? responseIdentityElement.GetString() switch
+            form.ResponseIdentity = RequestJson.TryReadString(responseIdentityElement, out var identity)
+                ? identity switch
                 {
                     "anonymous" => ResponseIdentity.Anonymous,
                     "identified" => ResponseIdentity.Identified,
@@ -725,10 +730,10 @@ public sealed class FormsController(
             {
                 form.SubmissionDeadlineAt = null;
             }
-            else if (deadlineElement.ValueKind == JsonValueKind.String &&
-                     deadlineElement.GetString()!.EndsWith('Z') &&
+            else if (RequestJson.TryReadString(deadlineElement, out var rawDeadline) &&
+                     rawDeadline.EndsWith('Z') &&
                      DateTimeOffset.TryParse(
-                         deadlineElement.GetString(),
+                         rawDeadline,
                          CultureInfo.InvariantCulture,
                          DateTimeStyles.RoundtripKind,
                          out var deadline) &&
@@ -752,13 +757,13 @@ public sealed class FormsController(
         out string title)
     {
         title = string.Empty;
-        if (!properties.TryGetValue("title", out var element) || element.ValueKind != JsonValueKind.String)
+        if (!properties.TryGetValue("title", out var element) || !RequestJson.TryReadString(element, out var rawTitle))
         {
             errors.Add(RequestJson.Invalid("title", "Title must be a non-null string."));
             return false;
         }
 
-        title = TextRules.Trim(element.GetString()!);
+        title = TextRules.Trim(rawTitle);
         var count = TextRules.CodePointCount(title);
         if (count is 0 or > 200)
         {
@@ -780,13 +785,13 @@ public sealed class FormsController(
             return true;
         }
 
-        if (element.ValueKind != JsonValueKind.String)
+        if (!RequestJson.TryReadString(element, out var rawDescription))
         {
             errors.Add(RequestJson.Invalid("description", "Description must be a string or null."));
             return false;
         }
 
-        var normalized = TextRules.Trim(element.GetString()!);
+        var normalized = TextRules.Trim(rawDescription);
         description = normalized.Length == 0 ? null : normalized;
         return true;
     }
@@ -802,8 +807,8 @@ public sealed class FormsController(
             return true;
         }
 
-        responseMode = element.ValueKind == JsonValueKind.String
-            ? element.GetString() switch
+        responseMode = RequestJson.TryReadString(element, out var mode)
+            ? mode switch
         {
             "single" => ResponseMode.Single,
             "multiple" => ResponseMode.Multiple,
@@ -830,8 +835,8 @@ public sealed class FormsController(
             return true;
         }
 
-        responseIdentity = element.ValueKind == JsonValueKind.String
-            ? element.GetString() switch
+        responseIdentity = RequestJson.TryReadString(element, out var identity)
+            ? identity switch
         {
             "anonymous" => ResponseIdentity.Anonymous,
             "identified" => ResponseIdentity.Identified,
@@ -858,8 +863,8 @@ public sealed class FormsController(
             return true;
         }
 
-        resultVisibility = element.ValueKind == JsonValueKind.String
-            ? element.GetString() switch
+        resultVisibility = RequestJson.TryReadString(element, out var visibility)
+            ? visibility switch
         {
             "owner_only" => ResultVisibility.OwnerOnly,
             "respondents" => ResultVisibility.Respondents,
@@ -887,10 +892,10 @@ public sealed class FormsController(
             return true;
         }
 
-        if (element.ValueKind != JsonValueKind.String ||
-            !element.GetString()!.EndsWith('Z') ||
+        if (!RequestJson.TryReadString(element, out var rawDeadline) ||
+            !rawDeadline.EndsWith('Z') ||
             !DateTimeOffset.TryParse(
-                element.GetString(),
+                rawDeadline,
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.RoundtripKind,
                 out var parsed) ||

@@ -23,15 +23,20 @@ public static class RequestJson
 
         foreach (var property in body.EnumerateObject())
         {
-            if (!allowedProperties.Contains(property.Name))
+            if (!TryReadPropertyName(property, out var name))
             {
-                validationErrors.Add(Invalid(property.Name, "This field is not allowed."));
+                validationErrors.Add(Invalid("body", "The object contains an invalid JSON property name."));
+                continue;
+            }
+            if (!allowedProperties.Contains(name))
+            {
+                validationErrors.Add(Invalid(name, "This field is not allowed."));
                 continue;
             }
 
-            if (!properties.TryAdd(property.Name, property.Value))
+            if (!properties.TryAdd(name, property.Value))
             {
-                validationErrors.Add(Invalid(property.Name, "This field must not be repeated."));
+                validationErrors.Add(Invalid(name, "This field must not be repeated."));
             }
         }
 
@@ -53,9 +58,8 @@ public static class RequestJson
         out string value,
         out ApiErrorDetail? error)
     {
-        if (properties.TryGetValue(name, out var element) && element.ValueKind == JsonValueKind.String)
+        if (properties.TryGetValue(name, out var element) && TryReadString(element, out value))
         {
-            value = element.GetString()!;
             error = null;
             return true;
         }
@@ -67,4 +71,19 @@ public static class RequestJson
 
     public static ApiErrorDetail Invalid(string path, string message) =>
         new(path, "INVALID_VALUE", message);
+
+    public static bool TryReadString(JsonElement element, out string value)
+    {
+        value = string.Empty;
+        if (element.ValueKind != JsonValueKind.String) return false;
+        try { value = element.GetString()!; return true; }
+        catch (InvalidOperationException) { return false; } // Only the JSON string decode boundary.
+    }
+
+    public static bool TryReadPropertyName(JsonProperty property, out string name)
+    {
+        name = string.Empty;
+        try { name = property.Name; return true; }
+        catch (InvalidOperationException) { return false; } // Escaped lone surrogate in a name.
+    }
 }

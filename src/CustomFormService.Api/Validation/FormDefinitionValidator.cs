@@ -297,40 +297,45 @@ public static class FormDefinitionValidator
         var result = new JsonObject();
         foreach (var property in configElement.EnumerateObject())
         {
-            var propertyPath = $"{path}.{property.Name}";
-            if (!allowed.Contains(property.Name))
+            if (!RequestJson.TryReadPropertyName(property, out var name))
+            {
+                errors.Add(new ApiErrorDetail(path, "INVALID_QUESTION_CONFIG", "The config contains an invalid JSON property name."));
+                continue;
+            }
+            var propertyPath = $"{path}.{name}";
+            if (!allowed.Contains(name))
             {
                 errors.Add(new ApiErrorDetail(propertyPath, "INVALID_QUESTION_CONFIG", "This config property is not allowed for the question type."));
                 continue;
             }
 
-            if (result.ContainsKey(property.Name))
+            if (result.ContainsKey(name))
             {
                 errors.Add(new ApiErrorDetail(propertyPath, "INVALID_QUESTION_CONFIG", "This config property must not be repeated."));
                 continue;
             }
 
-            switch (property.Name)
+            switch (name)
             {
                 case "variant":
-                    if (property.Value.ValueKind != JsonValueKind.String || !IsValidVariant(type, property.Value.GetString()!))
+                    if (!RequestJson.TryReadString(property.Value, out var variant) || !IsValidVariant(type, variant))
                     {
                         errors.Add(new ApiErrorDetail(propertyPath, "INVALID_QUESTION_CONFIG", "The configured variant is invalid."));
                     }
                     else
                     {
-                        result[property.Name] = property.Value.GetString();
+                        result[name] = variant;
                     }
 
                     break;
                 case "placeholder":
-                    if (property.Value.ValueKind != JsonValueKind.String)
+                    if (!RequestJson.TryReadString(property.Value, out var placeholder))
                     {
                         errors.Add(new ApiErrorDetail(propertyPath, "INVALID_QUESTION_CONFIG", "Placeholder must be a string."));
                     }
                     else
                     {
-                        result[property.Name] = TextRules.Trim(property.Value.GetString()!);
+                        result[name] = TextRules.Trim(placeholder);
                     }
 
                     break;
@@ -342,7 +347,7 @@ public static class FormDefinitionValidator
                     }
                     else
                     {
-                        result[property.Name] = textLength;
+                        result[name] = textLength;
                     }
 
                     break;
@@ -356,7 +361,7 @@ public static class FormDefinitionValidator
                         }
                         else
                         {
-                            result[property.Name] = ratingBound;
+                            result[name] = ratingBound;
                         }
                     }
                     else if (!DefinitionNumber.TryRead(property.Value, out _))
@@ -365,7 +370,7 @@ public static class FormDefinitionValidator
                     }
                     else
                     {
-                        result[property.Name] = JsonNode.Parse(property.Value.GetRawText());
+                        result[name] = JsonNode.Parse(property.Value.GetRawText());
                     }
 
                     break;
@@ -433,13 +438,12 @@ public static class FormDefinitionValidator
             return false;
         }
 
-        if (element.ValueKind != JsonValueKind.String)
+        if (!RequestJson.TryReadString(element, out var value))
         {
             errors.Add(new ApiErrorDetail(path, "INVALID_QUESTION_TYPE", "Question type is invalid."));
             return false;
         }
 
-        var value = element.GetString();
         type = value switch
         {
             "text" => QuestionType.Text,
@@ -471,13 +475,13 @@ public static class FormDefinitionValidator
             return false;
         }
 
-        if (element.ValueKind != JsonValueKind.String)
+        if (!RequestJson.TryReadString(element, out var rawText))
         {
             errors.Add(Invalid(path, "This field must be a non-null string."));
             return false;
         }
 
-        value = TextRules.Trim(element.GetString()!);
+        value = TextRules.Trim(rawText);
         if (value.Length == 0)
         {
             errors.Add(new ApiErrorDetail(path, "REQUIRED_FIELD", "This field is required."));
@@ -503,13 +507,13 @@ public static class FormDefinitionValidator
             return null;
         }
 
-        if (element.ValueKind != JsonValueKind.String)
+        if (!RequestJson.TryReadString(element, out var rawText))
         {
             errors.Add(Invalid(path, "Description must be a string or null."));
             return null;
         }
 
-        var value = TextRules.Trim(element.GetString()!);
+        var value = TextRules.Trim(rawText);
         return value.Length == 0 ? null : value;
     }
 
@@ -571,14 +575,19 @@ public static class FormDefinitionValidator
 
         foreach (var property in element.EnumerateObject())
         {
-            var propertyPath = $"{path}.{property.Name}";
-            if (!allowed.Contains(property.Name))
+            if (!RequestJson.TryReadPropertyName(property, out var name))
+            {
+                errors.Add(Invalid(path, "The object contains an invalid JSON property name."));
+                continue;
+            }
+            var propertyPath = $"{path}.{name}";
+            if (!allowed.Contains(name))
             {
                 errors.Add(Invalid(propertyPath, "This field is not allowed."));
                 continue;
             }
 
-            if (!properties.TryAdd(property.Name, property.Value))
+            if (!properties.TryAdd(name, property.Value))
             {
                 errors.Add(Invalid(propertyPath, "This field must not be repeated."));
             }
