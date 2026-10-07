@@ -309,3 +309,11 @@ Owner 可明確授權多階段，但不得省略執行前的計畫核准 gate。
 不要開始 R1，不寫正式業務功能，不把 Google Auth 從 V1 定義中移除。
 完成後回報 R0 結果並停止，等我審查後再指定下一 Round。
 ```
+
+## 10. R10 前局部 review 修正（2026-10-07）
+
+Owner 核准 [局部修正計畫](R0_R9_Pre_R10_Local_Repair_Plan.md) 並授權開發；本次僅修正 F-01～03、受控確認 S-01 及成立後的 GetDetail scoped RepeatableRead，不啟動新 Round。S-01 在 root／Questions split SELECT barrier 及 Patch→Publish 時序均確認混合 Definition；修正後同一 GET 完整 V0、下一 GET 完整 V1。
+
+狀態：**局部修正開發完成，待 reviewer 審查**。最終 Windows build 0 warnings／0 errors；focused 171／171、完整 suite 377／377、原生 Kestrel HTTP 開發自測 67 項 PASS。首次 FAIL、harness 校正、實際命令、資料保留、共用路徑及提交詳見 [局部修正開發報告](R0_R9_Pre_R10_Local_Repair_Development_Report.md)。既有 DB 七表 rows／完整列 digest 保持一致，原生新合成 fixtures 保留。
+
+此為獨立 repair 註記；上方歷史 accepted／Owner pending 不更新。正式整合 Markdown／.http 未修改、未執行，舊結果不得代填修正版證據。後續 S-01 barrier 優先由整合計畫 02 的同版 suite 承接，不建立原生併行矩陣；R10／G1 仍需另次授權。
