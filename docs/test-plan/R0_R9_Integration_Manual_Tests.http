@@ -1,0 +1,880 @@
+# R0～R9 整合回歸驗收 — Prepare（2026-10-07）
+# 狀態：整體 review 完成；整合驗收計畫待 Owner review，尚未執行。
+# Companion: R0_R9_Integration_Acceptance_Test.md；review 基準 6f61a160863bfacb2fd85ef3d97abca271af5e22
+# 72 HTTP requests＋01／02／10／15／17 非 HTTP；保留既有與本次合成資料。
+# R10 Statistics、G1 Google Auth、R11／前端／部署不納入。
+# 所有預期以正式規格為準；12a～d 受 review 缺陷影響，先由 Owner 決定修正／執行順序。
+# 先 Clear All Cookies；每個 request @no-cookie-jar，只用明確 Cookie；none 身分不送 Cookie。
+# 工作副本在忽略的本次RunDir；不要把密碼／Token／Set-Cookie存進版本控制或證據。
+# 登出16a後清除本機aToken；16b不帶Cookie。JWT本身未撤銷。
+# AI／人工分開記錄。以下全部尚未執行；現有測試PASS不可代填。
+
+@apiBase = http://localhost:5000
+@runId = <NEW_UNIQUE_RUN_ID_AFTER_APPROVAL>
+@aEmail = ir-a-{{runId}}@example.test
+@bEmail = ir-b-{{runId}}@example.test
+@testPassword = <GENERATE_10_TO_128_CODE_POINT_PASSWORD_LOCALLY>
+@wrongPassword = <DIFFERENT_NONEMPTY_PASSWORD_LOCALLY>
+@aId = <COPY_03a_USER_ID>
+@bId = <COPY_03b_USER_ID>
+@aToken = <COPY_03f_ACCESS_TOKEN_VALUE_LOCALLY>
+@bToken = <COPY_03g_ACCESS_TOKEN_VALUE_LOCALLY>
+@futureDeadline = <UTC_ISO8601_Z_AT_LEAST_24_HOURS_AFTER_EXECUTION>
+@mId = <COPY_04a_ID>
+@sId = <COPY_04b_ID>
+@fId = <COPY_04c_ID>
+@qS = <COPY_04b_OPTIONAL_TEXT_ID>
+@qForeign = <COPY_04c_TEXT_ID>
+@qText = <COPY_06b_Text_ID>
+@qNumber = <COPY_06b_Number_ID>
+@qRating = <COPY_06b_Rating_ID>
+@qSingle = <COPY_06b_Single_ID>
+@qMultiple = <COPY_06b_Multiple_ID>
+@qTemp = <COPY_06b_Temporary_ID>
+@sc1 = <COPY_06b_Single_OPTION_VALUE_one_ID>
+@sc2 = <COPY_06b_Single_OPTION_VALUE_two_ID>
+@mc1 = <COPY_06b_Multiple_OPTION_VALUE_a_ID>
+@mc2 = <COPY_06b_Multiple_OPTION_VALUE_b_ID>
+@temp1 = <COPY_06b_Temporary_OPTION_VALUE_temp1_ID>
+@temp2 = <COPY_06b_Temporary_OPTION_VALUE_temp2_ID>
+@bR1 = <COPY_08c_RESPONSE_ID>
+@bR2 = <COPY_08d_RESPONSE_ID>
+@aR1 = <COPY_08f_RESPONSE_ID>
+@sBR = <COPY_09b_RESPONSE_ID>
+
+### 01 — 非 HTTP：環境、Migration 狀態與本次原生啟動
+# 按Markdown 01全部前置／DB／finally／結果紀錄執行，不能跳過。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+
+### 01a — 原生 API health
+# 前置：01 同次 build／原生啟動完成；身分：無Cookie
+# 預期：200；{"status":"healthy"}
+# DB／非HTTP核對：按Markdown 01與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/health
+
+### 01b — 原生 API readiness
+# 前置：01a；身分：無Cookie
+# 預期：200；Healthy
+# DB／非HTTP核對：按Markdown 01與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/health/ready
+
+### 02 — 非 HTTP：同版既有自動測試承接
+# 按Markdown 02全部前置／DB／finally／結果紀錄執行，不能跳過。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+
+### 03a — 註冊新 Owner A
+# 前置：01／02；兩個新 email 不存在；身分：無Cookie
+# 預期：201 User；email 正規化、displayName=IR A、avatarUrl=null；不設定 access_token；保存 aId
+# DB／非HTTP核對：按Markdown 03與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/register
+Content-Type: application/json
+
+{"email":"{{aEmail}}","password":"{{testPassword}}","displayName":" IR A "}
+
+### 03b — 註冊新會員 B
+# 前置：前一案例成功或預期拒絕已確認；身分：無Cookie
+# 預期：201 User；無登入 Cookie；保存 bId，與 aId 不同
+# DB／非HTTP核對：按Markdown 03與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/register
+Content-Type: application/json
+
+{"email":"{{bEmail}}","password":"{{testPassword}}","displayName":"IR B"}
+
+### 03c — 註冊後尚未登入
+# 前置：前一案例成功或預期拒絕已確認；身分：無Cookie
+# 預期：401 AUTH_REQUIRED；不因註冊自動登入
+# DB／非HTTP核對：按Markdown 03與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/users/me
+
+### 03d — 重複正規化 email
+# 前置：前一案例成功或預期拒絕已確認；身分：無Cookie
+# 預期：409 USER_EMAIL_ALREADY_EXISTS；A 不被更新
+# DB／非HTTP核對：按Markdown 03與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/register
+Content-Type: application/json
+
+{"email":" {{aEmail}} ","password":"{{testPassword}}","displayName":"Duplicate"}
+
+### 03e — 錯誤密碼
+# 前置：前一案例成功或預期拒絕已確認；身分：無Cookie
+# 預期：401 AUTH_INVALID_CREDENTIALS；不設定登入 Cookie
+# DB／非HTTP核對：按Markdown 03與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/login
+Content-Type: application/json
+
+{"email":"{{aEmail}}","password":"{{wrongPassword}}"}
+
+### 03f — 登入 A
+# 前置：前一案例成功或預期拒絕已確認；身分：無Cookie
+# 預期：200 User id=aId；保存 aToken 僅本機；Cookie scope 按 §3 核對
+# DB／非HTTP核對：按Markdown 03與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/login
+Content-Type: application/json
+
+{"email":"{{aEmail}}","password":"{{testPassword}}"}
+
+### 03g — 登入 B
+# 前置：前一案例成功或預期拒絕已確認；身分：無Cookie
+# 預期：200 User id=bId；保存 bToken 僅本機
+# DB／非HTTP核對：按Markdown 03與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/login
+Content-Type: application/json
+
+{"email":"{{bEmail}}","password":"{{testPassword}}"}
+
+### 03h — 查 A 本人
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200；id=aId；public User shape
+# DB／非HTTP核對：按Markdown 03與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/users/me
+Cookie: access_token={{aToken}}
+
+### 03i — 修改目前 profile
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200；displayName=IR A Updated；DB 僅 A display_name／updated_at 改變
+# DB／非HTTP核對：按Markdown 03與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/users/me
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{"displayName":" IR A Updated "}
+
+### 04a — 建立空草稿 M
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：201；draft／single／anonymous／owner_only／null deadline／questions=[]；description=null；creatorDisplayName=IR A Updated；保存 mId
+# DB／非HTTP核對：按Markdown 04與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{"title":" IR main {{runId}} ","description":"   "}
+
+### 04b — 建立 single anonymous S
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：201 draft；single／anonymous；1 Optional Text；保存 sId、qS；deadline DB 精度相容
+# DB／非HTTP核對：按Markdown 04與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{"title":"IR single {{runId}}","submissionDeadlineAt":"{{futureDeadline}}","questions":[{"type":"text","title":"Optional single text","sortOrder":0}]}
+
+### 04c — 建立 B 的私有草稿 F
+# 前置：前一案例成功或預期拒絕已確認；身分：B
+# 預期：201 Draft；owner=bId；保存 fId、qForeign；不得發布此 Form
+# DB／非HTTP核對：按Markdown 04與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{"title":"IR foreign {{runId}}","questions":[{"type":"text","title":"Foreign text","sortOrder":0}]}
+
+### 05a — A 的 Owner List
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200；恰有 M、S，沒有 F；totalItems=2／totalPages=1；updatedAt DESC,id DESC；兩個 count=0
+# DB／非HTTP核對：按Markdown 05與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms?page=1&pageSize=20
+Cookie: access_token={{aToken}}
+
+### 05b — B 的 Owner List
+# 前置：前一案例成功或預期拒絕已確認；身分：B
+# 預期：200；僅 F，default page=1／pageSize=20；totalItems=1；count=0
+# DB／非HTTP核對：按Markdown 05與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms
+Cookie: access_token={{bToken}}
+
+### 05c — Owner Detail／目前 Creator
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200；與 04a Form Definition 一致；creatorDisplayName=IR A Updated；沒有 Creator email／responses／count
+# DB／非HTTP核對：按Markdown 05與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mId}}
+Cookie: access_token={{aToken}}
+
+### 05d — 其他會員探查 Draft
+# 前置：前一案例成功或預期拒絕已確認；身分：B
+# 預期：404 FORM_NOT_FOUND
+# DB／非HTTP核對：按Markdown 05與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mId}}
+Cookie: access_token={{bToken}}
+
+### 05e — Owner Draft 的本人 Latest
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：404 RESPONSE_NOT_FOUND
+# DB／非HTTP核對：按Markdown 05與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mId}}/responses/me/latest
+Cookie: access_token={{aToken}}
+
+### 05f — Draft Owner Count
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200；{"count":0}
+# DB／非HTTP核對：按Markdown 05與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mId}}/respondent-count
+Cookie: access_token={{aToken}}
+
+### 06a — 不完整草稿不可發布
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：400 FORM_NOT_PUBLISHABLE；questions／REQUIRED_FIELD；status／timestamps／children 不變
+# DB／非HTTP核對：按Markdown 06與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mId}}/publish
+Cookie: access_token={{aToken}}
+
+### 06b — 完整新增 Definition
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200；multiple／identified；6 Questions／6 Options；按題 title 取得 qText/qNumber/qRating/qSingle/qMultiple/qTemp 與選項 IDs；至少 Text required=true
+# DB／非HTTP核對：按Markdown 06與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mId}}
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{"responseMode":"multiple","responseIdentity":"identified","questions":[{"type":"text","title":"Text","required":true,"sortOrder":10,"config":{"minLength":2,"maxLength":100}},{"type":"number","title":"Number","sortOrder":20,"config":{"min":0,"max":100}},{"type":"rating","title":"Rating","sortOrder":30,"config":{"min":1,"max":5}},{"type":"single_choice","title":"Single","sortOrder":40,"options":[{"label":"One","value":"one","sortOrder":0},{"label":"Two","value":"two","sortOrder":10}]},{"type":"multiple_choice","title":"Multiple","sortOrder":50,"options":[{"label":"A","value":"a","sortOrder":0},{"label":"B","value":"b","sortOrder":10}]},{"type":"single_choice","title":"Temporary","sortOrder":60,"options":[{"label":"Temp 1","value":"temp1","sortOrder":0},{"label":"Temp 2","value":"temp2","sortOrder":10}]}]}
+
+### 06c — 排序交換與 config replacement
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200；Question 順序 Number、Text updated、Rating、Single、Multiple、Temporary；Text config 只有 maxLength，沒有 minLength；Single options sc2→sc1，sc1 value=first；ID／created_at 保留
+# DB／非HTTP核對：按Markdown 06與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mId}}
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{"questions":[{"id":"{{qText}}","title":" Text updated ","sortOrder":20,"config":{"maxLength":100}},{"id":"{{qNumber}}","sortOrder":10},{"id":"{{qSingle}}","options":[{"id":"{{sc1}}","label":" One updated ","value":" first ","sortOrder":10},{"id":"{{sc2}}","sortOrder":0}]}]}
+
+### 06d — Candidate 失敗原子性
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：400 FORM_DEFINITION_INVALID；questions[0].sortOrder／DUPLICATE_SORT_ORDER；整份 Definition 與所有 timestamps 同 06c
+# DB／非HTTP核對：按Markdown 06與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mId}}
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{"title":"Must not persist","questions":[{"id":"{{qText}}","sortOrder":10}]}
+
+### 06e — 刪除指定 Option
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200；只刪 temp1、其餘保留；6 Questions／5 Options
+# DB／非HTTP核對：按Markdown 06與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mId}}
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{"questions":[{"id":"{{qTemp}}","options":[{"id":"{{temp1}}"}]}]}
+
+### 06f — 刪除 Question 與 Cascade Options
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200；qTemp 與 temp2 DB row 不存在；最終5 Questions／4 Options；其他 IDs 保留
+# DB／非HTTP核對：按Markdown 06與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mId}}
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{"questions":[{"id":"{{qTemp}}"}]}
+
+### 06g — 空 Delta 合法 no-op
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200；完整 Definition／Form、Question、Option updated_at 不變；不是清空 Options
+# DB／非HTTP核對：按Markdown 06與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mId}}
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{"questions":[{"id":"{{qSingle}}","options":[]}]}
+
+### 06h — 跨 Form Question ID 不可 Upsert
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：400 FORM_DEFINITION_INVALID；questions[0].id／QUESTION_NOT_FOUND；M、F 完全不變
+# DB／非HTTP核對：按Markdown 06與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mId}}
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{"questions":[{"id":"{{qForeign}}","title":"Must not move"}]}
+
+### 07a — Draft Result Visibility
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200；仍 Draft、multiple／identified；只有 result_visibility／updated_at 改變
+# DB／非HTTP核對：按Markdown 07與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mId}}/result-visibility
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{"resultVisibility":"public"}
+
+### 07b — 發布 M
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200 published；Question／Option／Config Definition hash 同 06f／06g；responseMode/Identity 不變
+# DB／非HTTP核對：按Markdown 07與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mId}}/publish
+Cookie: access_token={{aToken}}
+
+### 07c — Owner Published Definition freeze
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：409 FORM_NOT_EDITABLE；完整 DB 不變
+# DB／非HTTP核對：按Markdown 07與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mId}}
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{"title":"Must stay frozen","responseIdentity":"anonymous"}
+
+### 07d — 其他會員管理優先於 freeze
+# 前置：前一案例成功或預期拒絕已確認；身分：B
+# 預期：403 FORM_ACCESS_DENIED；不是 FORM_NOT_EDITABLE；DB 不變
+# DB／非HTTP核對：按Markdown 07與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mId}}
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{"title":"Not mine"}
+
+### 07e — Published Result Visibility
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200；仍 Published；Definition／identity／deadline 全部不變；只改 visibility／updated_at
+# DB／非HTTP核對：按Markdown 07與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mId}}/result-visibility
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{"resultVisibility":"respondents"}
+
+### 07f — 發布 S
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200 published；deadline 嚴格晚於本次 server now；single／anonymous 保留
+# DB／非HTTP核對：按Markdown 07與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{sId}}/publish
+Cookie: access_token={{aToken}}
+
+### 08a — Required 遺漏拒絕
+# 前置：前一案例成功或預期拒絕已確認；身分：B
+# 預期：400 VALIDATION_ERROR；questions.<qText>／REQUIRED_FIELD；Response、Answer 零新增
+# DB／非HTTP核對：按Markdown 08與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mId}}/responses
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{"answers":[]}
+
+### 08b — Option 歸屬拒絕
+# 前置：前一案例成功或預期拒絕已確認；身分：B
+# 預期：400 VALIDATION_ERROR；answers[1].value／OPTION_NOT_FOUND；零新增
+# DB／非HTTP核對：按Markdown 08與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mId}}/responses
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{"answers":[{"questionId":"{{qText}}","value":"valid"},{"questionId":"{{qSingle}}","value":"{{mc1}}"}]}
+
+### 08c — B 成功提交五題型
+# 前置：前一案例成功或預期拒絕已確認；身分：B
+# 預期：201 Receipt；保存 bR1；5 Answers 按 Number→Text→Rating→Single→Multiple；Text=Hello 😀；number 數值=1（token 不要求逐字相同）；不含 userId／Answer ID
+# DB／非HTTP核對：按Markdown 08與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mId}}/responses
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{"answers":[{"questionId":"{{qMultiple}}","value":["{{mc2}}","{{mc1}}"]},{"questionId":"{{qSingle}}","value":"{{sc1}}"},{"questionId":"{{qRating}}","value":5},{"questionId":"{{qText}}","value":"  Hello 😀  "},{"questionId":"{{qNumber}}","value":1.0}]}
+
+### 08d — multiple 第二次完整回覆（optional 遺漏）
+# 前置：前一案例成功或預期拒絕已確認；身分：B
+# 預期：201，保存 bR2；id 不同 bR1；只1 Answer Text=Latest only；bR1+5 Answers 保留；确保 bR2.submittedAt > bR1（見 §3）
+# DB／非HTTP核對：按Markdown 08與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mId}}/responses
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{"answers":[{"questionId":"{{qText}}","value":"  Latest only  "}]}
+
+### 08e — Latest 不從舊答補題
+# 前置：前一案例成功或預期拒絕已確認；身分：B
+# 預期：200；id=bR2；answers 僅 Text；submittedAt／values 與 08d 持久化 Receipt 一致；不得回 bR1 的 Number／Choice／Rating
+# DB／非HTTP核對：按Markdown 08與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mId}}/responses/me/latest
+Cookie: access_token={{bToken}}
+
+### 08f — Owner 也可填答
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：201；保存 aR1；5 Answers；與 B 分開；M 總 Responses=3、Answers=11
+# DB／非HTTP核對：按Markdown 08與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mId}}/responses
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{"answers":[{"questionId":"{{qText}}","value":"Owner answer"},{"questionId":"{{qNumber}}","value":2},{"questionId":"{{qRating}}","value":1},{"questionId":"{{qSingle}}","value":"{{sc2}}"},{"questionId":"{{qMultiple}}","value":["{{mc1}}"]}]}
+
+### 08g — Owner 本人 Latest
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200；id=aR1；只回 A 自己的5 Answers
+# DB／非HTTP核對：按Markdown 08與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mId}}/responses/me/latest
+Cookie: access_token={{aToken}}
+
+### 08h — Count 按 User 去重
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200；{"count":2}；不是3；包含 Owner；無原始答案
+# DB／非HTTP核對：按Markdown 08與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mId}}/respondent-count
+Cookie: access_token={{aToken}}
+
+### 08i — List Count 與端點一致
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200；M count=2、S count=0；totalItems=2；沒有 F／Questions／Answers
+# DB／非HTTP核對：按Markdown 08與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms?status=published
+Cookie: access_token={{aToken}}
+
+### 09a — anonymous 仍要求登入
+# 前置：前一案例成功或預期拒絕已確認；身分：無Cookie
+# 預期：401 AUTH_REQUIRED；不新增 Response
+# DB／非HTTP核對：按Markdown 09與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{sId}}/responses
+Content-Type: application/json
+
+{"answers":[]}
+
+### 09b — single anonymous 的空有效回覆
+# 前置：前一案例成功或預期拒絕已確認；身分：B
+# 預期：201；保存 sBR；Receipt answers=[]；DB 仍保存 user_id=bId；S Response=1／Answers=0
+# DB／非HTTP核對：按Markdown 09與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{sId}}/responses
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{"answers":[]}
+
+### 09c — single 重試
+# 前置：前一案例成功或預期拒絕已確認；身分：B
+# 預期：409 RESPONSE_ALREADY_SUBMITTED；S 仍1 Response／0 Answer
+# DB／非HTTP核對：按Markdown 09與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{sId}}/responses
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{"answers":[]}
+
+### 09d — 本人 Latest 可讀 anonymous 回覆
+# 前置：前一案例成功或預期拒絕已確認；身分：B
+# 預期：200；id=sBR、answers=[]；不回 userId；anonymous 不等於未登入／DB 去識別
+# DB／非HTTP核對：按Markdown 09與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{sId}}/responses/me/latest
+Cookie: access_token={{bToken}}
+
+### 10 — 非 HTTP：截止時間暫存 probe 與 finally 復原
+# 按Markdown 10全部前置／DB／finally／結果紀錄執行，不能跳過。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+
+### 10a — 逾期優先於 single／answers
+# 前置：10 僅本次 S 的 deadline 暫時 probe 已就緒；必須 finally 復原；身分：B
+# 預期：409 SUBMISSION_DEADLINE_EXCEEDED；不是 ALREADY_SUBMITTED 或 VALIDATION_ERROR；零新增
+# DB／非HTTP核對：按Markdown 10與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{sId}}/responses
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{}
+
+### 10b — 逾期不 auto-close
+# 前置：10 deadline probe 尚有效；身分：B
+# 預期：200；status=published；Definition 仍 frozen
+# DB／非HTTP核對：按Markdown 10與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{sId}}
+Cookie: access_token={{bToken}}
+
+### 10c — 逾期 Owner Count
+# 前置：10 deadline probe；本例後執行 10 finally 精確復原；身分：A
+# 預期：200；{"count":1}
+# DB／非HTTP核對：按Markdown 10與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{sId}}/respondent-count
+Cookie: access_token={{aToken}}
+
+### 11a — 主動 Close M
+# 前置：10 finally 復原完成，否則停止依賴案例；身分：A
+# 預期：200 closed；Definition／Responses／Answers 不變
+# DB／非HTTP核對：按Markdown 11與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mId}}/close
+Cookie: access_token={{aToken}}
+
+### 11b — Close 重試
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：409 FORM_ALREADY_CLOSED；DB 不變
+# DB／非HTTP核對：按Markdown 11與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mId}}/close
+Cookie: access_token={{aToken}}
+
+### 11c — Closed 不再提交
+# 前置：前一案例成功或預期拒絕已確認；身分：B
+# 預期：409 FORM_NOT_SUBMITTABLE；先於 missing answers；零新增
+# DB／非HTTP核對：按Markdown 11與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mId}}/responses
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{}
+
+### 11d — Closed Result Visibility
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200 closed；identified／Definition／回覆不變；不測 Statistics 存取
+# DB／非HTTP核對：按Markdown 11與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mId}}/result-visibility
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{"resultVisibility":"owner_only"}
+
+### 11e — Closed 仍可查本人 Latest
+# 前置：前一案例成功或預期拒絕已確認；身分：B
+# 預期：200；id=bR2、1 Answer；visibility=owner_only 不影響本人 Latest
+# DB／非HTTP核對：按Markdown 11與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mId}}/responses/me/latest
+Cookie: access_token={{bToken}}
+
+### 12a — F-01 負 offset
+# 前置：F-01 修正版本由 Owner 指定，或 Owner 明確決定先記錄已知 FAIL；身分：A
+# 預期：200；items=[]；page 保留2147483647、pageSize=100、totalItems=2、totalPages=1
+# DB／非HTTP核對：按Markdown 12與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms?page=2147483647&pageSize=100
+Cookie: access_token={{aToken}}
+
+### 12b — F-01 正向 wrap 到第1頁
+# 前置：同 12a；unchecked offset 為0；身分：A
+# 預期：200；items=[]；page 保留1073741825、pageSize=4、totalItems=2、totalPages=1；不得回 M／S
+# DB／非HTTP核對：按Markdown 12與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms?page=1073741825&pageSize=4
+Cookie: access_token={{aToken}}
+
+### 12c — F-02 Unicode 解碼
+# 前置：F-02 修正版本由 Owner 指定，或 Owner 明確決定先記錄已知 FAIL；身分：無Cookie
+# 預期：400 VALIDATION_ERROR；displayName／INVALID_VALUE；不新增會員／Cookie
+# DB／非HTTP核對：按Markdown 12與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/register
+Content-Type: application/json
+
+{"email":"ir-unicode-{{runId}}@example.test","password":"{{testPassword}}","displayName":"\uD800"}
+
+### 12d — F-03 Content-Type 正式錯誤
+# 前置：F-03 修正版本由 Owner 指定，或 Owner 明確決定先記錄已知 FAIL；身分：無Cookie
+# 預期：400 VALIDATION_ERROR，正式 error Envelope；不得回 415 ProblemDetails
+# DB／非HTTP核對：按Markdown 12與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/register
+Content-Type: text/plain
+
+{}
+
+### 13a — 非 Owner 不能刪除
+# 前置：12 已執行或依 Owner 決定標記 BLOCKED；開始前保存 M subtree snapshot；身分：B
+# 預期：403 FORM_ACCESS_DENIED；全部資料不變
+# DB／非HTTP核對：按Markdown 13與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+DELETE {{apiBase}}/api/v1/forms/{{mId}}
+Cookie: access_token={{bToken}}
+
+### 13b — Owner Soft Delete Closed M
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：204 無 body；deleted_at／updated_at 變更；status 仍 closed；5Q／4O／3R／11A 全部保留
+# DB／非HTTP核對：按Markdown 13與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+DELETE {{apiBase}}/api/v1/forms/{{mId}}
+Cookie: access_token={{aToken}}
+
+### 13c — Deleted Detail
+# 前置：前一案例成功或預期拒絕已確認；身分：B
+# 預期：404 FORM_NOT_FOUND
+# DB／非HTTP核對：按Markdown 13與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mId}}
+Cookie: access_token={{bToken}}
+
+### 13d — Deleted Owner List 排除
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：200；只有 S；totalItems=1；M 排除
+# DB／非HTTP核對：按Markdown 13與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms
+Cookie: access_token={{aToken}}
+
+### 13e — Deleted Submit
+# 前置：前一案例成功或預期拒絕已確認；身分：B
+# 預期：404 FORM_NOT_FOUND；先於 lifecycle／required；零新增
+# DB／非HTTP核對：按Markdown 13與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mId}}/responses
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{"answers":[]}
+
+### 13f — Deleted Latest
+# 前置：前一案例成功或預期拒絕已確認；身分：B
+# 預期：404 FORM_NOT_FOUND；不是 RESPONSE_NOT_FOUND
+# DB／非HTTP核對：按Markdown 13與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mId}}/responses/me/latest
+Cookie: access_token={{bToken}}
+
+### 13g — Deleted Count
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：404 FORM_NOT_FOUND；不是可讀的2
+# DB／非HTTP核對：按Markdown 13與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mId}}/respondent-count
+Cookie: access_token={{aToken}}
+
+### 13h — Delete 重試
+# 前置：前一案例成功或預期拒絕已確認；身分：A
+# 預期：404 FORM_NOT_FOUND；deleted_at 不重寫
+# DB／非HTTP核對：按Markdown 13與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+DELETE {{apiBase}}/api/v1/forms/{{mId}}
+Cookie: access_token={{aToken}}
+
+### 14a — Published S 可直接刪除
+# 前置：S deadline 已由 10 finally 復原；先保存 S snapshot；身分：A
+# 預期：204；status 仍 published；1Q／0O／1R／0A 全保留
+# DB／非HTTP核對：按Markdown 14與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+DELETE {{apiBase}}/api/v1/forms/{{sId}}
+Cookie: access_token={{aToken}}
+
+### 14b — Draft F 可直接刪除
+# 前置：先保存 F snapshot；F 一直未發布；身分：B
+# 預期：204；status 仍 draft；1Q 保留
+# DB／非HTTP核對：按Markdown 14與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+DELETE {{apiBase}}/api/v1/forms/{{fId}}
+Cookie: access_token={{bToken}}
+
+### 15 — 非 HTTP：最終 DB 與原資料 preservation 核對
+# 按Markdown 15全部前置／DB／finally／結果紀錄執行，不能跳過。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+
+### 16a — Logout A 清除目前 client Cookie
+# 前置：15 DB 核對完成；aToken 只在本 request 用一次；身分：A
+# 預期：204 無 body；Clear Cookie scope 同 Login；刪除本機 A Cookie／aToken 變數
+# DB／非HTTP核對：按Markdown 16與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/logout
+Cookie: access_token={{aToken}}
+
+### 16b — 登出後無 Cookie
+# 前置：16a 後 client Cookie 清除；V1 不承諾撤銷旧 JWT；身分：無Cookie
+# 預期：401 AUTH_REQUIRED；不得重送之前的 JWT
+# DB／非HTTP核對：按Markdown 16與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/users/me
+
+### 16c — Logout 壞 Cookie 仍成功
+# 前置：前一案例成功或預期拒絕已確認；身分：壞Cookie
+# 預期：204 無 body；清除 Cookie；不查 DB User
+# DB／非HTTP核對：按Markdown 16與§5；保留既有資料與本次fixtures。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/logout
+Cookie: access_token=invalid-integration-token
+
+### 17 — 非 HTTP：暫存清理與證據 handoff
+# 按Markdown 17全部前置／DB／finally／結果紀錄執行，不能跳過。
+# AI實際：未執行（等待 Owner review）
+# 人工實際：未執行（等待 Owner review）
