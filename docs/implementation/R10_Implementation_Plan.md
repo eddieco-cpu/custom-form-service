@@ -1,12 +1,12 @@
 # R10 — Statistics 精簡實作計畫
 
-2026-10-10；狀態：**R10 實作計畫待 review**；R10 **not started**。Owner 本次只授權規格核准標示同步與實作規劃；計畫確認後仍須另行授權開發。本次沒有修改產品／測試／schema／Migration，未執行 build、測試或正式驗收。
+2026-10-10；狀態：**Owner 已確認本版 review 通過並明確授權開發**（核准計畫提交 `06853f3`）。R10 已依本設計完成開發與必要驗證，交付為 **development verified／開發完成、待驗收**；實際結果見 [R10 開發報告](R10_Development_Report.md)，產品／測試提交 `a4f9402336a4eecdc07c72e92ef09234a4d5e976`。下文保留核准設計與原規劃交付歷史；未準備或執行正式驗收，未 accepted。
 
 依最新 [AGENTS.md](../../AGENTS.md)、[development skill](../../.agents/skills/v1-round-development/SKILL.md)、[Backend Implementation Plan](V1_Backend_Implementation_Plan.md) R10。正式契約：00 §7；01 §3.3、FORM-07／09、SUB-06、STA-02～05；02 §5／7～11；03a §2／5～6／8～9；03b §3.5；**03c v1.1（2026-10-10，Owner 已核准）§3.4～3.5／§7～8**；04 §4.3／§5／§10；05 §5.3／§10～15／§20。四欄位修訂核准基準 `0e9c03e096f45fd21e27876edbf48299f463f05f`；未發現契約衝突。
 
 ## 1. 既有進度與前置狀態
 
-規劃起點 `0e9c03e`、分支 master、Git 乾淨；`git diff e22db98 HEAD -- src tests` 無輸出。現有程式已含 R8 Submit、R9 Latest／Count、Detail scoped RepeatableRead；尚無 Statistics 路由／DTO／聚合器。
+原規劃起點 `0e9c03e`、分支 master、Git 乾淨；當時 `git diff e22db98 HEAD -- src tests` 無輸出，已有 R8 Submit、R9 Latest／Count、Detail scoped RepeatableRead，尚無 Statistics 路由／DTO／聚合器。開發起點 `06853f3` 亦乾淨；目前實作及驗證另見開發報告。
 
 | 項目 | 實際狀態與本計畫處理 |
 | --- | --- |
@@ -16,7 +16,7 @@
 | 正式 R0～R9 整合驗收 | 成對文件尚未同步 `e22db98` 修正版／未執行；舊結果不能證明修正版。保留待處理狀態，不在本次準備或執行 |
 | R7／R9 | 總計畫仍為 acceptance results pending owner confirmation，人工未執行、未 accepted；本次規劃授權不代表確認這兩輪驗收 |
 | I-01／I-02 | README 範圍過時、List Count／items 快照為整體 review 的非阻擋改善；仍未處理，不擴充 R10 |
-| 開發啟動條件 | 本計畫 review 確認＋Owner 另行開發授權尚缺；正式整合驗收及歷史 Round 確認是已列出的待辦，現有 review 未將其定為 R10 技術 blocker，不自行宣稱通過或升為新 gate |
+| 開發啟動條件 | 原規劃時尚缺本計畫 review 確認＋Owner 另行開發授權，現已由 Owner 明確滿足；正式整合驗收及歷史 Round 確認仍是已列出的待辦，既有 review 未將其定為 R10 技術 blocker，不宣稱這些待辦通過 |
 
 ## 2. 端點與 Conditional Authentication
 
@@ -108,10 +108,10 @@ Closed 無任何 Response 仍回 200，Root／Question count=0；Choice／Rating
 
 獲開發授權後實跑：`dotnet restore CustomFormService.sln`、`dotnet build CustomFormService.sln --no-restore --configuration Debug --disable-build-servers -m:1`、focused `dotnet test CustomFormService.sln --no-build --configuration Debug --filter "FullyQualifiedName~R10_"`（新案例採 R10_ 命名）、同版全套 `dotnet test CustomFormService.sln --no-build --configuration Debug`，各自以當次 RunDir／TRX 保存實際結果。補短 Windows 原生 Kestrel 開發自測：確認本次 source／DLL／PID、health/readiness，代表性 public 壞 Cookie、private 錯誤及九欄位／精確數值輸出；不複製正式驗收矩陣。若原生環境受阻，明列未完成，不以 TestServer／Linux PASS 代稱原生成功。
 
-## 7. 交付與停止點
+## 7. 原規劃交付歷史與開發停止點
 
-本次實際只做 `Get-Content`／`rg` 文件與來源核對、`git status`／`log`／`diff`，交付前檢查文件 diff 與 `git diff --check`；沒有跑上述未來命令、HTTP、DB、build／tests，未新增測試或正式驗收文件。AGENTS.md／skills 無需修改。
+原規劃交付階段只做 `Get-Content`／`rg` 文件與來源核對、`git status`／`log`／`diff`，交付前檢查文件 diff 與 `git diff --check`；當時沒有跑上述未來命令、HTTP、DB、build／tests，未新增測試或正式驗收文件。AGENTS.md／skills 無需修改。後續開發命令與結果以開發報告為準。
 
-規格核准標示同步與本計畫準備採不同單一目的提交，於交付訊息回報 SHA／最終 Git state。**本次停止於「R10 實作計畫待 review」**，等待 Owner 確認計畫後另行授權開發；不將規劃狀態改為 in progress／development verified／accepted。
+原規劃階段的規格核准標示同步與本計畫準備採不同單一目的提交（`925a2d8`／`06853f3`），當時停止於「R10 實作計畫待 review」、維持 not started。Owner 現已 review 通過並另行授權開發；目前停止於「開發完成、待驗收」，不將開發完成視為 accepted。
 
 後續開發獲授權且必要驗證成功時，交付實際變更、命令／結果、SQL／一致性證據、未驗證／前置待辦、diff／提交與 Git state，停止於「開發完成、待驗收」。獨立 code review、正式驗收準備、核准計畫執行及 Owner accepted 各保留既有授權邊界；不自動建立或執行成對驗收計畫、不開始 R11／G1。
