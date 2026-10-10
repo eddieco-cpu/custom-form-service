@@ -2,9 +2,9 @@
 
 | 項目 | 內容 |
 | --- | --- |
-| 版本 | 1.0 |
-| 日期 | 2026-09-28 |
-| 狀態 | 正式規格 |
+| 版本 | 1.1 |
+| 日期 | 2026-10-10 |
+| 狀態 | 正式規格；本次 Statistics 資料揭露說明修訂待 review |
 | 職責 | 跨 Domain、Database、API 與實作層的安全、完整性、交易、一致性及工程邊界 |
 | 配套文件 | [Overview](00-v1-overview.md)、[Domain](01-v1-domain-specification.md)、[Database](02-v1-database-specification.md)、[API Common](03a-v1-api-contract-common.md)、[API Auth／User／Form](03b-v1-api-contract-auth-user-form.md)、[API Submission／Statistics](03c-v1-api-contract-submission-statistics.md)、[Errors](04-v1-error-catalog.md) |
 
@@ -138,6 +138,7 @@ CORS 不視為 CSRF Protection。V1 沒有獨立 CSRF Token Protocol，而是依
 
 - User Response 不包含 passwordHash、status、Provider Token 或 Google `sub`。
 - FormDetail 可以包含 Creator 的內部 userId 與目前 displayName，但不包含 Creator email 或外部 Identity。
+- Statistics Root 依 API Part C §3.4 提供 Creator 目前 displayName，anonymous 模式亦同；不提供 Creator ID、email 或外部 Identity。建立者名稱的揭露不授權揭露匿名 Respondent 身分。
 - Anonymous Statistics 不回 respondents，也不得回可跨 Question 連結身分的替代 ID。
 - Identified Statistics 的 Respondent 只包含內部 User ID 與目前 displayName。
 - Error Response 不得包含 Stack Trace、SQL、Constraint 名稱、Connection String、Credential、JWT、Password Hash 或 Provider Secret。
@@ -163,7 +164,7 @@ Owner 也不能：
 
 - 修改 Published／Closed Definition。
 - 在 Published 期間讀取整體 Statistics。
-- 繞過 anonymous Statistics 的身分隱藏。
+- 繞過 anonymous Statistics 的 Respondent 身分隱藏。
 - 因為擁有 Form 而跳過 Submission 的 status、Deadline、Required 或 Answer Validation。
 
 存在性隱藏是 Endpoint Contract 的一部分。程式實作者不得把 404 一律改成 403，或把應使用 403 的管理操作一律改成 404。
@@ -519,7 +520,7 @@ V1 不建立下列 Domain Table／資源：
 | Submission | Authentication、Published、單一時間取樣、嚴格 Deadline、Required、Answer Type、Option 歸屬與正規化 |
 | Concurrency | single 同時提交最多一個 201；Patch／Publish、Submit／Close／Delete、Google 首次登入競爭符合線性化規則 |
 | Latest／Effective | 相同時間以 ID tie-break；只使用最新完整 Response；不逐題補舊答案 |
-| Statistics | Closed-only；完整 Visibility Matrix；Published 存在性保護；Public 壞 Cookie 視為匿名；anonymous 不帶身分 |
+| Statistics | Closed-only；完整 Visibility Matrix；Published 存在性保護；Public 壞 Cookie 視為匿名；anonymous 不帶 Respondent 身分；Root 依 03c §3.4 完整回傳 |
 | Empty Data | 零人 Closed Statistics 回 200；Choice／Rating 零值項目與其他空陣列正確 |
 | Pagination | 只有 Form List 分頁；Default、上限、超界、空清單與穩定排序正確 |
 | Soft Delete | Detail、List、Submit、Latest、Count、Statistics 全部一致不可存取 |

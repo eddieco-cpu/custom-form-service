@@ -2,9 +2,9 @@
 
 | 項目 | 內容 |
 | --- | --- |
-| 版本 | 1.0 |
-| 日期 | 2026-09-28 |
-| 狀態 | 正式規格 |
+| 版本 | 1.1 |
+| 日期 | 2026-10-10 |
+| 狀態 | 正式規格；本次 Statistics 建立者揭露說明修訂待 review |
 | 職責 | 定義 V1 的業務實體、狀態、行為、權限、驗證與資料語意 |
 | 配套文件 | [Database](02-v1-database-specification.md)、[API Common](03a-v1-api-contract-common.md)、[API Auth／User／Form](03b-v1-api-contract-auth-user-form.md)、[API Submission／Statistics](03c-v1-api-contract-submission-statistics.md)、[Errors](04-v1-error-catalog.md)、[Constraints](05-v1-system-constraints.md) |
 
@@ -442,20 +442,22 @@ Published Statistics 對任何有效 Active User 表示 Statistics 尚不可用�
 
 Public Statistics 不要求先讀取受保護的 Form Detail，因此 Statistics 回應必須包含足夠的 Form 與 Question 顯示資料。
 
+Statistics 包含 Creator 的目前 displayName，即使 responseIdentity 為 anonymous 也相同；建立者名稱與填答者身分是不同資訊。Creator 改名後，下一次查詢反映目前名稱，不保存名稱快照，也不揭露 Creator email 或外部 Identity。Creator 後來 disabled 不改變 Form 的 Statistics 可用狀態或存取政策；Private Statistics 的呼叫者仍須符合 Active 身分規則。完整 Root Shape 見 API Contract Part C §3.4。
+
 ### STA-03：Response Identity
 
 | responseIdentity | Statistics 揭露 |
 | --- | --- |
-| anonymous（預設） | 不含 respondents、不含身分，也不得提供跨 Question 的 Respondent—Answer Mapping |
+| anonymous（預設） | 不含 respondents、不含 Respondent 身分，也不得提供跨 Question 的 Respondent—Answer Mapping |
 | identified | 每個 Statistic Item 包含 respondents；每人只包含 id 與目前 displayName |
 
 兩種模式都在內部保存 userId。anonymous 不是未登入提交，也不是資料庫去識別化。Owner 也不能繞過 anonymous 限制。
 
-identified + public 是合法組合，未登入訪客可以看到 Statistics 中的 User ID 與 displayName。Statistics 使用目前的 displayName，不保存提交當下名稱快照，也不回傳 email 或外部 Identity 資料。
+identified + public 是合法組合，未登入訪客可以看到 Statistics Item respondents 中的 User ID 與 displayName。Respondents 使用目前的 displayName，不保存提交當下名稱快照，也不回傳 email 或外部 Identity 資料。
 
 同一 Statistic Item 的 respondents 依 displayName ASC、User ID ASC 排序，一次完整回傳，不分頁。
 
-responseIdentity 屬 Form Definition，Publish 後不可修改。Anonymous 限制只保證系統不建立身分投影或跨題 Mapping；不保證使用者自行寫入自由文字的個資無法被辨認。
+responseIdentity 屬 Form Definition，Publish 後不可修改。Anonymous 限制只保證系統不建立 Respondent 身分投影或跨題 Mapping；不保證使用者自行寫入自由文字的個資無法被辨認。
 
 ### STA-04：Count 語意
 

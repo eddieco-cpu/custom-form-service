@@ -82,7 +82,7 @@ Next round: prerequisite only; not started
 | R7 | Lifecycle 與 Result Policy | Publish／Close／Visibility、Freeze 與並行 | **acceptance results pending owner confirmation（2026-10-04）**。Owner 核准 `28cb8e2` 並授權三項成對局部修訂後直接執行；修訂 `858d6ae`。RunId `r7-acceptance-20261004-01`：Windows 本次 restore/build／原生 API PASS、full 首次 167/167、M2 1/1、HTTP／DB 42/42 PASS；Linux 未執行，人工全部未執行。M2 未重現、根因未明；既有資料不變、新 fixtures 保留、probe／秘密清理完成，詳見 [執行報告](R7_Acceptance_Execution_Report.md) 與 [成對紀錄](../test-plan/R7_Acceptance_Test.md)。未 accepted，未開始 R8。 |
 | R8 | Submission | 全題型 Answer／Response、single／multiple、並行 | **accepted（2026-10-05，Owner 本 chat 明確確認 R8 驗收通過）**。依據本次重驗 [R8_Acceptance_Rerun_20261005_Report.md](R8_Acceptance_Rerun_20261005_Report.md) 與既有成對驗收紀錄；人工未執行，不改填人工 PASS。**以下保留確認前紀錄：** **2026-10-05 本次重驗完成，驗收結果待 Owner review。** RunId `r8-acceptance-20261005-02`，測試 HEAD `d4d93e75ce35947015280f77794527ff8c9b5631`；核准計畫 `8680ccc`，source/tests/specs 與候選相同、請求／預期未改。Windows restore/build 0 warnings/errors，本次 native health/readiness PASS；全套 **280/280 PASS**、**54 HTTP／4 非 HTTP 全部 PASS**。四組 native race 各確認兩 waiter 後釋放 barrier；deadline／workers／barriers 清理完成，舊列完整不變、新五張 fixtures 與合法歷史保留。所有前次 FAIL／BLOCKED 與 PASS 保留歷史；人工未執行。詳見 [本次重驗報告](R8_Acceptance_Rerun_20261005_Report.md)。未 accepted、未進 R9。 **以下保留歷史：** **2026-10-05 獨立 review／本次 AI 驗收：BLOCKED，驗收結果待 Owner review。** HEAD `0bb7842`、核准 `8680ccc`，source/tests 與 `d3f75b3` 相同、54 請求未改；未發現具體 R8 產品／計畫缺陷。新 RunId `r8-acceptance-20261005-01`：build 0 warnings/errors、native 01a PASS；01b 首次 503 Unhealthy FAIL，PostgreSQL 實際 host binding 空。HTTP 1 PASS／1 FAIL／52 BLOCKED；非 HTTP 01 FAIL、02／13／14 BLOCKED，full／後續未執行。舊完整資料與前次最終 snapshot 相同，無新 fixture；所有舊失敗與補驗 PASS 保留歷史、人工未執行。詳見 [本次獨立報告](R8_Independent_Review_Acceptance_Report.md)。需恢復環境後新 RunId 補驗；未 accepted、未進 R9。 **以下為 2026-10-04 歷史：** **正式補驗完成，待 Owner review（2026-10-04）**。核准 `8680ccc`、Execute 授權持續有效；新 RunId `r8-acceptance-20261004-02`：Windows restore/build 0 warnings/errors、本次 native API health/readiness PASS、全套實際 280/280、54 HTTP／4 非 HTTP 全部 PASS。四組 native 兩 waiter／共用 10 秒／finally 與 Clock／EF／precommit faults 證據完整，旧列不變、新五 fixtures／9 Responses／10 Answers 保留。首次 FAIL／BLOCKED 與環境修復紀錄保留；人工未執行，Owner 指定本輪依 AI 證據審核、不要求人工作為 accepted 必要條件。详見 [正式補驗報告](R8_Acceptance_Reexecution_Report.md)及成對結果。未改產品／預期，未 accepted、未進 R9／R10／G1。 |
 | R9 | Latest 與 Respondent Count | 最新整份回覆與有效人數 | **acceptance results pending owner confirmation（2026-10-05，R9 驗收結果待 Owner review）**。Owner 核准 `17b1c2f`，授權三項補強 `f8a8026` 後 Execute，並指定新會員註冊／登入修訂 `f93d7fc`；首輪工具失敗歷史 `2644eb3`。補驗 RunId `r9-acceptance-20261005-02`：Windows 同次 build 0 warnings/errors／本次原生 health/readiness PASS；新 full **306/306（R9 26/26）**、**40 HTTP／4 非 HTTP PASS**，四組實際 SELECT＋RepeatableRead 證據齊全。Linux 未執行，人工全部未執行。首輪 04a 工具欄位錯誤／13 精度誤報與全部 FAIL／BLOCKED 保留；舊資料及首輪合法 fixtures 完整不變、本次新會員／fixtures 保留，deadline finally 精確復原。詳見 [執行報告](R9_Acceptance_Execution_Report.md)與[成對結果](../test-plan/R9_Acceptance_Test.md)。未自行 accepted／未開始 R10。 |
-| R10 | Statistics | Closed／Visibility／anonymous／identified／分布 | not started |
+| R10 | Statistics | Closed／Visibility／anonymous／identified／分布；Root 四欄位投影（03c §3.4） | not started；2026-10-10 規格修訂待 review |
 | R11 | A 階段整合與交付 | 契約回歸、從零建庫、本機驗收、缺口清單 | not started |
 | G1（後續） | Google Auth 補齊 | 真實 Google 登入，含併發與全 V1 後端驗收 | not started |
 
@@ -209,11 +209,13 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 
 ### R10 — Statistics／Result Access
 
-**輸入**：01 STA、03c §7～8、04 統計特殊錯誤優先序、05 §11／13／20。**工作**：完成 18 號端點；只在 Closed 提供，依 owner_only／respondents／public 全矩陣授權；Public 壞 Cookie 視為匿名；匿名不出 respondents 或跨題 mapping，identified 的 respondents 僅 ID＋目前 displayName。即時計算每人最新**整份** Response 的題型分布，排序、count、zero-data 與回傳 metadata 對齊契約。
+**狀態／本次文件交付（2026-10-10）**：R10 **not started**。依 `02_Statistics_API_Amendment_for_R10.md` 整理 Statistics Root 四欄位追加，契約候選為 [03c v1.1（2026-10-10）§3.4／§7.3](../specs/03c-v1-api-contract-submission-statistics.md#34-statistics-root)，尚待 Owner review，未記為已核准。跨文件核對見 [規格更新報告](R10_Statistics_Specification_Update_Report.md)。本次僅文件更新，未修改產品程式、DB schema 或 Migration，未產出 R10 個別實作／驗收計畫，未執行 build 或測試。停止於「規格更新完成、待 review」；本次確認後，R10 個別實作計畫仍需另行授權。
+
+**輸入**：01 STA、FORM-07；02 §5／§7 的既有 User／Form 欄位；03c §3.4／§7～8（上述 v1.1 候選須先 review 確認）；03b §3.5 的 Creator 目前名稱語意；04 §4.3／§10 統計特殊錯誤優先序；05 §5.3／§10～13／§20。**工作**：完成 18 號端點；只在 Closed 提供，依 owner_only／respondents／public 全矩陣授權；Public 壞 Cookie 視為匿名；匿名不出 respondents 或跨題 mapping，identified 的 respondents 僅 ID＋目前 displayName。即時計算每人最新**整份** Response 的題型分布，排序、count、zero-data 與回傳 metadata 對齊契約。Root 追加 `creatorDisplayName`、`responseMode`、`resultVisibility`、`submissionDeadlineAt`，全部由既有資料投影，依 03c §3.4 的必須出現、目前名稱、enum、nullable 與表定截止時間語意回傳；零資料及 anonymous 亦提供。`questions[].type` 已存在，維持原 Shape；不新增 endpoint、名稱快照或 schema／Migration。
 
 **R8 A 數值依賴登記**：Answer 已沿用 DefinitionNumber 的 PostgreSQL JSONB 安全保存範圍（01 §3.3），不經 decimal／double 捨入；Receipt 不承諾逐字保留原始 token。R10 必須依 01 §3.3／05 §11.4 按精確數值等值分組及排序，`1`／`1.0`／`1e0` 同組，不以 token 文本或有限精度轉型分組。本次只登記後續依賴，未實作 R10。
 
-**驗收／證據**：角色 × lifecycle × visibility 存取矩陣；未登入及壞／過期 Cookie 下 Published／Draft 的存在性保護；同一人多次提交只算最新完整回覆；選項 count、multiple choice 總數、空值項目、zero-data 200、identified item.count 與 respondents 長度一致；anonymous 結果（包含 Owner）無身分資訊。**提交**：如 `feat(statistics): implement closed form statistics`。**停止**：附測試矩陣及漏項。
+**驗收／證據**：角色 × lifecycle × visibility 存取矩陣；未登入及壞／過期 Cookie 下 Published／Draft 的存在性保護；同一人多次提交只算最新完整回覆；選項 count、multiple choice 總數、空值項目、zero-data 200、identified item.count 與 respondents 長度一致；anonymous 結果（包含 Owner）無 Respondent 身分資訊；成功 Root 依 03c §3.4 完整回傳。此為既有 Round 範圍摘要，個別驗收計畫與執行仍依另行授權及核准 gate。**提交**：如 `feat(statistics): implement closed form statistics`。**停止**：附測試矩陣及漏項。
 
 ### R11 — A 階段整合／本機驗收／交接
 
@@ -297,7 +299,7 @@ Owner 可明確授權多階段，但不得省略執行前的計畫核准 gate。
 
 ## 8. 要不要做成 Skill？
 
-**現在不建議。** Skill 適合跨專案、跨工作區重複使用的「如何規劃／執行／回報分段開發」流程。本文件的七表、十八端點、Google 延後、錯誤矩陣及 Round 驗收直接綁定此專案；做成通用 Skill 會讓規格重複維護，做成個人 Skill 又可能在別的專案被誤觸發。此階段採「正式規格＋Implementation Plan＋repo 短 `AGENTS.md`＋每次明確下達 Round」。將來有兩個以上專案都採相同工作模式，再抽出不含本專案業務內容的 Skill，專案規格和驗收仍放 repo。
+Repo 現已採用 [v1-round-development](../../.agents/skills/v1-round-development/SKILL.md) 與 [v1-acceptance-testing](../../.agents/skills/v1-acceptance-testing/SKILL.md) 兩個 repository-local workflow skills，適用階段依 AGENTS.md；原「現在不建議」的建立初期建議已過時。Skills 只組織開發／驗收流程，業務契約仍由正式規格管理，Round 範圍與進度仍由本計畫管理，共通護欄與階段邊界仍由 AGENTS.md 管理。不得將 API 欄位細節複製到 skills 或 AGENTS.md。本次文件整理不啟動開發或驗收 skill 的執行流程。
 
 ## 9. 第一次交給 Codex 的指令（複製使用）
 

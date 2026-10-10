@@ -2,9 +2,9 @@
 
 | 項目 | 內容 |
 | --- | --- |
-| 版本 | 1.0 |
-| 日期 | 2026-09-28 |
-| 狀態 | 正式規格 |
+| 版本 | 1.1 |
+| 日期 | 2026-10-10 |
+| 狀態 | 正式規格；本次 Statistics 摘要修訂待 review |
 | 定位 | V1 產品與系統規格的入口文件 |
 | 主要讀者 | 專案負責人、產品／系統設計者、程式實作者、測試人員 |
 
@@ -124,7 +124,9 @@ V1 的核心語意：
 - identified 的每個統計項目可以回 User ID 與目前 displayName。
 - Closed 且沒有 Response 仍回合法的零資料結果。
 
-完整 Access Matrix、各題型聚合方式、排序與 Response Shape 見 Domain 與 API Contract Part B。
+Statistics 自帶 Form 與 Question 顯示資料，Public Client 不需先查詢受保護的 Form Detail；建立者目前名稱可公開，anonymous 限制仍適用於填答者身分。
+
+完整 Access Matrix、各題型聚合方式、排序與 Response Shape 見 Domain 與 API Contract Part C（§3.4、§7～8）。
 
 ## 8. 資料模型概覽
 

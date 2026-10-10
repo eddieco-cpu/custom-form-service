@@ -2,9 +2,9 @@
 
 | 項目 | 內容 |
 | --- | --- |
-| 版本 | 1.0 |
-| 日期 | 2026-09-28 |
-| 狀態 | 正式規格 |
+| 版本 | 1.1 |
+| 日期 | 2026-10-10 |
+| 狀態 | 正式規格；本次 Statistics Root 欄位修訂待 review |
 | Base Path | `/api/v1` |
 | 範圍 | Submission、Latest Response、Respondent Count、Statistics；Endpoint 15～18 |
 | 必要前置 | [Part A：Common](03a-v1-api-contract-common.md) |
@@ -80,6 +80,10 @@ count 是至少成功提交過一次的不同 User 數，不是歷史 Response �
   "formId": "form-id",
   "title": "活動回饋",
   "description": null,
+  "creatorDisplayName": "Eddie",
+  "responseMode": "multiple",
+  "resultVisibility": "public",
+  "submissionDeadlineAt": "2026-10-10T10:30:00Z",
   "count": 2,
   "questions": [
     {
@@ -102,6 +106,28 @@ count 是至少成功提交過一次的不同 User 數，不是歷史 Response �
 ```
 
 Statistics 自帶 Form 與 Question 顯示資料，Public Client 不需要先呼叫受保護的 Form Detail。
+
+以上為 Closed、public、anonymous 的成功回應範例；identified 時依 §8.5 在每個 Statistic Item 加入 respondents，Root Shape 相同。
+
+Root 固定包含以下九個欄位；所有欄位必須出現，nullable 欄位沒有值時明確回 `null`，不得省略。
+
+| 欄位 | 型別／值域 | 資料來源與語意 |
+| --- | --- | --- |
+| `formId` | UUID String | `forms.id`；維持 formId，不改為 id |
+| `title` | String | `forms.title` |
+| `description` | String／`null` | `forms.description` |
+| `creatorDisplayName` | String | `forms.user_id` 對應 `users.display_name` 的目前名稱；與 FormDetail 語意一致，不保存名稱快照 |
+| `responseMode` | `single`／`multiple` | `forms.response_mode`；單次／多次提交模式 |
+| `resultVisibility` | `owner_only`／`respondents`／`public` | `forms.result_visibility`；目前結果存取政策 |
+| `submissionDeadlineAt` | UTC ISO 8601 String／`null` | `forms.submission_deadline_at`；表定截止時間，無期限時回 null；維持既有保存值的時間精度 |
+| `count` | 非負 Integer | 具有 Effective Response 的不同 User 數，非 Response 筆數；見 §8.2 |
+| `questions` | Array | 完整 Statistics Question 集合，依 §8.3 排序 |
+
+- Creator 改名後，下一次 Statistics 查詢反映目前名稱；不回 Creator email、外部 Provider ID 或其他 Identity 資料。Creator 後來 disabled 不會使原本符合存取規則的 Form 被排除；Private Statistics 呼叫者仍須通過既有 Active 身分規則。
+- `creatorDisplayName` 在 anonymous／identified 及所有允許的 Visibility 組合均提供；anonymous 限制的是 Respondent 身分，不是建立者名稱。
+- `submissionDeadlineAt` 不是實際關閉時間。提前 Close、Closed 時期限已過或尚未到，均回保存的表定截止時間；到期不會自動 Close，也不提前開放 Statistics。
+- Root 不追加 `id`、`userId`、`creatorId`、`status`、`responseIdentity`、`createdAt`、`updatedAt`、`deletedAt` 或 `closedAt`。題目既有欄位維持 `questionId`、`title`、`description`、`type`、`count`、`statistics`；`questions[].type` 已提供題型，不新增欄位或 Question config。
+- 零填答者也回完整 Root，包含上述四個新增欄位；各層 count、Item 集合與匿名／具名規則仍依 §8。
 
 ### 3.5 Identified Respondent
 
@@ -357,7 +383,7 @@ Respondent 指至少曾成功提交該 Form 的 User。
 200 OK
 ```
 
-Body：Statistics Root。
+Body：[§3.4 Statistics Root](#34-statistics-root)，包含全部九個根欄位；anonymous／identified 使用相同 Root，Item 是否含 respondents 依 §8.4～8.5。成功 Shape 的追加不改變 §7.1～7.2 的存取判定或 §7.4 的錯誤與優先序。
 
 ### 7.4 錯誤與優先序
 
@@ -422,7 +448,7 @@ responseIdentity = `anonymous` 時：
 
 - Statistic Item 完全省略 `respondents` Property。
 - 不回 `respondents: null` 或可串接跨 Question 身分的替代 ID。
-- Owner 也不能取得身分或跨 Question Mapping。
+- Owner 也不能取得 Respondent 身分或跨 Question Mapping。
 
 ### 8.5 Identified
 
