@@ -4,6 +4,7 @@ using CustomFormService.Api.Contracts.Errors;
 using CustomFormService.Api.Infrastructure.Persistence;
 using CustomFormService.Api.Middleware;
 using CustomFormService.Api.Validation;
+using CustomFormService.Api.Queries;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +28,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<CurrentUserContext>();
 builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<StatisticsCredentialResolver>();
+builder.Services.AddScoped<StatisticsQuery>();
 builder.Services.AddSingleton<PasswordCredentialService>();
 builder.Services
     .AddOptions<PasswordHasherOptions>()
