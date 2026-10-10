@@ -1,12 +1,12 @@
 # R10 Statistics 規格更新交付
 
-日期：2026-10-10。狀態：**規格更新完成、待 review**；R10 **not started**。
+日期：2026-10-10。狀態：**Statistics 規格修訂已獲 Owner 核准**；R10 **not started**。
 
 ## 1. 授權與文件版本
 
-依 Owner 本次指示及附件 `02_Statistics_API_Amendment_for_R10.md`（2026-10-10）更新文件。附件作為需求輸入，其中後續實作計畫、開發與驗收的描述不是本次執行授權。
+依 Owner 指示及附件 `02_Statistics_API_Amendment_for_R10.md`（2026-10-10）更新文件。附件作為需求輸入，其中後續實作計畫、開發與驗收的描述不是初次規格整理的執行授權。
 
-本次修改的正式規格版本為 v1.1（2026-10-10），修訂明確標示待 review；其餘正式規格維持 v1.0。Implementation Plan 的 R10 引用指向此契約候選，未聲稱本次修訂已獲 Owner 核准。
+**Owner 確認（2026-10-10）**：本 chat 明確確認「本次 Statistics 規格更新 review 通過，我確認採用四欄位追加及相關語意」，核准規格整理提交 `0e9c03e096f45fd21e27876edbf48299f463f05f`。本次修改的正式規格版本 v1.1（2026-10-10）現為已核准；其餘正式規格維持 v1.0。Implementation Plan 的 R10 引用已同步為核准契約。本次確認亦另授權精簡實作計畫，見 [R10_Implementation_Plan.md](R10_Implementation_Plan.md)；該計畫仍待 review，不代表開發或驗收授權。
 
 ## 2. 修改檔案與契約差異
 
@@ -48,10 +48,10 @@
 ## 4. 衝突與待確認事項
 
 - 未發現附件與現行正式規格中既有存取、錯誤、聚合或匿名／具名規則的實質衝突。Root 五欄位 → 九欄位是本次明確授權的契約變更；原「匿名不含身分」的概括文字已限縮為 Respondent 身分，符合既有匿名填答政策。
-- 待 Owner review 確認 v1.1 的四欄位契約及公開目前 Creator 名稱（包含 anonymous + public）、必須出現／null／deadline 語意；本次不推定已核准。
-- 確認後再另行授權 R10 個別實作計畫；開發、驗收準備、驗收執行與 accepted 各依既有階段邊界，未提前開始。
+- v1.1 的四欄位契約及公開目前 Creator 名稱（包含 anonymous + public）、必須出現／null／deadline 語意，已由 Owner 明確核准，無剩餘規格決策。
+- R10 精簡實作計畫已另獲規劃授權，交付待 review；開發、驗收準備、驗收執行與 accepted 各依既有階段邊界，未提前開始。
 
-## 5. 實際檢查與未驗證事項
+## 5. 初次規格更新的檢查與未驗證事項（歷史）
 
 - 使用 `Get-Content` 閱讀附件、最新 AGENTS.md、兩個 skills、八份正式規格及 Backend Implementation Plan；使用 `rg --files`／`rg -n` 核對文件與相關文字。
 - 編輯前 `git status --short` 為空，分支 `master`；`git log -3 --oneline` 確認最新紀錄，起點 `7e10d71`。

@@ -4,7 +4,7 @@
 | --- | --- |
 | 版本 | 1.1 |
 | 日期 | 2026-10-10 |
-| 狀態 | 正式規格；本次 Statistics 資料揭露說明修訂待 review |
+| 狀態 | 正式規格；本次 Statistics 資料揭露說明修訂已於 2026-10-10 獲 Owner 核准 |
 | 職責 | 跨 Domain、Database、API 與實作層的安全、完整性、交易、一致性及工程邊界 |
 | 配套文件 | [Overview](00-v1-overview.md)、[Domain](01-v1-domain-specification.md)、[Database](02-v1-database-specification.md)、[API Common](03a-v1-api-contract-common.md)、[API Auth／User／Form](03b-v1-api-contract-auth-user-form.md)、[API Submission／Statistics](03c-v1-api-contract-submission-statistics.md)、[Errors](04-v1-error-catalog.md) |
 

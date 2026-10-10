@@ -4,7 +4,7 @@
 | --- | --- |
 | 版本 | 1.1 |
 | 日期 | 2026-10-10 |
-| 狀態 | 正式規格；本次 Statistics Root 欄位修訂待 review |
+| 狀態 | 正式規格；本次 Statistics Root 欄位修訂已於 2026-10-10 獲 Owner 核准 |
 | Base Path | `/api/v1` |
 | 範圍 | Submission、Latest Response、Respondent Count、Statistics；Endpoint 15～18 |
 | 必要前置 | [Part A：Common](03a-v1-api-contract-common.md) |
