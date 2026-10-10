@@ -1,0 +1,787 @@
+# R10 — Statistics；R10 驗收計畫待 review／未執行／未 accepted
+# Companion: R10_Acceptance_Test.md；正式契約 03c v1.1 §3.4、§7～8。
+# 45 HTTP requests；非 HTTP 01／02／15。依 01 → 01a/b → 02 → 03～14 → 15 順序。
+# 本次只 Prepare；核准與另行 Execute 授權之前，不發請求／不執行指令。
+# review 新 DLL 0x800711C7 BLOCKED；既有經 source/PDB 核對的 43/420 PASS 是歷史，不能代填本次新 build runtime。
+# 01 必須本次 restore/build、新 BuildRoot manifest、同 repo 本次 DLL 的 native PID／listener，再核對 health/readiness。
+# 01 runtime BLOCKED 時不默換舊 DLL；未送出的 01a/b 與 03～14 記 BLOCKED。02 僅可嘗試同次新 build，15 仍處理清理。
+# 02 同次新 build full 承接 R10 43 DataRows／完整 420；JWT／數值極值／四組真實快照按 Markdown 對應，不新增 native race。
+# 先 Clear All Cookies；每 request @no-cookie-jar，只有明確 Cookie，guest 不送 Cookie／Bearer。
+# 正常成功保留新會員／Forms／合法歷史與 soft-deleted main；舊資料／所有歷史失敗及 artifacts 不動。
+# RunId／emails／UUID／token 不沿用；重驗兩檔同步新 RunId，秘密只在本機、結果恢復 placeholders。
+# Number 大數直接保留 raw JSON token，不經 JavaScript Number／double／decimal；統計 raw Body 按 Markdown §4 完整核對。
+# 全部 AI／人工實際結果：未執行（等待 Owner review）
+
+@apiBase = http://localhost:5011
+@runId = r10-acceptance-20261010-01
+@futureDeadline = 2036-10-10T00:00:00.123456Z
+@ownerEmail = r10-owner-r10-acceptance-20261010-01@example.test
+@respondentEmail = r10-respondent-r10-acceptance-20261010-01@example.test
+@otherEmail = r10-other-r10-acceptance-20261010-01@example.test
+@testPassword = <GENERATE_RANDOM_10_TO_128_CHARACTER_PASSWORD_LOCALLY>
+@ownerToken = <COPY_ONLY_ACCESS_TOKEN_VALUE_FROM_03b_LOCALLY>
+@respondentToken = <COPY_ONLY_ACCESS_TOKEN_VALUE_FROM_03d_LOCALLY>
+@otherToken = <COPY_ONLY_ACCESS_TOKEN_VALUE_FROM_03f_LOCALLY>
+@ownerId = <COPY_NEW_USER_ID_FROM_03a>
+@respondentId = <COPY_NEW_USER_ID_FROM_03c>
+@otherId = <COPY_NEW_USER_ID_FROM_03e>
+@missingFormId = 00000000-0000-4000-8000-000000000010
+@mainFormId = <COPY_NEW_FORM_ID_FROM_04a>
+@identifiedFormId = <COPY_NEW_FORM_ID_FROM_04b>
+@zeroFormId = <COPY_NEW_FORM_ID_FROM_04c>
+@qMainText = <COPY_MAIN_QUESTION_ID_BY_TYPE_AND_TITLE_Text>
+@qMainNumber = <COPY_MAIN_QUESTION_ID_BY_TYPE_AND_TITLE_Number>
+@qMainSingle = <COPY_MAIN_QUESTION_ID_BY_TYPE_AND_TITLE_Single>
+@qMainMultiple = <COPY_MAIN_QUESTION_ID_BY_TYPE_AND_TITLE_Multiple>
+@qMainRating = <COPY_MAIN_QUESTION_ID_BY_TYPE_AND_TITLE_Rating>
+@qIdentifiedText = <COPY_IDENTIFIED_QUESTION_ID_BY_TYPE_AND_TITLE_Text>
+@qIdentifiedNumber = <COPY_IDENTIFIED_QUESTION_ID_BY_TYPE_AND_TITLE_Number>
+@qIdentifiedSingle = <COPY_IDENTIFIED_QUESTION_ID_BY_TYPE_AND_TITLE_Single>
+@qIdentifiedMultiple = <COPY_IDENTIFIED_QUESTION_ID_BY_TYPE_AND_TITLE_Multiple>
+@qIdentifiedRating = <COPY_IDENTIFIED_QUESTION_ID_BY_TYPE_AND_TITLE_Rating>
+@oMainSingleYes = <COPY_MAIN_OPTION_ID_BY_QUESTION_AND_BUSINESS_VALUE_SingleYes>
+@oMainSingleNo = <COPY_MAIN_OPTION_ID_BY_QUESTION_AND_BUSINESS_VALUE_SingleNo>
+@oMainMultipleOne = <COPY_MAIN_OPTION_ID_BY_QUESTION_AND_BUSINESS_VALUE_MultipleOne>
+@oMainMultipleTwo = <COPY_MAIN_OPTION_ID_BY_QUESTION_AND_BUSINESS_VALUE_MultipleTwo>
+@oIdentifiedSingleYes = <COPY_IDENTIFIED_OPTION_ID_BY_QUESTION_AND_BUSINESS_VALUE_SingleYes>
+@oIdentifiedSingleNo = <COPY_IDENTIFIED_OPTION_ID_BY_QUESTION_AND_BUSINESS_VALUE_SingleNo>
+@oIdentifiedMultipleOne = <COPY_IDENTIFIED_OPTION_ID_BY_QUESTION_AND_BUSINESS_VALUE_MultipleOne>
+@oIdentifiedMultipleTwo = <COPY_IDENTIFIED_OPTION_ID_BY_QUESTION_AND_BUSINESS_VALUE_MultipleTwo>
+@mainOldResponseId = <COPY_RESPONSE_ID_FROM_07a>
+@mainLatestResponseId = <COPY_RESPONSE_ID_FROM_07b>
+@mainOwnerResponseId = <COPY_RESPONSE_ID_FROM_07c>
+@identifiedOwnerResponseId = <COPY_RESPONSE_ID_FROM_07d>
+@identifiedRespondentResponseId = <COPY_RESPONSE_ID_FROM_07e>
+
+### 01 — 非 HTTP：本次 restore/build／產物／原生啟動／baseline
+# 按 R10_Acceptance_Test.md 的 01 執行；新 EvidenceRoot；source/PDB/DLL hashes、API PID/5011 路徑一致；保留 DB 與舊 API；政策阻擋記 BLOCKED／原因
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+
+### 01a — 本次產物原生 health
+# 前置：01 restore/build/source-PDB-manifest／native listener 已核對；未能啟動時此列 BLOCKED。
+# 預期：200；{"status":"healthy"}；必須是 01 已確認的本次新 DLL 程序。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/health
+
+### 01b — 本次產物原生 readiness
+# 前置：01a PASS；同一個已驗證的新 API 程序。
+# 預期：200；Healthy；本次新 API 可讀本機開發 PostgreSQL。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/health/ready
+
+### 02 — 非 HTTP：同次新 build full 與自動化映射
+# 按 R10_Acceptance_Test.md 的 02 執行；同 BuildRoot --no-build full；真實 TRX/SQL/四 snapshot；七表 before/after 相等；政策阻擋不取舊 binaries
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+
+### 03a — 註冊 owner
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：201；Active 合成 User；記錄 ownerId，email={{ownerEmail}}；不可保存 password/hash。
+# password／usable Set-Cookie 不留證據；只保存非秘密 User Body，Token 僅本機。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{ownerEmail}}",
+  "password": "{{testPassword}}",
+  "displayName": "R10 Owner"
+}
+
+### 03b — 登入 owner
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；User ID 與 03a 相同；Set-Cookie access_token，值僅放本機 ownerToken，Body 無 token。
+# password／usable Set-Cookie 不留證據；只保存非秘密 User Body，Token 僅本機。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{ownerEmail}}",
+  "password": "{{testPassword}}"
+}
+
+### 03c — 註冊 respondent
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：201；Active 合成 User；記錄 respondentId，email={{respondentEmail}}；不可保存 password/hash。
+# password／usable Set-Cookie 不留證據；只保存非秘密 User Body，Token 僅本機。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{respondentEmail}}",
+  "password": "{{testPassword}}",
+  "displayName": "R10 Respondent"
+}
+
+### 03d — 登入 respondent
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；User ID 與 03c 相同；Set-Cookie access_token，值僅放本機 respondentToken，Body 無 token。
+# password／usable Set-Cookie 不留證據；只保存非秘密 User Body，Token 僅本機。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{respondentEmail}}",
+  "password": "{{testPassword}}"
+}
+
+### 03e — 註冊 other
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：201；Active 合成 User；記錄 otherId，email={{otherEmail}}；不可保存 password/hash。
+# password／usable Set-Cookie 不留證據；只保存非秘密 User Body，Token 僅本機。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{otherEmail}}",
+  "password": "{{testPassword}}",
+  "displayName": "R10 Other"
+}
+
+### 03f — 登入 other
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；User ID 與 03e 相同；Set-Cookie access_token，值僅放本機 otherToken，Body 無 token。
+# password／usable Set-Cookie 不留證據；只保存非秘密 User Body，Token 僅本機。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{otherEmail}}",
+  "password": "{{testPassword}}"
+}
+
+### 04a — 建立 main 五題型 Draft
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：201；Draft FormDetail；Owner A；記錄 mainFormId／全部 Question、Option IDs；五題與四 Options；測資依 §共用變數。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms
+Cookie: access_token={{ownerToken}}
+Content-Type: application/json
+
+{
+  "title": "R10 main {{runId}}",
+  "description": null,
+  "responseMode": "multiple",
+  "responseIdentity": "anonymous",
+  "resultVisibility": "owner_only",
+  "submissionDeadlineAt": "{{futureDeadline}}",
+  "questions": [
+    {
+      "type": "rating",
+      "title": "Rating",
+      "sortOrder": 50,
+      "config": {
+        "min": 0,
+        "max": 2
+      }
+    },
+    {
+      "type": "multiple_choice",
+      "title": "Multiple",
+      "sortOrder": 40,
+      "options": [
+        {
+          "label": "Two",
+          "value": "two",
+          "sortOrder": 20
+        },
+        {
+          "label": "One",
+          "value": "one",
+          "sortOrder": 10
+        }
+      ]
+    },
+    {
+      "type": "single_choice",
+      "title": "Single",
+      "sortOrder": 30,
+      "options": [
+        {
+          "label": "No",
+          "value": "no",
+          "sortOrder": 20
+        },
+        {
+          "label": "Yes",
+          "value": "yes",
+          "sortOrder": 10
+        }
+      ]
+    },
+    {
+      "type": "number",
+      "title": "Number",
+      "sortOrder": 20
+    },
+    {
+      "type": "text",
+      "title": "Text",
+      "sortOrder": 10
+    }
+  ]
+}
+
+### 04b — 建立 identified 五題型 Draft
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：201；Draft FormDetail；Owner A；記錄 identifiedFormId／全部 Question、Option IDs；五題與四 Options；測資依 §共用變數。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms
+Cookie: access_token={{ownerToken}}
+Content-Type: application/json
+
+{
+  "title": "R10 identified {{runId}}",
+  "description": null,
+  "responseMode": "single",
+  "responseIdentity": "identified",
+  "resultVisibility": "public",
+  "submissionDeadlineAt": null,
+  "questions": [
+    {
+      "type": "rating",
+      "title": "Rating",
+      "sortOrder": 50,
+      "config": {
+        "min": 0,
+        "max": 2
+      }
+    },
+    {
+      "type": "multiple_choice",
+      "title": "Multiple",
+      "sortOrder": 40,
+      "options": [
+        {
+          "label": "Two",
+          "value": "two",
+          "sortOrder": 20
+        },
+        {
+          "label": "One",
+          "value": "one",
+          "sortOrder": 10
+        }
+      ]
+    },
+    {
+      "type": "single_choice",
+      "title": "Single",
+      "sortOrder": 30,
+      "options": [
+        {
+          "label": "No",
+          "value": "no",
+          "sortOrder": 20
+        },
+        {
+          "label": "Yes",
+          "value": "yes",
+          "sortOrder": 10
+        }
+      ]
+    },
+    {
+      "type": "number",
+      "title": "Number",
+      "sortOrder": 20
+    },
+    {
+      "type": "text",
+      "title": "Text",
+      "sortOrder": 10
+    }
+  ]
+}
+
+### 04c — 建立 zero 五題型 Draft
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：201；Draft FormDetail；Owner A；記錄 zeroFormId／全部 Question、Option IDs；五題與四 Options；測資依 §共用變數。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms
+Cookie: access_token={{ownerToken}}
+Content-Type: application/json
+
+{
+  "title": "R10 zero {{runId}}",
+  "description": null,
+  "responseMode": "single",
+  "responseIdentity": "identified",
+  "resultVisibility": "public",
+  "submissionDeadlineAt": null,
+  "questions": [
+    {
+      "type": "rating",
+      "title": "Rating",
+      "sortOrder": 50,
+      "config": {
+        "min": 0,
+        "max": 2
+      }
+    },
+    {
+      "type": "multiple_choice",
+      "title": "Multiple",
+      "sortOrder": 40,
+      "options": [
+        {
+          "label": "Two",
+          "value": "two",
+          "sortOrder": 20
+        },
+        {
+          "label": "One",
+          "value": "one",
+          "sortOrder": 10
+        }
+      ]
+    },
+    {
+      "type": "single_choice",
+      "title": "Single",
+      "sortOrder": 30,
+      "options": [
+        {
+          "label": "No",
+          "value": "no",
+          "sortOrder": 20
+        },
+        {
+          "label": "Yes",
+          "value": "yes",
+          "sortOrder": 10
+        }
+      ]
+    },
+    {
+      "type": "number",
+      "title": "Number",
+      "sortOrder": 20
+    },
+    {
+      "type": "text",
+      "title": "Text",
+      "sortOrder": 10
+    }
+  ]
+}
+
+### 05a — UUID 優先於 invalid auth
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：400；VALIDATION_ERROR；至少一個 detail path=formId、code=INVALID_VALUE；Error Envelope。
+# 此 GET-only 組之前取 Markdown 15／§7.1 完整七表 snapshot（不得混入前一合法寫入）。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/not-a-uuid/statistics
+Cookie: access_token=not-a-jwt
+
+### 05b — missing Form 優先於 invalid auth
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：404；FORM_NOT_FOUND；01 已以 DB 確認該 UUID 不存在。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{missingFormId}}/statistics
+Cookie: access_token=not-a-jwt
+
+### 05c — Draft Active Owner 得知未開放
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：409；FORM_STATISTICS_NOT_AVAILABLE。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
+Cookie: access_token={{ownerToken}}
+
+### 05d — Draft 非 Owner 存在性保護
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：404；FORM_NOT_FOUND。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
+Cookie: access_token={{otherToken}}
+
+### 05e — Draft bad Cookie 存在性保護
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：404；FORM_NOT_FOUND。
+# 此 GET-only 組之後取同 snapshot，逐列／count／migration 完全不變。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
+Cookie: access_token=not-a-jwt
+
+### 06a — Publish main
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；FormDetail.status=published；不送 Body／Content-Type。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mainFormId}}/publish
+Cookie: access_token={{ownerToken}}
+
+### 06b — Publish identified
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；FormDetail.status=published；不送 Body／Content-Type。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{identifiedFormId}}/publish
+Cookie: access_token={{ownerToken}}
+
+### 06c — Publish zero
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；FormDetail.status=published；不送 Body／Content-Type。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{zeroFormId}}/publish
+Cookie: access_token={{ownerToken}}
+
+### 06d — Published 其他 Active User 未開放 public
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：409；FORM_STATISTICS_NOT_AVAILABLE；public 不提前開放。
+# 此 GET-only 組之前取 Markdown 15／§7.1 完整七表 snapshot（不得混入前一合法寫入）。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{identifiedFormId}}/statistics
+Cookie: access_token={{otherToken}}
+
+### 06e — Published public bad Cookie 隱藏存在性
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：404；FORM_NOT_FOUND。
+# 此 GET-only 組之後取同 snapshot，逐列／count／migration 完全不變。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{identifiedFormId}}/statistics
+Cookie: access_token=not-a-jwt
+
+### 07a — B 的 main 舊整份答卷
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：201；保存 Receipt；5 Answers，text=Old、number=1、single=no、multiple=one、rating=2；記錄 mainOldResponseId。
+# Receipt／新 Response IDs 及 Answers 保存值依 Markdown §7.2 核對；POST 不盲重送。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
+Cookie: access_token={{respondentToken}}
+Content-Type: application/json
+
+{
+  "answers": [
+    {"questionId":"{{qMainText}}","value":" Old "},
+    {"questionId":"{{qMainNumber}}","value":1e0},
+    {"questionId":"{{qMainSingle}}","value":"{{oMainSingleNo}}"},
+    {"questionId":"{{qMainMultiple}}","value":["{{oMainMultipleOne}}"]},
+    {"questionId":"{{qMainRating}}","value":2}
+  ]
+}
+
+### 07b — B 的 main 較新整份、刻意缺 Text
+# 前置：07a 已成功；本次時間應嚴格較晚，先確認服務時間前進及 Receipt／DB tie-break；不能盲重送。
+# 預期：201；Receipt 4 Answers，完全沒有 Text；number=100000000000000000000000000000000000001、single=yes、multiple=one/two、rating=1；記錄 mainLatestResponseId。
+# Receipt／新 Response IDs 及 Answers 保存值依 Markdown §7.2 核對；POST 不盲重送。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
+Cookie: access_token={{respondentToken}}
+Content-Type: application/json
+
+{
+  "answers": [
+    {"questionId":"{{qMainNumber}}","value":100000000000000000000000000000000000001},
+    {"questionId":"{{qMainSingle}}","value":"{{oMainSingleYes}}"},
+    {"questionId":"{{qMainMultiple}}","value":["{{oMainMultipleOne}}","{{oMainMultipleTwo}}"]},
+    {"questionId":"{{qMainRating}}","value":1}
+  ]
+}
+
+### 07c — A 的 main 最新零 Answer
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：201；Receipt answers=[]；記錄 mainOwnerResponseId；Root 仍計入 A。
+# Receipt／新 Response IDs 及 Answers 保存值依 Markdown §7.2 核對；POST 不盲重送。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
+Cookie: access_token={{ownerToken}}
+Content-Type: application/json
+
+{"answers":[]}
+
+### 07d — A 的 identified 整份
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：201；5 Answers；text=A、number=100000000000000000000000000000000000001、single=yes、multiple=one/two、rating=2；記錄 identifiedOwnerResponseId。
+# Receipt／新 Response IDs 及 Answers 保存值依 Markdown §7.2 核對；POST 不盲重送。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{identifiedFormId}}/responses
+Cookie: access_token={{ownerToken}}
+Content-Type: application/json
+
+{
+  "answers": [
+    {"questionId":"{{qIdentifiedText}}","value":" A "},
+    {"questionId":"{{qIdentifiedNumber}}","value":100000000000000000000000000000000000001},
+    {"questionId":"{{qIdentifiedSingle}}","value":"{{oIdentifiedSingleYes}}"},
+    {"questionId":"{{qIdentifiedMultiple}}","value":["{{oIdentifiedMultipleOne}}","{{oIdentifiedMultipleTwo}}"]},
+    {"questionId":"{{qIdentifiedRating}}","value":2}
+  ]
+}
+
+### 07e — B 的 identified 整份相近大數
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：201；5 Answers；text=a、number=100000000000000000000000000000000000002、single=no、multiple=one、rating=0；記錄 identifiedRespondentResponseId。
+# Receipt／新 Response IDs 及 Answers 保存值依 Markdown §7.2 核對；POST 不盲重送。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{identifiedFormId}}/responses
+Cookie: access_token={{respondentToken}}
+Content-Type: application/json
+
+{
+  "answers": [
+    {"questionId":"{{qIdentifiedText}}","value":"a"},
+    {"questionId":"{{qIdentifiedNumber}}","value":100000000000000000000000000000000000002},
+    {"questionId":"{{qIdentifiedSingle}}","value":"{{oIdentifiedSingleNo}}"},
+    {"questionId":"{{qIdentifiedMultiple}}","value":["{{oIdentifiedMultipleOne}}"]},
+    {"questionId":"{{qIdentifiedRating}}","value":0}
+  ]
+}
+
+### 08a — Close main
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；FormDetail.status=closed；未到期提前 Close，表定 deadline 保持；不送 Body／Content-Type。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mainFormId}}/close
+Cookie: access_token={{ownerToken}}
+
+### 08b — Close identified
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；FormDetail.status=closed；deadline=null；不送 Body／Content-Type。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{identifiedFormId}}/close
+Cookie: access_token={{ownerToken}}
+
+### 08c — Close zero
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；FormDetail.status=closed；deadline=null；不送 Body／Content-Type。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{zeroFormId}}/close
+Cookie: access_token={{ownerToken}}
+
+### 09a — Closed private 沒 Cookie
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：401；AUTH_REQUIRED。
+# 此 GET-only 組之前取 Markdown 15／§7.1 完整七表 snapshot（不得混入前一合法寫入）。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
+
+### 09b — Closed private invalid Cookie
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：401；AUTH_TOKEN_INVALID。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
+Cookie: access_token=not-a-jwt
+
+### 09c — owner_only 拒絕 Active Respondent
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：403；STATISTICS_ACCESS_DENIED。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
+Cookie: access_token={{respondentToken}}
+
+### 09d — owner_only Owner 匿名統計
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；完整 main 分布 §4：Root=2、Question counts=0/1/1/1/1；目前 Creator=R10 Owner、mode=multiple、visibility=owner_only、精確保存 deadline；Owner 也無 respondents。
+# 此 GET-only 組之後取同 snapshot，逐列／count／migration 完全不變。
+# 成功 raw JSON 全部斷言依 Markdown §4（九 Root／六 Question／各層 count／隱私／null／精確數值）。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
+Cookie: access_token={{ownerToken}}
+
+### 10a — main 改 respondents
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；FormDetail.resultVisibility=respondents；Definition／Response 不改。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility
+Cookie: access_token={{ownerToken}}
+Content-Type: application/json
+
+{"resultVisibility":"respondents"}
+
+### 10b — respondents 允許 B
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；與 09d 分布相同，只有 resultVisibility=respondents；Root 四欄位仍完整，anonymous 無 respondents。
+# 此 GET-only 組之前取 Markdown 15／§7.1 完整七表 snapshot（不得混入前一合法寫入）。
+# 成功 raw JSON 全部斷言依 Markdown §4（九 Root／六 Question／各層 count／隱私／null／精確數值）。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
+Cookie: access_token={{respondentToken}}
+
+### 10c — respondents 拒絕未提交 C
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：403；STATISTICS_ACCESS_DENIED。
+# 此 GET-only 組之後取同 snapshot，逐列／count／migration 完全不變。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
+Cookie: access_token={{otherToken}}
+
+### 11a — main 改 public
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；FormDetail.resultVisibility=public。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility
+Cookie: access_token={{ownerToken}}
+Content-Type: application/json
+
+{"resultVisibility":"public"}
+
+### 11b — Closed public bad Cookie 直接統計
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；與 09d 分布相同，resultVisibility=public；bad Cookie 不阻擋，無 Respondent 身分。
+# 此 GET-only 組之前取 Markdown 15／§7.1 完整七表 snapshot（不得混入前一合法寫入）。
+# 此 GET-only 組之後取同 snapshot，逐列／count／migration 完全不變。
+# 成功 raw JSON 全部斷言依 Markdown §4（九 Root／六 Question／各層 count／隱私／null／精確數值）。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
+Cookie: access_token=not-a-jwt
+
+### 12a — A 提交後改 Creator／Respondent 名稱
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；public User.displayName=R10 Owner Updated；只改本次 A。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/users/me
+Cookie: access_token={{ownerToken}}
+Content-Type: application/json
+
+{"displayName":"R10 Owner Updated"}
+
+### 12b — B 提交後改 Respondent 名稱
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；public User.displayName=R10 Respondent Updated；只改本次 B。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/users/me
+Cookie: access_token={{respondentToken}}
+Content-Type: application/json
+
+{"displayName":"R10 Respondent Updated"}
+
+### 12c — identified public 精確分布／目前名單
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；完整 identified 分布 §4：Root=2、每題=2、兩個大數精確分開排序、text=A/a；每 Item respondents 僅 id/目前名稱，零票 []；四 Root 欄位與 deadline=null。
+# 此 GET-only 組之前取 Markdown 15／§7.1 完整七表 snapshot（不得混入前一合法寫入）。
+# 成功 raw JSON 全部斷言依 Markdown §4（九 Root／六 Question／各層 count／隱私／null／精確數值）。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{identifiedFormId}}/statistics
+
+### 12d — anonymous Creator 改名可見
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；main 分布不變；creatorDisplayName=R10 Owner Updated；其他 Root 值與 11b 相同，anonymous 仍完全省略 respondents。
+# 此 GET-only 組之後取同 snapshot，逐列／count／migration 完全不變。
+# 成功 raw JSON 全部斷言依 Markdown §4（九 Root／六 Question／各層 count／隱私／null／精確數值）。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
+
+### 13a — Closed public identified 五題型零資料
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：200；Root=0、全部 Question=0；text/number=[]；Choice 全 Options count=0；rating 0..2 全零；每 Item respondents=[]；Root 九欄位含目前 Creator／single／public／deadline=null。
+# 此 GET-only 組之前取 Markdown 15／§7.1 完整七表 snapshot（不得混入前一合法寫入）。
+# 此 GET-only 組之後取同 snapshot，逐列／count／migration 完全不變。
+# 成功 raw JSON 全部斷言依 Markdown §4（九 Root／六 Question／各層 count／隱私／null／精確數值）。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{zeroFormId}}/statistics
+
+### 14a — 只 Soft Delete 本次 main
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：204；無 Body；main 的 Questions／Options／Responses／Answers 保留。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+DELETE {{apiBase}}/api/v1/forms/{{mainFormId}}
+Cookie: access_token={{ownerToken}}
+
+### 14b — Deleted 優先於 invalid auth
+# 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
+# 預期：404；FORM_NOT_FOUND；不回 Root／答案。
+# 此 GET-only 組之前取 Markdown 15／§7.1 完整七表 snapshot（不得混入前一合法寫入）。
+# 此 GET-only 組之後取同 snapshot，逐列／count／migration 完全不變。
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
+Cookie: access_token=not-a-jwt
+
+### 15 — 非 HTTP：DB／Effective／GET 無寫入／保留與清理
+# 按 R10_Acceptance_Test.md 的 15 執行；即使 BLOCKED 仍核對已有資料；舊 rows digest 不變；完整成功 delta 3 users/3 forms/15 questions/12 options/5 responses/19 answers；migration不變；只停止本次核對 PID、清秘密並保留證據
+# AI 實際結果：未執行（等待 Owner review）
+# 人工實際結果：未執行（等待 Owner review）
