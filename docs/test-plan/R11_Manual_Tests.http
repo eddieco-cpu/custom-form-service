@@ -1,0 +1,674 @@
+# R11 — Prepare；計畫待 Owner review。49 HTTP／6非HTTP；全部AI／人工未執行（等待 Owner review）。
+# Companion: R11_Acceptance_Test.md，依01→02→03→04→05～13→14→15。
+# 不使用 Send All；Owner 核准目前paired files及明確Execute授權後才執行。
+# 非HTTP 01 baseline／02 clean snapshot build／03隔離空DB migration／04full及兩native PID，詳Markdown §3。
+# 固定開發volume名稱不能只靠-p隔離；03必須override volume name並inspect真正Mounts。
+# 只用本次原生DLL；05a/b空庫、05c/d既有開發DB；所有業務HTTP用apiBase。
+# Clear All Cookies；每request @no-cookie-jar；只有明確Cookie。工作副本／記憶體存憑證，交付恢復placeholder。
+# JSON body／IDs／token不可沿用歷史Run；number1.0直接發raw JSON。
+# 每案前置／預期及分開結果在Markdown；14核對完整列／GET無寫入，保留fixtures／隔離volume；15交接。
+# G1 pending；不開始前端或部署。
+
+@runId = <NEW_UNIQUE_R11_RUN_ID_AFTER_APPROVAL>
+@apiBase = http://localhost:5012
+@emptyApiBase = http://localhost:5013
+@testPassword = <GENERATE_SYNTHETIC_PASSWORD_LOCALLY>
+@aToken = <ACCESS_TOKEN_VALUE_FROM_06d_LOCALLY>
+@bToken = <ACCESS_TOKEN_VALUE_FROM_06e_LOCALLY>
+@mainFormId = <M_ID_FROM_07a>
+@singleFormId = <S_ID_FROM_11a>
+@qText = <TEXT_ID_FROM_07b>
+@qNumber = <NUMBER_ID_FROM_07b>
+@qSingle = <SINGLE_CHOICE_ID_FROM_07b>
+@qMultiple = <MULTIPLE_CHOICE_ID_FROM_07b>
+@qRating = <RATING_ID_FROM_07b>
+@sYes = <YES_OPTION_ID_FROM_07b>
+@sNo = <NO_OPTION_ID_FROM_07b>
+@mOne = <ONE_OPTION_ID_FROM_07b>
+@mTwo = <TWO_OPTION_ID_FROM_07b>
+@qIdentified = <TEXT_ID_FROM_11a>
+
+###
+# 05a — 隔離空庫 API health
+# 前置：03 migration、04 full 與本次隔離 API 啟動完成
+# 預期：200；{"status":"healthy"}
+# @no-cookie-jar
+GET {{emptyApiBase}}/health HTTP/1.1
+
+###
+# 05b — 隔離空庫 API readiness
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200；Healthy；實際連線隔離 DB
+# @no-cookie-jar
+GET {{emptyApiBase}}/health/ready HTTP/1.1
+
+###
+# 05c — 開發 DB API health
+# 前置：04 後啟動另一個本次 DLL PID，連既有開發 DB
+# 預期：200；{"status":"healthy"}
+# @no-cookie-jar
+GET {{apiBase}}/health HTTP/1.1
+
+###
+# 05d — 開發 DB API readiness
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200；Healthy；記錄 PID／port／DB 對應
+# @no-cookie-jar
+GET {{apiBase}}/health/ready HTTP/1.1
+
+###
+# 06a — 註冊 A
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：201 User；A id；無 access_token Cookie
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/register HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "r11-a-{{runId}}@example.test",
+  "password": "{{testPassword}}",
+  "displayName": "R11 A"
+}
+
+###
+# 06b — 註冊 B
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：201 User；B id；無 access_token Cookie
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/register HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "r11-b-{{runId}}@example.test",
+  "password": "{{testPassword}}",
+  "displayName": "R11 B"
+}
+
+###
+# 06c — 註冊不自動登入
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：401 AUTH_REQUIRED；Error Envelope
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/users/me HTTP/1.1
+
+###
+# 06d — 登入 A
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200 User.id=A；Set-Cookie flags／expiry 依 §2；保存 aToken 於記憶體
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "r11-a-{{runId}}@example.test",
+  "password": "{{testPassword}}"
+}
+
+###
+# 06e — 登入 B
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200 User.id=B；同 Cookie 契約；保存 bToken 於記憶體
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "r11-b-{{runId}}@example.test",
+  "password": "{{testPassword}}"
+}
+
+###
+# 06f — 確認本人 B
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200 User.id=B；只四欄 User
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/users/me HTTP/1.1
+Cookie: access_token={{bToken}}
+
+###
+# 07a — 建立空草稿 M
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：201 Draft；title trim；questions=[]；multiple／anonymous／owner_only；保存 mainFormId
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms HTTP/1.1
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{
+  "title": " R11 main {{runId}} ",
+  "responseMode": "multiple",
+  "responseIdentity": "anonymous"
+}
+
+###
+# 07b — 編輯五題型草稿
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200 完整 FormDetail；title 已編輯、description=null；排序10..50、Options10/20；按 type／Option.value保存IDs
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mainFormId}} HTTP/1.1
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{
+  "title": "R11 main edited {{runId}}",
+  "description": " ",
+  "questions": [
+    {
+      "type": "rating",
+      "title": "Rating",
+      "sortOrder": 50,
+      "config": {
+        "min": 0,
+        "max": 2
+      }
+    },
+    {
+      "type": "multiple_choice",
+      "title": "Multiple",
+      "sortOrder": 40,
+      "options": [
+        {
+          "label": "Two",
+          "value": "two",
+          "sortOrder": 20
+        },
+        {
+          "label": "One",
+          "value": "one",
+          "sortOrder": 10
+        }
+      ]
+    },
+    {
+      "type": "single_choice",
+      "title": "Single",
+      "sortOrder": 30,
+      "options": [
+        {
+          "label": "No",
+          "value": "no",
+          "sortOrder": 20
+        },
+        {
+          "label": "Yes",
+          "value": "yes",
+          "sortOrder": 10
+        }
+      ]
+    },
+    {
+      "type": "number",
+      "title": "Number",
+      "sortOrder": 20
+    },
+    {
+      "type": "text",
+      "title": "Text",
+      "sortOrder": 10
+    }
+  ]
+}
+
+###
+# 07c — 他人草稿存在性隱藏
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：404 FORM_NOT_FOUND
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}} HTTP/1.1
+Cookie: access_token={{bToken}}
+
+###
+# 07d — 拒絕無效 Delta 並保證原子性
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：400 FORM_DEFINITION_INVALID；detail questions[0].sortOrder／INVALID_SORT_ORDER；title／全部列與 timestamps 不變
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mainFormId}} HTTP/1.1
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{
+  "title": "Must not persist",
+  "questions": [
+    {
+      "id": "{{qText}}",
+      "sortOrder": -1
+    }
+  ]
+}
+
+###
+# 08a — 發布 M
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200 Published FormDetail；五題型 Definition 全部與07b相同；僅合法 lifecycle／updatedAt改變
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mainFormId}}/publish HTTP/1.1
+Cookie: access_token={{aToken}}
+
+###
+# 08b — 會員讀取 Published
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200 完整五題型 FormDetail；不混入Responses／Count／Statistics
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}} HTTP/1.1
+Cookie: access_token={{bToken}}
+
+###
+# 08c — Owner 修改發布定義被拒絕
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：409 FORM_NOT_EDITABLE；資料不變
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mainFormId}} HTTP/1.1
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{
+  "title": "Must not persist"
+}
+
+###
+# 08d — 非 Owner 優先授權拒絕
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：403 FORM_ACCESS_DENIED；先於FORM_NOT_EDITABLE
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mainFormId}} HTTP/1.1
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{
+  "title": "Must not persist"
+}
+
+###
+# 08e — Published 不提供統計
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：409 FORM_STATISTICS_NOT_AVAILABLE
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics HTTP/1.1
+Cookie: access_token={{aToken}}
+
+###
+# 09a — B 第一份五題型回覆
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：201 Receipt；排序／trim後Text=Old；五Answers；保存oldResponseId／submittedAt
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses HTTP/1.1
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{
+  "answers": [
+    {
+      "questionId": "{{qRating}}",
+      "value": 1
+    },
+    {
+      "questionId": "{{qMultiple}}",
+      "value": [
+        "{{mTwo}}"
+      ]
+    },
+    {
+      "questionId": "{{qSingle}}",
+      "value": "{{sYes}}"
+    },
+    {
+      "questionId": "{{qNumber}}",
+      "value": 9
+    },
+    {
+      "questionId": "{{qText}}",
+      "value": " Old "
+    }
+  ]
+}
+
+###
+# 09b — B 最新整份略過 optional Text
+# 前置：09a成功後等待至少1秒；不改DB時間；時間未嚴格較新則停止依賴並記FAIL
+# 預期：201 新Receipt；只有四Answers；submittedAt嚴格晚於09a；保存latestResponseId
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses HTTP/1.1
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{
+  "answers": [
+    {
+      "questionId": "{{qRating}}",
+      "value": 0
+    },
+    {
+      "questionId": "{{qMultiple}}",
+      "value": [
+        "{{mOne}}"
+      ]
+    },
+    {
+      "questionId": "{{qSingle}}",
+      "value": "{{sNo}}"
+    },
+    {
+      "questionId": "{{qNumber}}",
+      "value": 1.0
+    }
+  ]
+}
+
+###
+# 09c — A 也提交五題型
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：201 Receipt；五Answers；Text=Alpha；保存aResponseId
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses HTTP/1.1
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{
+  "answers": [
+    {
+      "questionId": "{{qRating}}",
+      "value": 2
+    },
+    {
+      "questionId": "{{qMultiple}}",
+      "value": [
+        "{{mOne}}",
+        "{{mTwo}}"
+      ]
+    },
+    {
+      "questionId": "{{qSingle}}",
+      "value": "{{sYes}}"
+    },
+    {
+      "questionId": "{{qNumber}}",
+      "value": 1
+    },
+    {
+      "questionId": "{{qText}}",
+      "value": " Alpha "
+    }
+  ]
+}
+
+###
+# 09d — B 最新整份
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200；id=latestResponseId；只四題且不回填Old／Text；與09b Receipt相等
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/responses/me/latest HTTP/1.1
+Cookie: access_token={{bToken}}
+
+###
+# 09e — Owner 填答人數
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200；僅count=2，非3 Responses
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/respondent-count HTTP/1.1
+Cookie: access_token={{aToken}}
+
+###
+# 09f — 非 Owner Count拒絕
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：403 FORM_ACCESS_DENIED
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/respondent-count HTTP/1.1
+Cookie: access_token={{bToken}}
+
+###
+# 09g — Owner List count對齊
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200；只有M、pagination 1/100/1/1；M.count=2；FormSummary shape
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms?page=1&pageSize=100 HTTP/1.1
+Cookie: access_token={{aToken}}
+
+###
+# 10a — 關閉 M
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200 Closed FormDetail；Definition保持凍結、deadline=null
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mainFormId}}/close HTTP/1.1
+Cookie: access_token={{aToken}}
+
+###
+# 10b — Closed Submit 優先狀態拒絕
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：409 FORM_NOT_SUBMITTABLE，先於null Answer驗證；無新Response／Answer
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses HTTP/1.1
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{
+  "answers": [
+    {
+      "questionId": "{{qNumber}}",
+      "value": null
+    }
+  ]
+}
+
+###
+# 10c — Owner 匿名統計
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200；完整§5預期分布／九欄Root／anonymous完全省略respondents
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics HTTP/1.1
+Cookie: access_token={{aToken}}
+
+###
+# 10d — owner_only 拒絕 Respondent
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：403 STATISTICS_ACCESS_DENIED
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics HTTP/1.1
+Cookie: access_token={{bToken}}
+
+###
+# 10e — owner_only 要求登入
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：401 AUTH_REQUIRED
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics HTTP/1.1
+
+###
+# 10f — 改 respondents
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200 FormDetail；Closed／anonymous不變；visibility=respondents
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility HTTP/1.1
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{
+  "resultVisibility": "respondents"
+}
+
+###
+# 10g — Respondent 匿名統計
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200；分布同10c，Root.resultVisibility=respondents；無respondents
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics HTTP/1.1
+Cookie: access_token={{bToken}}
+
+###
+# 10h — 改 public
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200 FormDetail；visibility=public；Definition不變
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility HTTP/1.1
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{
+  "resultVisibility": "public"
+}
+
+###
+# 10i — Public 壞Cookie視匿名
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200；分布同10c，Root.resultVisibility=public；不要求先讀FormDetail
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics HTTP/1.1
+Cookie: access_token=not-a-valid-jwt
+
+###
+# 11a — 建立 single／identified S
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：201 Draft；保存singleFormId／qIdentified；single／identified／public；一個optional Text
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms HTTP/1.1
+Cookie: access_token={{aToken}}
+Content-Type: application/json
+
+{
+  "title": "R11 single {{runId}}",
+  "responseMode": "single",
+  "responseIdentity": "identified",
+  "resultVisibility": "public",
+  "questions": [
+    {
+      "type": "text",
+      "title": "Identified Text",
+      "sortOrder": 10
+    }
+  ]
+}
+
+###
+# 11b — 發布 S
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200 Published FormDetail
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{singleFormId}}/publish HTTP/1.1
+Cookie: access_token={{aToken}}
+
+###
+# 11c — B single 提交
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：201；唯一一Response／一Answer；保存singleResponseId；Text=Identified
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{singleFormId}}/responses HTTP/1.1
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{
+  "answers": [
+    {
+      "questionId": "{{qIdentified}}",
+      "value": " Identified "
+    }
+  ]
+}
+
+###
+# 11d — single 重試拒絕
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：409 RESPONSE_ALREADY_SUBMITTED；無追加資料
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{singleFormId}}/responses HTTP/1.1
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{
+  "answers": [
+    {
+      "questionId": "{{qIdentified}}",
+      "value": "Different"
+    }
+  ]
+}
+
+###
+# 11e — 提交後改 B 目前名稱
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200 User.id=B、displayName=R11 B Updated；只改本次B
+# @no-cookie-jar
+PATCH {{apiBase}}/api/v1/users/me HTTP/1.1
+Cookie: access_token={{bToken}}
+Content-Type: application/json
+
+{
+  "displayName": "R11 B Updated"
+}
+
+###
+# 11f — 關閉 S
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200 Closed FormDetail；原singleResponse保留
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/forms/{{singleFormId}}/close HTTP/1.1
+Cookie: access_token={{aToken}}
+
+###
+# 11g — Public具名統計
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：200；九欄Root、single/public、count=1；Text.count=1，Item Identified:1；respondents恰[{id:B,displayName:R11 B Updated}]
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{singleFormId}}/statistics HTTP/1.1
+
+###
+# 12a — Soft Delete S
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：204無Body；只deleted_at／updated_at合法變更，status=closed；子列保留
+# @no-cookie-jar
+DELETE {{apiBase}}/api/v1/forms/{{singleFormId}} HTTP/1.1
+Cookie: access_token={{aToken}}
+
+###
+# 12b — 刪除後 Latest
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：404 FORM_NOT_FOUND（非RESPONSE_NOT_FOUND）
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{singleFormId}}/responses/me/latest HTTP/1.1
+Cookie: access_token={{bToken}}
+
+###
+# 12c — 刪除後 Count
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：404 FORM_NOT_FOUND
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{singleFormId}}/respondent-count HTTP/1.1
+Cookie: access_token={{aToken}}
+
+###
+# 12d — 刪除後 Public Statistics
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：404 FORM_NOT_FOUND；先於Auth
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/forms/{{singleFormId}}/statistics HTTP/1.1
+Cookie: access_token=not-a-valid-jwt
+
+###
+# 13a — A 登出
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：204無Body；Cookie Scope同Login且失效；清除A本機Cookie
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/logout HTTP/1.1
+Cookie: access_token={{aToken}}
+
+###
+# 13b — B 登出
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：204無Body；Cookie失效；清除B本機Cookie
+# @no-cookie-jar
+POST {{apiBase}}/api/v1/auth/logout HTTP/1.1
+Cookie: access_token={{bToken}}
+
+###
+# 13c — B 登出後本人查詢
+# 前置：前案達到預期後順序執行；細節見 Markdown 同編號
+# 預期：401 AUTH_REQUIRED；以已清除的B Cookie容器發送，不能重送保存token
+# @no-cookie-jar
+GET {{apiBase}}/api/v1/users/me HTTP/1.1
+
+###
+# 非HTTP 14 — 依Markdown §7，核對DB／GET／拒絕無寫入、保留fixtures、清秘密、停止本人PID與隔離container。
+# 前置：即使HTTP BLOCKED也做可行清理；不刪除regular volume或新合成會員。
+# 預期：舊完整列／Migration不變，本次合法delta明確；隔離volume保留供review。
+
+###
+# 非HTTP 15 — 依Markdown §8～9核對README／設定／舊計畫標記／known gaps、17端點Error索引與completion gate。
+# 預期：未完成補件列缺口；AI／人工分開；交執行報告停於驗收結果待Owner確認，不自行accepted。
