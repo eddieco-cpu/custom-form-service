@@ -1,7 +1,8 @@
-# R10 — Statistics；R10 驗收結果待 Owner review／AI -02 完成／人工未執行／未 accepted
+# R10 — Statistics；accepted（2026-10-11，Owner 本 chat 明確確認）；AI -02 完成／人工未執行
+# 確認結果提交 3125924；本次未重跑。以下請求／結果與確認前限制保留；不代填人工 PASS。
 # Companion: R10_Acceptance_Test.md；正式契約 03c v1.1 §3.4、§7～8。
 # 45 HTTP requests；非 HTTP 01／02／15。依 01 → 01a/b → 02 → 03～14 → 15 順序。
-# Owner 核准 f072b4c 並授權 Execute；本次 -02 45 HTTP／3 非 HTTP PASS；不自行 accepted 或開始 R11／G1。
+# Owner 核准 f072b4c 並授權 Execute；-02 45 HTTP／3 非 HTTP PASS；Owner 另已確認 R10 accepted，G1 pending。
 # review 新 DLL 0x800711C7 BLOCKED；既有經 source/PDB 核對的 43/420 PASS 是歷史，不能代填本次新 build runtime。
 # 01 必須本次 restore/build、新 BuildRoot manifest、同 repo 本次 DLL 的 native PID／listener，再核對 health/readiness。
 # 01 runtime BLOCKED 時不默換舊 DLL；未送出的 01a/b 與 03～14 記 BLOCKED。02 僅可嘗試同次新 build，15 仍處理清理。

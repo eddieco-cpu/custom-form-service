@@ -1,6 +1,6 @@
 # R10 — Statistics 正式驗收計畫
 
-狀態：**R10 驗收結果待 Owner review（2026-10-11）**。Owner 核准成對計畫 `f072b4c07c437d59e57c8cfadc6244220e5cfdfa` 並明確授權 AI Execute。補驗 RunId `r10-acceptance-20261011-02`：45 HTTP／3 非 HTTP 全部 PASS；同次新產物 full 420/420（R10 43/43）。人工未執行、R10 未 accepted。成對請求：[R10_Manual_Tests.http](R10_Manual_Tests.http)；完整命令、首次 FAIL／BLOCKED、產物／程序／SQL／清理證據見 [執行報告](../implementation/R10_Acceptance_Execution_Report.md)。
+狀態：**R10 accepted（2026-10-11，Owner 本 chat 明確確認「R10 驗收通過」）**。確認結果版本 `312592451a1d48805f9521bb4074846da32d38f1`。Owner 核准成對計畫 `f072b4c07c437d59e57c8cfadc6244220e5cfdfa` 並明確授權 AI Execute；補驗 RunId `r10-acceptance-20261011-02`：45 HTTP／3 非 HTTP 全部 PASS，同次新產物 full 420/420（R10 43/43）。人工仍未執行，不改填人工 PASS。成對請求：[R10_Manual_Tests.http](R10_Manual_Tests.http)；完整證據見 [執行報告](../implementation/R10_Acceptance_Execution_Report.md)。下文「待 Owner review／未 accepted」及 pending 描述保留為確認前歷史；本次沒有重跑或改写結果，不確認其他 Round。
 
 ## 1. 依據、目前進度與界線
 
