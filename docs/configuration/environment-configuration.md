@@ -45,6 +45,8 @@ Integration TestFactory目前會將已解析host/port/database/username再寫入
 
 本次使用ignored工作副本／記憶體秘密，結束清除可用secret與token，只停止驗明屬本次的PID。開發資料與新合成fixtures保留；隔離container停止、volume預設保留供review，禁止對regular volume做down -v。實跑target及結果於本次執行報告回填。
 
+本次已實跑：RunId `r11-acceptance-20261011-01`，Development/Production原fixture DI Options與原DbContext SQL均指向 `127.0.0.1:55432/r11_empty`，host/port/database/username最後生效provider是TestFactory記憶體provider，password是環境provider。full420/420，開發DB localhost:5432舊列未變；本次隔離container停止且volume保留，工作秘密已清除。詳[獨立報告](../implementation/R11_Acceptance_Execution_Report.md)。結果待Owner確認，未宣稱正式HTTPS或G1通過。
+
 本專案刻意保留兩條互不自動相通的設定管線：
 
 ```text

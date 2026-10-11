@@ -1,10 +1,10 @@
-# R11 — Owner review通過並授權局部修訂後直接Execute。49 HTTP／6非HTTP；本次結果見Markdown，人工分開。
+# R11 — 本次r11-acceptance-20261011-01：49 HTTP／6非HTTP最終PASS；人工未執行，結果待Owner確認。
 # Companion: R11_Acceptance_Test.md，依01→02→03→04→05～13→14→15。
 # 不使用 Send All；依2026-10-11「執行 R11 AI 驗收」chat授權順序執行。
 # 非HTTP 01 baseline／02 clean snapshot build／03隔離空DB migration／04full及兩native PID，詳Markdown §3。
 # 固定開發volume名稱不能只靠-p隔離；03必須override volume name並inspect真正Mounts。
 # 04 full前讀原TestFactory的實際DI Options／providers及SQL連線身分，確認隔離DB；不能只據env推定。
-# §8 README／非秘密設定／舊計畫標記本次已授權；實跑及coverage於驗收後回填，不改產品／tests。
+# §8 README／非秘密設定／舊計畫標記已補件；結果／coverage已按實跑回填，工具首次失敗保留；無產品／tests修改。
 # 只用本次原生DLL；05a/b空庫、05c/d既有開發DB；所有業務HTTP用apiBase。
 # Clear All Cookies；每request @no-cookie-jar；只有明確Cookie。工作副本／記憶體存憑證，交付恢復placeholder。
 # JSON body／IDs／token不可沿用歷史Run；number1.0直接發raw JSON。

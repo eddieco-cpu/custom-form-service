@@ -1,6 +1,6 @@
 # R11 — A 階段整合／本機驗收／交接精簡計畫
 
-2026-10-11（Asia/Taipei）；**acceptance executing**。Owner 在「執行 R11 AI 驗收」chat 明確確認成對計畫 review 通過，授權下列 fixture 核對／§8 文件補件及修訂後直接 Execute。保留49 HTTP／6非HTTP、請求與預期，不修改產品或測試程式。成對請求：[R11_Manual_Tests.http](R11_Manual_Tests.http)。
+2026-10-11（Asia/Taipei）；**acceptance results pending owner confirmation**。Owner 在「執行 R11 AI 驗收」chat 明確確認成對計畫 review 通過，授權下列 fixture 核對／§8 文件補件及修訂後直接 Execute。保留49 HTTP／6非HTTP、請求與預期，不修改產品或測試程式。成對請求：[R11_Manual_Tests.http](R11_Manual_Tests.http)。
 
 R10 已依可追溯 Owner「R10 驗收通過」確認 accepted；結果提交 `3125924`，確認提交 `3e9168d`。本次授權包含交接文件補件；產品／測試缺陷只交付 findings，交原 Codex 修正後再補驗。**G1 pending；本次不開始前端或部署，不標記 A-stage／Backend V1 accepted。**
 
@@ -38,7 +38,7 @@ R10 已依可追溯 Owner「R10 驗收通過」確認 accepted；結果提交 `3
 
 一般HTTP沿用本機開發DB，保留fixtures。確認其migration狀態已為目前版本，**不在開發DB套migration或重建**。僅在必要時以既有設定啟動postgres service，`docker compose config --quiet`／`docker compose up -d postgres`／`docker compose ps`；不輸出展開後secret config。確認healthy、實際host binding與TCP可連線。開始前、suite後、全部HTTP後依14的七表完整列digest／Migration比較；與使用者協調DB無外部寫入的視窗，不revert他人變更。
 
-### 02 — clean restore／build（全部命令尚未執行）
+### 02 — clean restore／build（本次實際结果見§9）
 
 以**核准HEAD的git archive**在新的ignored RunDir建立沒有bin／obj的source snapshot；不刪原工作目錄產物／舊證據，不使用reset／git clean。snapshot不是新產品修改；git archive只取核准內容，原工作目錄未提交變更仍保留，不能把未review修改悄悄加入測試。
 
@@ -107,55 +107,55 @@ dotnet test CustomFormService.sln --no-build --configuration Debug --logger "trx
 
 | 編號／操作 | 預期結果 | AI 實際結果 | 人工實際結果 |
 | --- | --- | --- | --- |
-| 05a 隔離空庫 API health | 200；{"status":"healthy"} | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 05b 隔離空庫 API readiness | 200；Healthy；實際連線隔離 DB | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 05c 開發 DB API health | 200；{"status":"healthy"} | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 05d 開發 DB API readiness | 200；Healthy；記錄 PID／port／DB 對應 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 06a 註冊 A | 201 User；A id；無 access_token Cookie | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 06b 註冊 B | 201 User；B id；無 access_token Cookie | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 06c 註冊不自動登入 | 401 AUTH_REQUIRED；Error Envelope | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 06d 登入 A | 200 User.id=A；Set-Cookie flags／expiry 依 §2；保存 aToken 於記憶體 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 06e 登入 B | 200 User.id=B；同 Cookie 契約；保存 bToken 於記憶體 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 06f 確認本人 B | 200 User.id=B；只四欄 User | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07a 建立空草稿 M | 201 Draft；title trim；questions=[]；multiple／anonymous／owner_only；保存 mainFormId | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07b 編輯五題型草稿 | 200 完整 FormDetail；title 已編輯、description=null；排序10..50、Options10/20；按 type／Option.value保存IDs | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07c 他人草稿存在性隱藏 | 404 FORM_NOT_FOUND | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07d 拒絕無效 Delta 並保證原子性 | 400 FORM_DEFINITION_INVALID；detail questions[0].sortOrder／INVALID_SORT_ORDER；title／全部列與 timestamps 不變 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 08a 發布 M | 200 Published FormDetail；五題型 Definition 全部與07b相同；僅合法 lifecycle／updatedAt改變 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 08b 會員讀取 Published | 200 完整五題型 FormDetail；不混入Responses／Count／Statistics | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 08c Owner 修改發布定義被拒絕 | 409 FORM_NOT_EDITABLE；資料不變 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 08d 非 Owner 優先授權拒絕 | 403 FORM_ACCESS_DENIED；先於FORM_NOT_EDITABLE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 08e Published 不提供統計 | 409 FORM_STATISTICS_NOT_AVAILABLE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 09a B 第一份五題型回覆 | 201 Receipt；排序／trim後Text=Old；五Answers；保存oldResponseId／submittedAt | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 09b B 最新整份略過 optional Text | 201 新Receipt；只有四Answers；submittedAt嚴格晚於09a；保存latestResponseId | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 09c A 也提交五題型 | 201 Receipt；五Answers；Text=Alpha；保存aResponseId | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 09d B 最新整份 | 200；id=latestResponseId；只四題且不回填Old／Text；與09b Receipt相等 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 09e Owner 填答人數 | 200；僅count=2，非3 Responses | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 09f 非 Owner Count拒絕 | 403 FORM_ACCESS_DENIED | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 09g Owner List count對齊 | 200；只有M、pagination 1/100/1/1；M.count=2；FormSummary shape | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 10a 關閉 M | 200 Closed FormDetail；Definition保持凍結、deadline=null | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 10b Closed Submit 優先狀態拒絕 | 409 FORM_NOT_SUBMITTABLE，先於null Answer驗證；無新Response／Answer | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 10c Owner 匿名統計 | 200；完整§5預期分布／九欄Root／anonymous完全省略respondents | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 10d owner_only 拒絕 Respondent | 403 STATISTICS_ACCESS_DENIED | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 10e owner_only 要求登入 | 401 AUTH_REQUIRED | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 10f 改 respondents | 200 FormDetail；Closed／anonymous不變；visibility=respondents | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 10g Respondent 匿名統計 | 200；分布同10c，Root.resultVisibility=respondents；無respondents | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 10h 改 public | 200 FormDetail；visibility=public；Definition不變 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 10i Public 壞Cookie視匿名 | 200；分布同10c，Root.resultVisibility=public；不要求先讀FormDetail | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 11a 建立 single／identified S | 201 Draft；保存singleFormId／qIdentified；single／identified／public；一個optional Text | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 11b 發布 S | 200 Published FormDetail | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 11c B single 提交 | 201；唯一一Response／一Answer；保存singleResponseId；Text=Identified | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 11d single 重試拒絕 | 409 RESPONSE_ALREADY_SUBMITTED；無追加資料 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 11e 提交後改 B 目前名稱 | 200 User.id=B、displayName=R11 B Updated；只改本次B | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 11f 關閉 S | 200 Closed FormDetail；原singleResponse保留 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 11g Public具名統計 | 200；九欄Root、single/public、count=1；Text.count=1，Item Identified:1；respondents恰[{id:B,displayName:R11 B Updated}] | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 12a Soft Delete S | 204無Body；只deleted_at／updated_at合法變更，status=closed；子列保留 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 12b 刪除後 Latest | 404 FORM_NOT_FOUND（非RESPONSE_NOT_FOUND） | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 12c 刪除後 Count | 404 FORM_NOT_FOUND | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 12d 刪除後 Public Statistics | 404 FORM_NOT_FOUND；先於Auth | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 13a A 登出 | 204無Body；Cookie Scope同Login且失效；清除A本機Cookie | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 13b B 登出 | 204無Body；Cookie失效；清除B本機Cookie | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 13c B 登出後本人查詢 | 401 AUTH_REQUIRED；以已清除的B Cookie容器發送，不能重送保存token | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 05a 隔離空庫 API health | 200；{"status":"healthy"} | PASS — 本次05a.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 05b 隔離空庫 API readiness | 200；Healthy；實際連線隔離 DB | PASS — 本次05b.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 05c 開發 DB API health | 200；{"status":"healthy"} | PASS — 本次05c.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 05d 開發 DB API readiness | 200；Healthy；記錄 PID／port／DB 對應 | PASS — 本次05d.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 06a 註冊 A | 201 User；A id；無 access_token Cookie | PASS — 本次06a.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 06b 註冊 B | 201 User；B id；無 access_token Cookie | PASS — 本次06b.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 06c 註冊不自動登入 | 401 AUTH_REQUIRED；Error Envelope | PASS — 本次06c.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 06d 登入 A | 200 User.id=A；Set-Cookie flags／expiry 依 §2；保存 aToken 於記憶體 | PASS — 本次06d.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 06e 登入 B | 200 User.id=B；同 Cookie 契約；保存 bToken 於記憶體 | PASS — 本次06e.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 06f 確認本人 B | 200 User.id=B；只四欄 User | PASS — 本次06f.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 07a 建立空草稿 M | 201 Draft；title trim；questions=[]；multiple／anonymous／owner_only；保存 mainFormId | PASS — 本次07a.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 07b 編輯五題型草稿 | 200 完整 FormDetail；title 已編輯、description=null；排序10..50、Options10/20；按 type／Option.value保存IDs | PASS — 本次07b.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 07c 他人草稿存在性隱藏 | 404 FORM_NOT_FOUND | PASS — 本次07c.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 07d 拒絕無效 Delta 並保證原子性 | 400 FORM_DEFINITION_INVALID；detail questions[0].sortOrder／INVALID_SORT_ORDER；title／全部列與 timestamps 不變 | PASS — 本次07d.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 08a 發布 M | 200 Published FormDetail；五題型 Definition 全部與07b相同；僅合法 lifecycle／updatedAt改變 | PASS — 本次08a.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 08b 會員讀取 Published | 200 完整五題型 FormDetail；不混入Responses／Count／Statistics | PASS — 本次08b.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 08c Owner 修改發布定義被拒絕 | 409 FORM_NOT_EDITABLE；資料不變 | PASS — 本次08c.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 08d 非 Owner 優先授權拒絕 | 403 FORM_ACCESS_DENIED；先於FORM_NOT_EDITABLE | PASS — 本次08d.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 08e Published 不提供統計 | 409 FORM_STATISTICS_NOT_AVAILABLE | PASS — 本次08e.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 09a B 第一份五題型回覆 | 201 Receipt；排序／trim後Text=Old；五Answers；保存oldResponseId／submittedAt | PASS — 本次09a.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 09b B 最新整份略過 optional Text | 201 新Receipt；只有四Answers；submittedAt嚴格晚於09a；保存latestResponseId | PASS — 本次09b.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 09c A 也提交五題型 | 201 Receipt；五Answers；Text=Alpha；保存aResponseId | PASS — 本次09c.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 09d B 最新整份 | 200；id=latestResponseId；只四題且不回填Old／Text；與09b Receipt相等 | PASS — 本次09d.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 09e Owner 填答人數 | 200；僅count=2，非3 Responses | PASS — 本次09e.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 09f 非 Owner Count拒絕 | 403 FORM_ACCESS_DENIED | PASS — 本次09f.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 09g Owner List count對齊 | 200；只有M、pagination 1/100/1/1；M.count=2；FormSummary shape | PASS — 本次09g.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 10a 關閉 M | 200 Closed FormDetail；Definition保持凍結、deadline=null | PASS — 本次10a.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 10b Closed Submit 優先狀態拒絕 | 409 FORM_NOT_SUBMITTABLE，先於null Answer驗證；無新Response／Answer | PASS — 本次10b.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 10c Owner 匿名統計 | 200；完整§5預期分布／九欄Root／anonymous完全省略respondents | PASS — 本次10c.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 10d owner_only 拒絕 Respondent | 403 STATISTICS_ACCESS_DENIED | PASS — 本次10d.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 10e owner_only 要求登入 | 401 AUTH_REQUIRED | PASS — 本次10e.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 10f 改 respondents | 200 FormDetail；Closed／anonymous不變；visibility=respondents | PASS — 本次10f.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 10g Respondent 匿名統計 | 200；分布同10c，Root.resultVisibility=respondents；無respondents | PASS — 本次10g.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 10h 改 public | 200 FormDetail；visibility=public；Definition不變 | PASS — 本次10h.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 10i Public 壞Cookie視匿名 | 200；分布同10c，Root.resultVisibility=public；不要求先讀FormDetail | PASS — 本次10i.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 11a 建立 single／identified S | 201 Draft；保存singleFormId／qIdentified；single／identified／public；一個optional Text | PASS — 本次11a.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 11b 發布 S | 200 Published FormDetail | PASS — 本次11b.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 11c B single 提交 | 201；唯一一Response／一Answer；保存singleResponseId；Text=Identified | PASS — 本次11c.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 11d single 重試拒絕 | 409 RESPONSE_ALREADY_SUBMITTED；無追加資料 | PASS — 本次11d.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 11e 提交後改 B 目前名稱 | 200 User.id=B、displayName=R11 B Updated；只改本次B | PASS — 本次11e.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 11f 關閉 S | 200 Closed FormDetail；原singleResponse保留 | PASS — 本次11f.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 11g Public具名統計 | 200；九欄Root、single/public、count=1；Text.count=1，Item Identified:1；respondents恰[{id:B,displayName:R11 B Updated}] | PASS — 本次11g.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 12a Soft Delete S | 204無Body；只deleted_at／updated_at合法變更，status=closed；子列保留 | PASS — 本次12a.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 12b 刪除後 Latest | 404 FORM_NOT_FOUND（非RESPONSE_NOT_FOUND） | PASS — 本次12b.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 12c 刪除後 Count | 404 FORM_NOT_FOUND | PASS — 本次12c.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 12d 刪除後 Public Statistics | 404 FORM_NOT_FOUND；先於Auth | PASS — 本次12d.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 13a A 登出 | 204無Body；Cookie Scope同Login且失效；清除A本機Cookie | PASS — 本次13a.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 13b B 登出 | 204無Body；Cookie失效；清除B本機Cookie | PASS — 本次13b.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
+| 13c B 登出後本人查詢 | 401 AUTH_REQUIRED；以已清除的B Cookie容器發送，不能重送保存token | PASS — 本次13c.http.json／SQL checkpoint | 未執行（人工；等待 Owner 確認） |
 
 ## 5. 統計的明確預期（10c／10g／10i／11g）
 
@@ -204,12 +204,12 @@ RV-I-01 Publish barrier fresh GET完整頂層DTO assertion未補強：04的pause
 
 Owner 本次一併授權 README、非秘密設定指引及舊整合計畫歷史標記。執行前完成這三項；實跑結果及端點／Error Catalog coverage 於驗收後回填，不提前宣稱 PASS。產品／測試程式不在本次修改範圍。
 
-| 檔案／項目 | 現有具體依據與必要補件／完成條件 |
+| 檔案／項目 | 審查時落差／本次補件與完成條件 |
 | --- | --- |
-| README.md（I-01） | 開頭仍R3～R5、最後Current boundaries把PATCH／Lifecycle／Submission／Statistics列未實作；補R6～R10現況／17端點索引、完整Email→統計操作、A-stage名稱及G1／部署pending，連本計畫。R4段「Delete synthetic user」與AGENTS資料保留護欄不一致，改為保留驗收fixtures，不新增User Delete能力 |
-| .env.example／appsettings*.json／configuration guide | 現.env僅4個Compose鍵、Development有非秘密DB／CORS／Secure=false、共用Secure=true、Staging/Production={}是正常覆寫設計；不因空檔判缺陷。需補API child-env非秘密placeholder操作範例、連線鍵對齊／優先序、隔離volume override、readiness host binding及data保護；Secret不進Git，無需要產品設定變更的證據 |
-| docs/test-plan/R0_R9_Integration_* | 未執行舊Prepare，source基準6f61a16／306 cases，仍把F-01～03與S-01當未修復。不能當修正版有效計畫。本R11提供目前整合執行入口；後續在兩份舊檔加「歷史未執行／R11取代現況整合入口」與連結即可，保留原內容，不重寫72-case矩陣或偽造結果 |
-| 手動驗收／交接 | 本paired files是可執行指引；補新RunId／Cookie隔離／動態ID辨認／fixture保留、fresh新DLL／DB scope及清理說明。15報告須逐案AI／人工分開、命令exit／證據可定位、非秘密啟動設定，另一操作者可從README重現 |
+| README.md（I-01） | 審查時仍R3～R5／把已完成API列未實作；本次已補R6～R10現況／17端點索引、完整Email→統計操作、A-stage及G1／部署pending，連本計畫／結果／coverage。「Delete synthetic user」已改為保留驗收fixtures，不新增User Delete能力 |
+| .env.example／appsettings*.json／configuration guide | .env僅4個Compose鍵、Development非秘密DB／CORS／Secure=false、共用Secure=true、Staging/Production={}皆沿用正常覆寫設計；本次已補child-env非秘密placeholder範例、連線鍵／优先序、隔離volume override、readiness binding及data保護。設定檔未改，Secret不進Git |
+| docs/test-plan/R0_R9_Integration_* | 舊Prepare基準6f61a16／306 cases未同步repair，不能當現況有效計畫；兩檔已加「歷史未執行／R11取代現況整合入口」及連結。原內容保留，不重寫72-case矩陣或偽造結果 |
+| 手動驗收／交接 | paired files及README／guide含新RunId、Cookie隔離、動態ID辨認、fixture保留、fresh DLL、DB scope／清理說明；本次結果逐案AI／人工分開，命令exit與原始證據見[獨立報告](../implementation/R11_Acceptance_Execution_Report.md)。人工仍未執行，另用fresh RunId |
 | known gaps | 歷史狀態詳[歷史證據索引](../implementation/R11_Historical_Status.md)：缺少repo紀錄與未取得可追溯確認分開。可追溯Owner確認可同步且註明來源，沒有來源不推定尚未驗收或補造結果；不重跑全部舊Round。RV-I-01維持非阻擋證據改善；I-02維持未定義List快照的建議；Windows新DLL policy／TCP port排除曾復發。G1真Provider、前端、Railway／domain／正式HTTPS為後续scope |
 
 沒有新確認產品缺陷；上述README／舊計畫是文件落差，固定Compose volume是隔離操作注意，RV-I-01／I-02是既有非阻擋限制。若執行發現實際契約偏離，記確切spec檔／章節、觸發請求、actual/expected、影響；停止受影響依賴，交目前Round修正授權／development skill，不在驗收中改期望求PASS。正式規格衝突同樣只停受影響工作。
@@ -220,12 +220,22 @@ Owner 本次一併授權 README、非秘密設定指引及舊整合計畫歷史�
 
 | 編號 | AI 實際結果 | 人工實際結果 |
 | --- | --- | --- |
-| 01 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 02 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 03 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 04 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 14 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 15 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 01 | PASS — 基準／舊七表／Migration | 未執行（人工；等待 Owner 確認） |
+| 02 | PASS — fresh build 0 warnings/errors／hash/PDB | 未執行（人工；等待 Owner 確認） |
+| 03 | PASS — 空Schema／migration／catalog | 未執行（人工；等待 Owner 確認） |
+| 04 | PASS — fixture DI/SQL確認／420/420／native PID | 未執行（人工；等待 Owner 確認） |
+| 14 | PASS — 最終fixtures／舊列／清理／volume保留 | 未執行（人工；等待 Owner 確認） |
+| 15 | PASS — README／guide／歷史標記／coverage缺口索引 | 未執行（人工；等待 Owner 確認） |
+
+本次RunId `r11-acceptance-20261011-01`，修訂／補件提交 `ee23e56`，source/tests/specs與 `a4f9402`相同。**49 HTTP＋6非HTTP最終PASS；fresh full 420 executed／420 passed／0 failed／0 skipped**；人工55案全部未執行。不是沿用歷史Codex PASS；失敗的sandbox／診斷工具尝試與實際結果分開保留。
+
+詳見[本次獨立執行報告](../implementation/R11_Acceptance_Execution_Report.md)、[端點／Error Catalog coverage](../implementation/R11_Coverage_Index.md)、[歷史來源索引](../implementation/R11_Historical_Status.md)、[原始證據](../../artifacts/r11-acceptance/r11-acceptance-20261011-01/)。API／test DLL／PDB及152 source checksums通過；Development／Production fixture有效DI Options/providers及原DbContext SQL指向隔離DB，核對成功後才跑full。
+
+保留開發DB新會員2／Form2／Question6／Option4／Response4／Answer15；舊全列／Migration不變，GET／拒絕無寫入。停止本次兩PID及隔離container，保留本次named volume供review；工作副本秘密已移除，paired文件保留placeholder。沒有改產品或tests，沒有擴大HTTP矩陣。README／非秘密guide／舊整合計畫標記已完成；coverage與各案結果於實跑後才回填。
+
+Known gaps以索引逐項列出，不把shared Auth或suite總PASS推論為每支端點完整矩陣。R0–R3缺repo記錄與Owner來源，R5 Owner確認與AI記錄缺口分開，R7/R9缺目前可追溯確認來源不等同尚未驗收；不重跑舊Round。RV-I-01／I-02、G1／frontend／部署／正式HTTPS維持原邊界。**停止於「R11 驗收結果待 Owner 確認」**，未accepted，未開始G1。
+
+### 歷史Prepare交付（f766548；不代表目前仍等待執行授權）
 
 本次 Prepare 文件自查：PowerShell 靜態解析確認49請求編號／順序／預期與Markdown一致、19 JSON bodies可解析、18變數均有定義、55案的110個AI／人工結果欄均初始化、6非HTTP編號／本機文件連結有效；五題型及4 Responses／15 Answers測資計數一致。`git diff --check` 通過，`git diff a4f9402 -- src tests docs/specs` 無輸出。這些是文件檢查，不是build／suite／HTTP或Schema驗收PASS。
 

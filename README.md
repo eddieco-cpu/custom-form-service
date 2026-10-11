@@ -1,6 +1,6 @@
 # Custom Form Service
 
-This repository contains the local Email/Password backend (A-stage) for the V1 custom form service. R3–R10 implement the complete seven-table schema and 17 business endpoints, including Draft editing, lifecycle, submissions, Latest Response, respondent count, and Closed Statistics. R11 independent integration acceptance is in progress; implementation does not establish acceptance. See the [paired R11 plan](docs/test-plan/R11_Acceptance_Test.md) and [historical status sources](docs/implementation/R11_Historical_Status.md). Google Authentication remains pending in G1; frontend and deployment have separate plans.
+This repository contains the local Email/Password backend (A-stage) for the V1 custom form service. R3–R10 implement the complete seven-table schema and 17 business endpoints, including Draft editing, lifecycle, submissions, Latest Response, respondent count, and Closed Statistics. R11 independent AI results await Owner confirmation: fresh full 420/420 and 49 HTTP plus 6 non-HTTP cases passed; manual acceptance is unexecuted. See the [execution report](docs/implementation/R11_Acceptance_Execution_Report.md), [coverage and known gaps](docs/implementation/R11_Coverage_Index.md), [paired plan](docs/test-plan/R11_Acceptance_Test.md), and [historical status sources](docs/implementation/R11_Historical_Status.md). Google Authentication remains pending in G1; frontend and deployment have separate plans.
 
 ## Prerequisites
 
@@ -78,7 +78,7 @@ dotnet test CustomFormService.sln --no-build --configuration Debug
 dotnet format CustomFormService.sln --verify-no-changes --no-restore
 ```
 
-The API and integration tests use the standard ASP.NET Core configuration pipeline, including Development User Secrets. No `.env` import step is required. The integration suite verifies both database readiness and the complete V1 PostgreSQL schema against the running container.
+The API and integration tests use the standard ASP.NET Core configuration pipeline, including Development User Secrets. No `.env` import step is required. The integration suite verifies both database readiness and the complete V1 PostgreSQL schema against the running container. For R11 full-suite and from-zero migration checks, use the [isolated database procedure](docs/test-plan/R11_Acceptance_Test.md), with a new project and explicit volume-name override. Confirm the original fixture's effective DI configuration and actual SQL database identity before running tests; environment variables alone are insufficient. Ordinary acceptance keeps the existing development database and its fixtures. Do not rebuild that database or apply an unreviewed migration to it.
 
 ## Database schema and migration
 
