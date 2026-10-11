@@ -1,3 +1,5 @@
+> 歷史未執行計畫：基準6f61a16／306 cases，未同步後續repair。現況整合入口已由 [R11 Markdown](R11_Acceptance_Test.md)／[R11 HTTP](R11_Manual_Tests.http) 取代；保留原內容與未執行結果，不將它當目前核准執行計畫。
+
 # R0～R9 整合回歸驗收計畫
 
 準備日期：2026-10-07（整體 review 自 2026-10-06 開始）。

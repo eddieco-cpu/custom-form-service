@@ -223,6 +223,8 @@ Round 索引是交付順序，非強制類別／檔案結構。為支撐某端�
 
 ### R11 — A 階段整合／本機驗收／交接
 
+**本次授權／執行（2026-10-11）**：Owner於「執行 R11 AI 驗收」chat核准f766548成對計畫，授權fixture實際連線核對、README／非秘密設定／舊計畫文件補件及修訂後直接Execute。49 HTTP矩陣與預期不變，不修改產品或tests。歷史來源與缺口見[R11_Historical_Status.md](R11_Historical_Status.md)；實跑與coverage驗收後填入。本次狀態acceptance executing，完成後待Owner確認，G1 pending。下方Prepare保留為歷史。
+
 **Prepare 交付（2026-10-11）**：Owner 確認 R10 accepted 後，只授權先交付 R11 精簡計畫。成對 [Markdown](../test-plan/R11_Acceptance_Test.md)／[.http](../test-plan/R11_Manual_Tests.http) 待 review；49 HTTP＋6 非 HTTP。空庫與 ordinary acceptance 分開：隔離 project／實際 named-volume override 從零 migration／完整回歸，既有開發 DB 保留兩新會員／兩表的真 HTTP fixtures；同次新 DLL 分別驗 health／readiness。既有有效證據由同次 full 承接，補件／known gaps明列；只修改文件，未 build／測試／startup／HTTP／DB mutation，不開始產品修正、前端或部署。下方工作清單是後續 Round 範圍，不構成本次執行或開發授權；本版需 Owner 核准並明確授權 Execute，文件／測試／產品補件需依相應階段另行授權。R7／R9 pending、R0～R3無repo acceptance紀錄／R5 AI缺口保留，不自動標 A-stage accepted；G1 pending。
 
 **輸入**：全部正式文件，尤其 03a 端點索引與 05 §20；R0～R10 報告。**工作**：執行 clean restore／build／tests，在專用空庫從零 apply migrations，啟動 Compose＋API，依 API 契約用 cookie jar／`.http`／測試套件重走註冊→建表→填答→關閉→統計；對 Error Catalog 做端點級核對；補完整 README、設定範例、必要測試 fixtures、手動驗收指引與 known gaps。依 05 §20 檢核 Unicode、分頁、Soft Delete、併發、Retry、身分揭露。

@@ -1,3 +1,5 @@
+# 歷史未執行計畫：基準6f61a16／306 cases；未同步後續repair。R11已取代現況整合入口，見R11_Acceptance_Test.md及R11_Manual_Tests.http。原內容／結果保留，不用作目前核准執行計畫。
+
 # R0～R9 整合回歸驗收 — Prepare（2026-10-07）
 # 狀態：整體 review 完成；整合驗收計畫待 Owner review，尚未執行。
 # Companion: R0_R9_Integration_Acceptance_Test.md；review 基準 6f61a160863bfacb2fd85ef3d97abca271af5e22

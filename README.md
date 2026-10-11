@@ -1,6 +1,6 @@
 # Custom Form Service
 
-This repository contains the ASP.NET Core backend for the V1 custom form service. The current implementation includes the R3 PostgreSQL schema, the R4 Email/Password authentication and current-user APIs, and the R5 foundational Form read/write APIs.
+This repository contains the local Email/Password backend (A-stage) for the V1 custom form service. R3–R10 implement the complete seven-table schema and 17 business endpoints, including Draft editing, lifecycle, submissions, Latest Response, respondent count, and Closed Statistics. R11 independent integration acceptance is in progress; implementation does not establish acceptance. See the [paired R11 plan](docs/test-plan/R11_Acceptance_Test.md) and [historical status sources](docs/implementation/R11_Historical_Status.md). Google Authentication remains pending in G1; frontend and deployment have separate plans.
 
 ## Prerequisites
 
@@ -145,7 +145,7 @@ Invoke-RestMethod -Method Patch -Uri http://localhost:5000/api/v1/users/me -Cont
 Invoke-WebRequest -Method Post -Uri http://localhost:5000/api/v1/auth/logout -WebSession $authSession
 ```
 
-Delete the synthetic user from the local database after manual verification if you do not want to retain it. Google Authentication remains part of the formal V1 contract and is deferred to the separate G1 round; R4 does not expose a placeholder Google endpoint.
+Retain synthetic acceptance users and their fixtures. Use a fresh RunId for another run; do not delete historical evidence or the regular database volume. Google Authentication remains part of the formal V1 contract and is deferred to G1.
 
 ## R5 Foundational Form APIs
 
@@ -158,9 +158,24 @@ R5 provides these formal V1 endpoints:
 
 Create accepts a Draft Form and an optional nested Question/Option tree. The complete tree is validated as a Draft definition and persisted in one transaction: an invalid nested definition leaves no Form, Question, or Option row behind. Form IDs are server-generated; Create rejects client-provided IDs and other read-only fields.
 
-`GET /api/v1/forms` is a paginated Owner-only list, with `page`, `pageSize`, and optional `status` query parameters. It excludes soft-deleted Forms and sorts by `updatedAt DESC, id DESC`. Form Detail requires an active signed-in user: the Owner can read a Draft, while another member receives `404 FORM_NOT_FOUND` for that Draft. Published and Closed read behavior is implemented by later lifecycle rounds.
+`GET /api/v1/forms` is a paginated Owner-only list, with `page`, `pageSize`, and optional `status` query parameters. It excludes soft-deleted Forms and sorts by `updatedAt DESC, id DESC`. Form Detail requires an active signed-in user: the Owner can read a Draft, while another member receives `404 FORM_NOT_FOUND` for that Draft. Active members can read Published and Closed Forms.
 
-Delete is Owner-only and performs a soft delete by setting `deleted_at`; it does not delete Question or Option rows. A deleted Form is excluded from the list and returns `404 FORM_NOT_FOUND` from Detail or a repeated Delete. Draft editing, lifecycle changes, result-visibility updates, submissions, counts, and statistics remain outside R5.
+Delete is Owner-only and performs a soft delete by setting `deleted_at`; children and submitted history remain. A deleted Form is excluded from the list and returns `404 FORM_NOT_FOUND` from Detail, Submit, Latest, Count, Statistics, or a repeated Delete.
+
+## R6–R10 workflow and endpoint index
+
+Use the [R11 HTTP companion](docs/test-plan/R11_Manual_Tests.http) for the complete sequential Email → Cookie Login → Draft → five Question types → Publish → Submit → Latest/Count → Close → Statistics → Logout workflow. Generate new synthetic users and a RunId, keep A/B cookies separate, and bind IDs by Question type and Option value. Anonymous requests carry no saved cookie. Never reuse historical tokens.
+
+| Capability | Endpoint under `/api/v1` |
+| --- | --- |
+| Email auth | POST `/auth/register`, `/auth/login`, `/auth/logout` |
+| Current User | GET/PATCH `/users/me` |
+| Form | POST/GET `/forms`; GET/PATCH/DELETE `/forms/{formId}` |
+| Lifecycle/policy | POST `/forms/{formId}/publish`, `/close`; PATCH `/forms/{formId}/result-visibility` |
+| Submission/queries | POST `/forms/{formId}/responses`; GET `/forms/{formId}/responses/me/latest`, `/respondent-count` |
+| Closed Statistics | GET `/forms/{formId}/statistics` |
+
+Draft PATCH applies the whole candidate atomically. Publish freezes the definition; Close stops submissions. `single` permits one successful response per member, while `multiple` retains history. Latest and Statistics select each member's latest complete response without filling omitted optional answers from older responses. Count counts distinct respondents. Closed Statistics enforce owner_only/respondents/public; anonymous omits respondents, identified uses current display names. See [formal contracts](docs/specs/03c-v1-api-contract-submission-statistics.md) for precise shapes and errors.
 
 ## Configuration
 
@@ -236,4 +251,4 @@ docker compose up -d --force-recreate postgres
 
 ## Current boundaries
 
-The database still contains the seven formal Domain Entities and the unchanged `InitialV1Schema` migration. R5 adds no migration or seed data. Google Authentication, Draft definition PATCH, lifecycle changes, result-visibility updates, Submission behavior, Statistics behavior, refresh tokens, email verification, password reset, sessions, and RBAC are not implemented in this round.
+The database contains all seven formal Domain Tables, including `user_identities`, and the unchanged schema-only `InitialV1Schema` migration. Google Authentication is pending in G1. Frontend, Railway, domain and live production HTTPS are pending separate delivery plans. Refresh tokens, email verification, password reset, sessions and RBAC are outside V1. R11 AI results await Owner confirmation after execution; neither A-stage acceptance nor full Backend V1 acceptance is implied.

@@ -1,8 +1,8 @@
 # R11 — A 階段整合／本機驗收／交接精簡計畫
 
-2026-10-11（Asia/Taipei）；**test plan pending owner review**。本次只 Prepare，未啟動 API／Compose、未 restore／build／tests、未送 HTTP、未套 migration／修改資料或產品程式。成對請求：[R11_Manual_Tests.http](R11_Manual_Tests.http)。
+2026-10-11（Asia/Taipei）；**acceptance executing**。Owner 在「執行 R11 AI 驗收」chat 明確確認成對計畫 review 通過，授權下列 fixture 核對／§8 文件補件及修訂後直接 Execute。保留49 HTTP／6非HTTP、請求與預期，不修改產品或測試程式。成對請求：[R11_Manual_Tests.http](R11_Manual_Tests.http)。
 
-R10 已依 Owner 本 chat「R10 驗收通過」確認 accepted；結果提交 `3125924`，確認提交 `3e9168d`。R11 執行仍須目前成對計畫 review／Owner 核准及明確 Execute 授權；交接文件補件或測試／產品修正另走授權的開發階段，不能在 Execute 中默默實作。**G1 pending；本次不開始前端或部署，不標記 A-stage／Backend V1 accepted。**
+R10 已依可追溯 Owner「R10 驗收通過」確認 accepted；結果提交 `3125924`，確認提交 `3e9168d`。本次授權包含交接文件補件；產品／測試缺陷只交付 findings，交原 Codex 修正後再補驗。**G1 pending；本次不開始前端或部署，不標記 A-stage／Backend V1 accepted。**
 
 ## 1. 精簡範圍與順序
 
@@ -89,7 +89,9 @@ dotnet ef migrations list --project src/CustomFormService.Api/CustomFormService.
 
 ### 04 — 完整回歸及本次原生啟動
 
-同snapshot／同DLL、同隔離DB子程序環境，執行一次full：
+full 前必須直接核對 `CustomFormServiceApiFactory.ConfigureWebHost`、所有 factory overrides 及 SQL helper 的實際來源。使用本次 test DLL 的唯讀診斷工作副本建立原 fixture，讀取 DI 的 `IOptions<PostgreSqlOptions>`／DbContext 與 IConfiguration providers：非秘密 host/port/database/username、最後生效 provider、連線後 current_database/current_user/server endpoint。Password只檢查來源及相符，不输出值。Development及suite使用的Production factory均核對；ConfigurationTests故意無效／假密碼的startup-only overrides另記，不誤認業務連線。目標必須與03的隔離container/volume一致，否則04及依賴HTTP BLOCKED；不得只根據環境變數推定。診斷不改產品／測試程式或加入測試案例。
+
+同snapshot／同DLL、已核對fixture實際指向的隔離DB子程序環境，執行一次full：
 
 ```powershell
 dotnet test CustomFormService.sln --no-build --configuration Debug --logger "trx;LogFileName=r11-full.trx" --results-directory <EvidenceRoot>/full
@@ -200,7 +202,7 @@ RV-I-01 Publish barrier fresh GET完整頂層DTO assertion未補強：04的pause
 
 ## 8. 非 HTTP 15 — 必要文件補件、known gaps與完成條件
 
-目前只盤點／列補件，**尚未修改README／設定／舊整合計畫／測試**。下列補件須在後續授權的文件／開發階段完成並review，再執行當時有效計畫：
+Owner 本次一併授權 README、非秘密設定指引及舊整合計畫歷史標記。執行前完成這三項；實跑結果及端點／Error Catalog coverage 於驗收後回填，不提前宣稱 PASS。產品／測試程式不在本次修改範圍。
 
 | 檔案／項目 | 現有具體依據與必要補件／完成條件 |
 | --- | --- |
@@ -208,7 +210,7 @@ RV-I-01 Publish barrier fresh GET完整頂層DTO assertion未補強：04的pause
 | .env.example／appsettings*.json／configuration guide | 現.env僅4個Compose鍵、Development有非秘密DB／CORS／Secure=false、共用Secure=true、Staging/Production={}是正常覆寫設計；不因空檔判缺陷。需補API child-env非秘密placeholder操作範例、連線鍵對齊／優先序、隔離volume override、readiness host binding及data保護；Secret不進Git，無需要產品設定變更的證據 |
 | docs/test-plan/R0_R9_Integration_* | 未執行舊Prepare，source基準6f61a16／306 cases，仍把F-01～03與S-01當未修復。不能當修正版有效計畫。本R11提供目前整合執行入口；後續在兩份舊檔加「歷史未執行／R11取代現況整合入口」與連結即可，保留原內容，不重寫72-case矩陣或偽造結果 |
 | 手動驗收／交接 | 本paired files是可執行指引；補新RunId／Cookie隔離／動態ID辨認／fixture保留、fresh新DLL／DB scope及清理說明。15報告須逐案AI／人工分開、命令exit／證據可定位、非秘密啟動設定，另一操作者可從README重現 |
-| known gaps | R7／R9 Owner confirmation仍pending；R0～R3沒有repo acceptance紀錄、R5 AI紀錄缺口，不補造。RV-I-01維持非阻擋證據改善；I-02維持未定義List快照的建議；Windows新DLL policy／TCP port排除曾復發，不能用R10成功宣稱永久解除。G1真Provider、前端、Railway／domain／正式HTTPS為後续scope |
+| known gaps | 歷史狀態詳[歷史證據索引](../implementation/R11_Historical_Status.md)：缺少repo紀錄與未取得可追溯確認分開。可追溯Owner確認可同步且註明來源，沒有來源不推定尚未驗收或補造結果；不重跑全部舊Round。RV-I-01維持非阻擋證據改善；I-02維持未定義List快照的建議；Windows新DLL policy／TCP port排除曾復發。G1真Provider、前端、Railway／domain／正式HTTPS為後续scope |
 
 沒有新確認產品缺陷；上述README／舊計畫是文件落差，固定Compose volume是隔離操作注意，RV-I-01／I-02是既有非阻擋限制。若執行發現實際契約偏離，記確切spec檔／章節、觸發請求、actual/expected、影響；停止受影響依賴，交目前Round修正授權／development skill，不在驗收中改期望求PASS。正式規格衝突同樣只停受影響工作。
 

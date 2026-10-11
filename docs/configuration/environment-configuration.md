@@ -9,6 +9,42 @@
 
 ## 1. 核心設計：Infrastructure 與 Application 設定分流
 
+### R11 非秘密操作補件（2026-10-11）
+
+以下是操作範本，不是驗收PASS。一般HTTP驗收沿用開發DB並保留合成fixtures；重建測試只使用新project及新volume。完整順序見[R11計畫](../test-plan/R11_Acceptance_Test.md)。`Staging/Production` JSON空物件是覆寫設計，不表示缺少設定；本次不改產品設定。
+
+```powershell
+# 只給新child process，不持久修改OS、User Secrets或根.env；secret由本機安全輸入取得。
+$r11Child = @{
+  ASPNETCORE_ENVIRONMENT = 'Development'
+  ASPNETCORE_URLS = 'http://localhost:5013'
+  PostgreSql__Host = '127.0.0.1'
+  PostgreSql__Port = '<CONFIRMED_FREE_LOOPBACK_PORT>'
+  PostgreSql__Database = 'r11_empty'
+  PostgreSql__Username = 'r11_empty'
+  PostgreSql__Password = '<LOCAL_SYNTHETIC_SECRET>'
+  Jwt__SigningKey = '<LOCAL_RANDOM_KEY_AT_LEAST_32_BYTES>'
+}
+Start-Process dotnet -ArgumentList @('exec','<ABSOLUTE_FRESH_API_DLL>') `
+  -WorkingDirectory '<SNAPSHOT_API_PROJECT>' -Environment $r11Child -WindowStyle Hidden
+```
+
+不要同時保留互相矛盾的DOTNET_ENVIRONMENT；host bootstrap要先確定。開發DB child則沿既有Development JSON/User Secrets，確認所有繼承的PostgreSql環境鍵沒有覆寫它。記錄child有效非秘密target，不輸出password／JWT key。
+
+根Compose固定 `volumes.postgres_data.name=custom-form-service-postgres-data`；`-p`只改project不隔離volume。隔離env工作副本包含全部四個POSTGRES_*，child shell的同名鍵也全部覆寫；API五個PostgreSql鍵與其一致。配對override如下：
+
+```yaml
+volumes:
+  postgres_data:
+    name: <NEW_RUN_ID>-postgres-data
+```
+
+每個命令帶 `-p <NEW_RUN_ID>-empty --env-file <IGNORED_RUN_DIR>/empty.env -f <SNAPSHOT>/compose.yaml -f <IGNORED_RUN_DIR>/empty.override.yaml`。先在記憶體解析merged config，確定volume未存在、不是開發volume，port未佔用且不在Windows排除範圍；之後inspect project labels、實際Mounts及loopback binding，再允許migration。container healthy不足以證明API readiness，要核對host TCP、native PID/DLL及 `/health/ready`。
+
+Integration TestFactory目前會將已解析host/port/database/username再寫入記憶體provider，最後套個案overrides。直接查其DI Options、DbContext connection、provider來源及SQL current_database/current_user，不能只看shell環境。Production factory會再加入User Secrets及Environment provider；startup-only ConfigurationTests的假密碼與無效值另列，不當業務target。fixture cleanup刪除自己的測試列；不應指向ordinary acceptance DB。
+
+本次使用ignored工作副本／記憶體秘密，結束清除可用secret與token，只停止驗明屬本次的PID。開發資料與新合成fixtures保留；隔離container停止、volume預設保留供review，禁止對regular volume做down -v。實跑target及結果於本次執行報告回填。
+
 本專案刻意保留兩條互不自動相通的設定管線：
 
 ```text
