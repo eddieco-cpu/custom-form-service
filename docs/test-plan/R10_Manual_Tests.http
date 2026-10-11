@@ -1,7 +1,7 @@
-# R10 — Statistics；R10 驗收計畫待 review／未執行／未 accepted
+# R10 — Statistics；R10 驗收結果待 Owner review／AI -02 完成／人工未執行／未 accepted
 # Companion: R10_Acceptance_Test.md；正式契約 03c v1.1 §3.4、§7～8。
 # 45 HTTP requests；非 HTTP 01／02／15。依 01 → 01a/b → 02 → 03～14 → 15 順序。
-# 本次只 Prepare；核准與另行 Execute 授權之前，不發請求／不執行指令。
+# Owner 核准 f072b4c 並授權 Execute；本次 -02 45 HTTP／3 非 HTTP PASS；不自行 accepted 或開始 R11／G1。
 # review 新 DLL 0x800711C7 BLOCKED；既有經 source/PDB 核對的 43/420 PASS 是歷史，不能代填本次新 build runtime。
 # 01 必須本次 restore/build、新 BuildRoot manifest、同 repo 本次 DLL 的 native PID／listener，再核對 health/readiness。
 # 01 runtime BLOCKED 時不默換舊 DLL；未送出的 01a/b 與 03～14 記 BLOCKED。02 僅可嘗試同次新 build，15 仍處理清理。
@@ -10,81 +10,82 @@
 # 正常成功保留新會員／Forms／合法歷史與 soft-deleted main；舊資料／所有歷史失敗及 artifacts 不動。
 # RunId／emails／UUID／token 不沿用；重驗兩檔同步新 RunId，秘密只在本機、結果恢復 placeholders。
 # Number 大數直接保留 raw JSON token，不經 JavaScript Number／double／decimal；統計 raw Body 按 Markdown §4 完整核對。
-# 全部 AI／人工實際結果：未執行（等待 Owner review）
+# AI 實際：-02 HTTP 45/45／非 HTTP 3/3 PASS；首次 -01 12c harness FAIL／4 BLOCKED 保留，見 Markdown §9／執行報告。
+# 人工實際：未執行（本次僅 AI）
 
 @apiBase = http://localhost:5011
-@runId = r10-acceptance-20261010-01
+@runId = r10-acceptance-20261011-02
 @futureDeadline = 2036-10-10T00:00:00.123456Z
-@ownerEmail = r10-owner-r10-acceptance-20261010-01@example.test
-@respondentEmail = r10-respondent-r10-acceptance-20261010-01@example.test
-@otherEmail = r10-other-r10-acceptance-20261010-01@example.test
+@ownerEmail = r10-owner-r10-acceptance-20261011-02@example.test
+@respondentEmail = r10-respondent-r10-acceptance-20261011-02@example.test
+@otherEmail = r10-other-r10-acceptance-20261011-02@example.test
 @testPassword = <GENERATE_RANDOM_10_TO_128_CHARACTER_PASSWORD_LOCALLY>
 @ownerToken = <COPY_ONLY_ACCESS_TOKEN_VALUE_FROM_03b_LOCALLY>
 @respondentToken = <COPY_ONLY_ACCESS_TOKEN_VALUE_FROM_03d_LOCALLY>
 @otherToken = <COPY_ONLY_ACCESS_TOKEN_VALUE_FROM_03f_LOCALLY>
-@ownerId = <COPY_NEW_USER_ID_FROM_03a>
-@respondentId = <COPY_NEW_USER_ID_FROM_03c>
-@otherId = <COPY_NEW_USER_ID_FROM_03e>
+@ownerId = 4523426b-902d-4f59-bcd4-7fd82c7b5f42
+@respondentId = 4afec530-6961-4cfc-bc6d-81b3ffba4668
+@otherId = a61c522c-d228-4ae0-b337-401950580d2e
 @missingFormId = 00000000-0000-4000-8000-000000000010
-@mainFormId = <COPY_NEW_FORM_ID_FROM_04a>
-@identifiedFormId = <COPY_NEW_FORM_ID_FROM_04b>
-@zeroFormId = <COPY_NEW_FORM_ID_FROM_04c>
-@qMainText = <COPY_MAIN_QUESTION_ID_BY_TYPE_AND_TITLE_Text>
-@qMainNumber = <COPY_MAIN_QUESTION_ID_BY_TYPE_AND_TITLE_Number>
-@qMainSingle = <COPY_MAIN_QUESTION_ID_BY_TYPE_AND_TITLE_Single>
-@qMainMultiple = <COPY_MAIN_QUESTION_ID_BY_TYPE_AND_TITLE_Multiple>
-@qMainRating = <COPY_MAIN_QUESTION_ID_BY_TYPE_AND_TITLE_Rating>
-@qIdentifiedText = <COPY_IDENTIFIED_QUESTION_ID_BY_TYPE_AND_TITLE_Text>
-@qIdentifiedNumber = <COPY_IDENTIFIED_QUESTION_ID_BY_TYPE_AND_TITLE_Number>
-@qIdentifiedSingle = <COPY_IDENTIFIED_QUESTION_ID_BY_TYPE_AND_TITLE_Single>
-@qIdentifiedMultiple = <COPY_IDENTIFIED_QUESTION_ID_BY_TYPE_AND_TITLE_Multiple>
-@qIdentifiedRating = <COPY_IDENTIFIED_QUESTION_ID_BY_TYPE_AND_TITLE_Rating>
-@oMainSingleYes = <COPY_MAIN_OPTION_ID_BY_QUESTION_AND_BUSINESS_VALUE_SingleYes>
-@oMainSingleNo = <COPY_MAIN_OPTION_ID_BY_QUESTION_AND_BUSINESS_VALUE_SingleNo>
-@oMainMultipleOne = <COPY_MAIN_OPTION_ID_BY_QUESTION_AND_BUSINESS_VALUE_MultipleOne>
-@oMainMultipleTwo = <COPY_MAIN_OPTION_ID_BY_QUESTION_AND_BUSINESS_VALUE_MultipleTwo>
-@oIdentifiedSingleYes = <COPY_IDENTIFIED_OPTION_ID_BY_QUESTION_AND_BUSINESS_VALUE_SingleYes>
-@oIdentifiedSingleNo = <COPY_IDENTIFIED_OPTION_ID_BY_QUESTION_AND_BUSINESS_VALUE_SingleNo>
-@oIdentifiedMultipleOne = <COPY_IDENTIFIED_OPTION_ID_BY_QUESTION_AND_BUSINESS_VALUE_MultipleOne>
-@oIdentifiedMultipleTwo = <COPY_IDENTIFIED_OPTION_ID_BY_QUESTION_AND_BUSINESS_VALUE_MultipleTwo>
-@mainOldResponseId = <COPY_RESPONSE_ID_FROM_07a>
-@mainLatestResponseId = <COPY_RESPONSE_ID_FROM_07b>
-@mainOwnerResponseId = <COPY_RESPONSE_ID_FROM_07c>
-@identifiedOwnerResponseId = <COPY_RESPONSE_ID_FROM_07d>
-@identifiedRespondentResponseId = <COPY_RESPONSE_ID_FROM_07e>
+@mainFormId = 1322a7f8-9fa9-4e9f-aa7a-825cb70098f4
+@identifiedFormId = d55ccf64-25f5-412c-b7d9-b832c79afba6
+@zeroFormId = 5f3959fa-ef3b-4cda-9e47-cda91f117a8f
+@qMainText = 8a2f326a-7753-40b5-aefd-661f4f445704
+@qMainNumber = 1dedd9ba-d9de-4389-9bfb-49d871056e81
+@qMainSingle = 8eabb3f2-f274-418a-8e18-af3774f56d8e
+@qMainMultiple = 6f65bd36-588b-436c-bc80-729ff79ebc96
+@qMainRating = 5ae40fa8-2201-42f1-9ce6-f5fcac0d701f
+@qIdentifiedText = 07ca95b0-64eb-4441-8b38-12d885d80be7
+@qIdentifiedNumber = 5dc33066-f7ec-44e6-9fe4-c13c9cb09002
+@qIdentifiedSingle = bffdea1b-603e-4cac-8bfc-dc78505fb7a7
+@qIdentifiedMultiple = 39a524c9-cdf2-4a75-abd8-1fb01e468842
+@qIdentifiedRating = 25378710-846b-47ad-89b9-462c29125a2a
+@oMainSingleYes = be0db7c6-6327-45ed-9c7c-1dce1c312d05
+@oMainSingleNo = 195441e6-eda1-422b-b318-f233f41e594c
+@oMainMultipleOne = 38c377dc-76d5-40ef-b8c6-cd5c7120ae8e
+@oMainMultipleTwo = ecf55fed-852b-4b4e-8202-ace7f796ac11
+@oIdentifiedSingleYes = 3f21cc09-2901-4652-ae0c-cca721d070be
+@oIdentifiedSingleNo = 49087fa4-b6f4-41e2-8f85-3dbdb84576a0
+@oIdentifiedMultipleOne = f86c19b2-275a-4111-8a4e-bd2927ce14f1
+@oIdentifiedMultipleTwo = 852159cc-b3da-40b3-a3f2-bc588c6602f7
+@mainOldResponseId = 4148fed4-b858-4823-9c28-ca8a47f21380
+@mainLatestResponseId = 51f08865-5292-472e-add7-6bf1d9089a49
+@mainOwnerResponseId = 095269ab-22e3-421f-a922-a43521771574
+@identifiedOwnerResponseId = 7b6a1ed7-9b02-46d8-b614-ec2677ede509
+@identifiedRespondentResponseId = 596649f3-c4db-428c-897e-56030d023400
 
 ### 01 — 非 HTTP：本次 restore/build／產物／原生啟動／baseline
 # 按 R10_Acceptance_Test.md 的 01 執行；新 EvidenceRoot；source/PDB/DLL hashes、API PID/5011 路徑一致；保留 DB 與舊 API；政策阻擋記 BLOCKED／原因
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；restore/build 0 warnings/errors；88/88 PDB；新 PID 36360／01a/b；證據 native-stage.json）
+# 人工實際結果：未執行（本次僅 AI）
 
 ### 01a — 本次產物原生 health
 # 前置：01 restore/build/source-PDB-manifest／native listener 已核對；未能啟動時此列 BLOCKED。
 # 預期：200；{"status":"healthy"}；必須是 01 已確認的本次新 DLL 程序。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:46:21.9526426+00:00；證據 01a.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/health
 
 ### 01b — 本次產物原生 readiness
 # 前置：01a PASS；同一個已驗證的新 API 程序。
 # 預期：200；Healthy；本次新 API 可讀本機開發 PostgreSQL。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:46:25.0298416+00:00；證據 01b.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/health/ready
 
 ### 02 — 非 HTTP：同次新 build full 與自動化映射
 # 按 R10_Acceptance_Test.md 的 02 執行；同 BuildRoot --no-build full；真實 TRX/SQL/四 snapshot；七表 before/after 相等；政策阻擋不取舊 binaries
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；同次新 DLL full 420/420、R10 43/43；四組同快照、九 SELECT；七表 baseline 不變；證據 regression-summary.json／TRX）
+# 人工實際結果：未執行（本次僅 AI）
 
 ### 03a — 註冊 owner
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：201；Active 合成 User；記錄 ownerId，email={{ownerEmail}}；不可保存 password/hash。
 # password／usable Set-Cookie 不留證據；只保存非秘密 User Body，Token 僅本機。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 201；2026-10-11T05:50:48.7318891+00:00；證據 03a.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/auth/register
 Content-Type: application/json
@@ -99,8 +100,8 @@ Content-Type: application/json
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：200；User ID 與 03a 相同；Set-Cookie access_token，值僅放本機 ownerToken，Body 無 token。
 # password／usable Set-Cookie 不留證據；只保存非秘密 User Body，Token 僅本機。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:49.7292145+00:00；證據 03b.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/auth/login
 Content-Type: application/json
@@ -114,8 +115,8 @@ Content-Type: application/json
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：201；Active 合成 User；記錄 respondentId，email={{respondentEmail}}；不可保存 password/hash。
 # password／usable Set-Cookie 不留證據；只保存非秘密 User Body，Token 僅本機。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 201；2026-10-11T05:50:49.9425188+00:00；證據 03c.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/auth/register
 Content-Type: application/json
@@ -130,8 +131,8 @@ Content-Type: application/json
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：200；User ID 與 03c 相同；Set-Cookie access_token，值僅放本機 respondentToken，Body 無 token。
 # password／usable Set-Cookie 不留證據；只保存非秘密 User Body，Token 僅本機。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:50.0440774+00:00；證據 03d.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/auth/login
 Content-Type: application/json
@@ -145,8 +146,8 @@ Content-Type: application/json
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：201；Active 合成 User；記錄 otherId，email={{otherEmail}}；不可保存 password/hash。
 # password／usable Set-Cookie 不留證據；只保存非秘密 User Body，Token 僅本機。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 201；2026-10-11T05:50:50.1330999+00:00；證據 03e.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/auth/register
 Content-Type: application/json
@@ -161,8 +162,8 @@ Content-Type: application/json
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：200；User ID 與 03e 相同；Set-Cookie access_token，值僅放本機 otherToken，Body 無 token。
 # password／usable Set-Cookie 不留證據；只保存非秘密 User Body，Token 僅本機。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:50.2493527+00:00；證據 03f.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/auth/login
 Content-Type: application/json
@@ -175,8 +176,8 @@ Content-Type: application/json
 ### 04a — 建立 main 五題型 Draft
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：201；Draft FormDetail；Owner A；記錄 mainFormId／全部 Question、Option IDs；五題與四 Options；測資依 §共用變數。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 201；2026-10-11T05:50:50.3470967+00:00；證據 04a.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms
 Cookie: access_token={{ownerToken}}
@@ -249,8 +250,8 @@ Content-Type: application/json
 ### 04b — 建立 identified 五題型 Draft
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：201；Draft FormDetail；Owner A；記錄 identifiedFormId／全部 Question、Option IDs；五題與四 Options；測資依 §共用變數。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 201；2026-10-11T05:50:50.6130913+00:00；證據 04b.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms
 Cookie: access_token={{ownerToken}}
@@ -323,8 +324,8 @@ Content-Type: application/json
 ### 04c — 建立 zero 五題型 Draft
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：201；Draft FormDetail；Owner A；記錄 zeroFormId／全部 Question、Option IDs；五題與四 Options；測資依 §共用變數。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 201；2026-10-11T05:50:50.6445228+00:00；證據 04c.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms
 Cookie: access_token={{ownerToken}}
@@ -398,8 +399,8 @@ Content-Type: application/json
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：400；VALIDATION_ERROR；至少一個 detail path=formId、code=INVALID_VALUE；Error Envelope。
 # 此 GET-only 組之前取 Markdown 15／§7.1 完整七表 snapshot（不得混入前一合法寫入）。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 400；2026-10-11T05:50:50.6684400+00:00；證據 05a.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/not-a-uuid/statistics
 Cookie: access_token=not-a-jwt
@@ -407,8 +408,8 @@ Cookie: access_token=not-a-jwt
 ### 05b — missing Form 優先於 invalid auth
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：404；FORM_NOT_FOUND；01 已以 DB 確認該 UUID 不存在。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 404；2026-10-11T05:50:50.9787595+00:00；證據 05b.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{missingFormId}}/statistics
 Cookie: access_token=not-a-jwt
@@ -416,8 +417,8 @@ Cookie: access_token=not-a-jwt
 ### 05c — Draft Active Owner 得知未開放
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：409；FORM_STATISTICS_NOT_AVAILABLE。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 409；2026-10-11T05:50:51.0135231+00:00；證據 05c.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
 Cookie: access_token={{ownerToken}}
@@ -425,8 +426,8 @@ Cookie: access_token={{ownerToken}}
 ### 05d — Draft 非 Owner 存在性保護
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：404；FORM_NOT_FOUND。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 404；2026-10-11T05:50:51.0372706+00:00；證據 05d.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
 Cookie: access_token={{otherToken}}
@@ -435,8 +436,8 @@ Cookie: access_token={{otherToken}}
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：404；FORM_NOT_FOUND。
 # 此 GET-only 組之後取同 snapshot，逐列／count／migration 完全不變。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 404；2026-10-11T05:50:51.0529662+00:00；證據 05e.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
 Cookie: access_token=not-a-jwt
@@ -444,8 +445,8 @@ Cookie: access_token=not-a-jwt
 ### 06a — Publish main
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：200；FormDetail.status=published；不送 Body／Content-Type。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:51.3572739+00:00；證據 06a.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/publish
 Cookie: access_token={{ownerToken}}
@@ -453,8 +454,8 @@ Cookie: access_token={{ownerToken}}
 ### 06b — Publish identified
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：200；FormDetail.status=published；不送 Body／Content-Type。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:51.5595212+00:00；證據 06b.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{identifiedFormId}}/publish
 Cookie: access_token={{ownerToken}}
@@ -462,8 +463,8 @@ Cookie: access_token={{ownerToken}}
 ### 06c — Publish zero
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：200；FormDetail.status=published；不送 Body／Content-Type。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:51.5837098+00:00；證據 06c.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{zeroFormId}}/publish
 Cookie: access_token={{ownerToken}}
@@ -472,8 +473,8 @@ Cookie: access_token={{ownerToken}}
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：409；FORM_STATISTICS_NOT_AVAILABLE；public 不提前開放。
 # 此 GET-only 組之前取 Markdown 15／§7.1 完整七表 snapshot（不得混入前一合法寫入）。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 409；2026-10-11T05:50:51.6089315+00:00；證據 06d.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{identifiedFormId}}/statistics
 Cookie: access_token={{otherToken}}
@@ -482,8 +483,8 @@ Cookie: access_token={{otherToken}}
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：404；FORM_NOT_FOUND。
 # 此 GET-only 組之後取同 snapshot，逐列／count／migration 完全不變。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 404；2026-10-11T05:50:51.8833683+00:00；證據 06e.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{identifiedFormId}}/statistics
 Cookie: access_token=not-a-jwt
@@ -492,8 +493,8 @@ Cookie: access_token=not-a-jwt
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：201；保存 Receipt；5 Answers，text=Old、number=1、single=no、multiple=one、rating=2；記錄 mainOldResponseId。
 # Receipt／新 Response IDs 及 Answers 保存值依 Markdown §7.2 核對；POST 不盲重送。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 201；2026-10-11T05:50:52.1451562+00:00；證據 07a.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
 Cookie: access_token={{respondentToken}}
@@ -513,8 +514,8 @@ Content-Type: application/json
 # 前置：07a 已成功；本次時間應嚴格較晚，先確認服務時間前進及 Receipt／DB tie-break；不能盲重送。
 # 預期：201；Receipt 4 Answers，完全沒有 Text；number=100000000000000000000000000000000000001、single=yes、multiple=one/two、rating=1；記錄 mainLatestResponseId。
 # Receipt／新 Response IDs 及 Answers 保存值依 Markdown §7.2 核對；POST 不盲重送。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 201；2026-10-11T05:50:52.2532326+00:00；證據 07b.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
 Cookie: access_token={{respondentToken}}
@@ -533,8 +534,8 @@ Content-Type: application/json
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：201；Receipt answers=[]；記錄 mainOwnerResponseId；Root 仍計入 A。
 # Receipt／新 Response IDs 及 Answers 保存值依 Markdown §7.2 核對；POST 不盲重送。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 201；2026-10-11T05:50:52.2839485+00:00；證據 07c.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/responses
 Cookie: access_token={{ownerToken}}
@@ -546,8 +547,8 @@ Content-Type: application/json
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：201；5 Answers；text=A、number=100000000000000000000000000000000000001、single=yes、multiple=one/two、rating=2；記錄 identifiedOwnerResponseId。
 # Receipt／新 Response IDs 及 Answers 保存值依 Markdown §7.2 核對；POST 不盲重送。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 201；2026-10-11T05:50:52.3111510+00:00；證據 07d.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{identifiedFormId}}/responses
 Cookie: access_token={{ownerToken}}
@@ -567,8 +568,8 @@ Content-Type: application/json
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：201；5 Answers；text=a、number=100000000000000000000000000000000000002、single=no、multiple=one、rating=0；記錄 identifiedRespondentResponseId。
 # Receipt／新 Response IDs 及 Answers 保存值依 Markdown §7.2 核對；POST 不盲重送。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 201；2026-10-11T05:50:52.3405072+00:00；證據 07e.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{identifiedFormId}}/responses
 Cookie: access_token={{respondentToken}}
@@ -587,8 +588,8 @@ Content-Type: application/json
 ### 08a — Close main
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：200；FormDetail.status=closed；未到期提前 Close，表定 deadline 保持；不送 Body／Content-Type。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:52.3703779+00:00；證據 08a.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{mainFormId}}/close
 Cookie: access_token={{ownerToken}}
@@ -596,8 +597,8 @@ Cookie: access_token={{ownerToken}}
 ### 08b — Close identified
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：200；FormDetail.status=closed；deadline=null；不送 Body／Content-Type。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:52.4037948+00:00；證據 08b.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{identifiedFormId}}/close
 Cookie: access_token={{ownerToken}}
@@ -605,8 +606,8 @@ Cookie: access_token={{ownerToken}}
 ### 08c — Close zero
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：200；FormDetail.status=closed；deadline=null；不送 Body／Content-Type。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:52.4257432+00:00；證據 08c.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 POST {{apiBase}}/api/v1/forms/{{zeroFormId}}/close
 Cookie: access_token={{ownerToken}}
@@ -615,16 +616,16 @@ Cookie: access_token={{ownerToken}}
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：401；AUTH_REQUIRED。
 # 此 GET-only 組之前取 Markdown 15／§7.1 完整七表 snapshot（不得混入前一合法寫入）。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 401；2026-10-11T05:50:52.4478972+00:00；證據 09a.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
 
 ### 09b — Closed private invalid Cookie
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：401；AUTH_TOKEN_INVALID。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 401；2026-10-11T05:50:52.7346939+00:00；證據 09b.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
 Cookie: access_token=not-a-jwt
@@ -632,8 +633,8 @@ Cookie: access_token=not-a-jwt
 ### 09c — owner_only 拒絕 Active Respondent
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：403；STATISTICS_ACCESS_DENIED。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 403；2026-10-11T05:50:52.7458651+00:00；證據 09c.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
 Cookie: access_token={{respondentToken}}
@@ -643,8 +644,8 @@ Cookie: access_token={{respondentToken}}
 # 預期：200；完整 main 分布 §4：Root=2、Question counts=0/1/1/1/1；目前 Creator=R10 Owner、mode=multiple、visibility=owner_only、精確保存 deadline；Owner 也無 respondents。
 # 此 GET-only 組之後取同 snapshot，逐列／count／migration 完全不變。
 # 成功 raw JSON 全部斷言依 Markdown §4（九 Root／六 Question／各層 count／隱私／null／精確數值）。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:52.7585583+00:00；證據 09d.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
 Cookie: access_token={{ownerToken}}
@@ -652,8 +653,8 @@ Cookie: access_token={{ownerToken}}
 ### 10a — main 改 respondents
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：200；FormDetail.resultVisibility=respondents；Definition／Response 不改。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:53.1625745+00:00；證據 10a.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility
 Cookie: access_token={{ownerToken}}
@@ -666,8 +667,8 @@ Content-Type: application/json
 # 預期：200；與 09d 分布相同，只有 resultVisibility=respondents；Root 四欄位仍完整，anonymous 無 respondents。
 # 此 GET-only 組之前取 Markdown 15／§7.1 完整七表 snapshot（不得混入前一合法寫入）。
 # 成功 raw JSON 全部斷言依 Markdown §4（九 Root／六 Question／各層 count／隱私／null／精確數值）。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:53.1955328+00:00；證據 10b.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
 Cookie: access_token={{respondentToken}}
@@ -676,8 +677,8 @@ Cookie: access_token={{respondentToken}}
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：403；STATISTICS_ACCESS_DENIED。
 # 此 GET-only 組之後取同 snapshot，逐列／count／migration 完全不變。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 403；2026-10-11T05:50:53.4993618+00:00；證據 10c.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
 Cookie: access_token={{otherToken}}
@@ -685,8 +686,8 @@ Cookie: access_token={{otherToken}}
 ### 11a — main 改 public
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：200；FormDetail.resultVisibility=public。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:53.7786761+00:00；證據 11a.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/forms/{{mainFormId}}/result-visibility
 Cookie: access_token={{ownerToken}}
@@ -700,8 +701,8 @@ Content-Type: application/json
 # 此 GET-only 組之前取 Markdown 15／§7.1 完整七表 snapshot（不得混入前一合法寫入）。
 # 此 GET-only 組之後取同 snapshot，逐列／count／migration 完全不變。
 # 成功 raw JSON 全部斷言依 Markdown §4（九 Root／六 Question／各層 count／隱私／null／精確數值）。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:53.8257263+00:00；證據 11b.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
 Cookie: access_token=not-a-jwt
@@ -709,8 +710,8 @@ Cookie: access_token=not-a-jwt
 ### 12a — A 提交後改 Creator／Respondent 名稱
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：200；public User.displayName=R10 Owner Updated；只改本次 A。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:54.3956884+00:00；證據 12a.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/users/me
 Cookie: access_token={{ownerToken}}
@@ -721,8 +722,8 @@ Content-Type: application/json
 ### 12b — B 提交後改 Respondent 名稱
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：200；public User.displayName=R10 Respondent Updated；只改本次 B。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:54.4184061+00:00；證據 12b.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 PATCH {{apiBase}}/api/v1/users/me
 Cookie: access_token={{respondentToken}}
@@ -735,8 +736,8 @@ Content-Type: application/json
 # 預期：200；完整 identified 分布 §4：Root=2、每題=2、兩個大數精確分開排序、text=A/a；每 Item respondents 僅 id/目前名稱，零票 []；四 Root 欄位與 deadline=null。
 # 此 GET-only 組之前取 Markdown 15／§7.1 完整七表 snapshot（不得混入前一合法寫入）。
 # 成功 raw JSON 全部斷言依 Markdown §4（九 Root／六 Question／各層 count／隱私／null／精確數值）。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:54.4345829+00:00；證據 12c.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{identifiedFormId}}/statistics
 
@@ -745,8 +746,8 @@ GET {{apiBase}}/api/v1/forms/{{identifiedFormId}}/statistics
 # 預期：200；main 分布不變；creatorDisplayName=R10 Owner Updated；其他 Root 值與 11b 相同，anonymous 仍完全省略 respondents。
 # 此 GET-only 組之後取同 snapshot，逐列／count／migration 完全不變。
 # 成功 raw JSON 全部斷言依 Markdown §4（九 Root／六 Question／各層 count／隱私／null／精確數值）。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:54.7674173+00:00；證據 12d.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
 
@@ -756,16 +757,16 @@ GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
 # 此 GET-only 組之前取 Markdown 15／§7.1 完整七表 snapshot（不得混入前一合法寫入）。
 # 此 GET-only 組之後取同 snapshot，逐列／count／migration 完全不變。
 # 成功 raw JSON 全部斷言依 Markdown §4（九 Root／六 Question／各層 count／隱私／null／精確數值）。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 200；2026-10-11T05:50:55.0600003+00:00；證據 13a.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{zeroFormId}}/statistics
 
 ### 14a — 只 Soft Delete 本次 main
 # 前置：前一 case 的必要操作成功；03～14 共用 01／01a／01b／02 gate PASS。
 # 預期：204；無 Body；main 的 Questions／Options／Responses／Answers 保留。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 204；2026-10-11T05:50:55.6233779+00:00；證據 14a.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 DELETE {{apiBase}}/api/v1/forms/{{mainFormId}}
 Cookie: access_token={{ownerToken}}
@@ -775,13 +776,13 @@ Cookie: access_token={{ownerToken}}
 # 預期：404；FORM_NOT_FOUND；不回 Root／答案。
 # 此 GET-only 組之前取 Markdown 15／§7.1 完整七表 snapshot（不得混入前一合法寫入）。
 # 此 GET-only 組之後取同 snapshot，逐列／count／migration 完全不變。
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；HTTP 404；2026-10-11T05:50:55.6478188+00:00；證據 14b.json）
+# 人工實際結果：未執行（本次僅 AI）
 # @no-cookie-jar
 GET {{apiBase}}/api/v1/forms/{{mainFormId}}/statistics
 Cookie: access_token=not-a-jwt
 
 ### 15 — 非 HTTP：DB／Effective／GET 無寫入／保留與清理
 # 按 R10_Acceptance_Test.md 的 15 執行；即使 BLOCKED 仍核對已有資料；舊 rows digest 不變；完整成功 delta 3 users/3 forms/15 questions/12 options/5 responses/19 answers；migration不變；只停止本次核對 PID、清秘密並保留證據
-# AI 實際結果：未執行（等待 Owner review）
-# 人工實際結果：未執行（等待 Owner review）
+# AI 實際結果：PASS（-02；舊 223 列完整不變、Migration 不變；新 delta 3/0/3/15/12/5/19；只清理本次 API／秘密，保留兩次 fixtures；證據 db-verification.json／cleanup.json）
+# 人工實際結果：未執行（本次僅 AI）

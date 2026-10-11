@@ -1,10 +1,10 @@
 # R10 — Statistics 正式驗收計畫
 
-狀態：**R10 驗收計畫待 review**。2026-10-10 僅 Prepare，未執行 restore／build／測試／API／DB 操作，R10 未 accepted。成對請求：[R10_Manual_Tests.http](R10_Manual_Tests.http)。核准本計畫與另行授權 Execute 後才執行；人工結果與 AI 結果分開，開發或 review PASS 不代填。
+狀態：**R10 驗收結果待 Owner review（2026-10-11）**。Owner 核准成對計畫 `f072b4c07c437d59e57c8cfadc6244220e5cfdfa` 並明確授權 AI Execute。補驗 RunId `r10-acceptance-20261011-02`：45 HTTP／3 非 HTTP 全部 PASS；同次新產物 full 420/420（R10 43/43）。人工未執行、R10 未 accepted。成對請求：[R10_Manual_Tests.http](R10_Manual_Tests.http)；完整命令、首次 FAIL／BLOCKED、產物／程序／SQL／清理證據見 [執行報告](../implementation/R10_Acceptance_Execution_Report.md)。
 
 ## 1. 依據、目前進度與界線
 
-依 [AGENTS.md](../../AGENTS.md)、[acceptance skill](../../.agents/skills/v1-acceptance-testing/SKILL.md)、[總計畫 R10](../implementation/V1_Backend_Implementation_Plan.md)、[核准實作計畫](../implementation/R10_Implementation_Plan.md)（06853f3）、[開發報告](../implementation/R10_Development_Report.md)（產品／tests a4f9402336a4eecdc07c72e92ef09234a4d5e976，報告 838a7a7）及 [獨立 review](../implementation/R10_Independent_Code_Review_Report.md)（8c79e09）編製。Owner 已確認 review 無阻擋缺陷或新增非阻擋 findings；R10 正式／人工驗收尚未執行。
+依 [AGENTS.md](../../AGENTS.md)、[acceptance skill](../../.agents/skills/v1-acceptance-testing/SKILL.md)、[總計畫 R10](../implementation/V1_Backend_Implementation_Plan.md)、[核准實作計畫](../implementation/R10_Implementation_Plan.md)（06853f3）、[開發報告](../implementation/R10_Development_Report.md)（產品／tests a4f9402336a4eecdc07c72e92ef09234a4d5e976，報告 838a7a7）及 [獨立 review](../implementation/R10_Independent_Code_Review_Report.md)（8c79e09）編製。Owner 已確認 review 無阻擋缺陷或新增非阻擋 findings；R10 正式 AI 驗收已補驗，人工尚未執行；本次結果見 §9／執行報告，未 accepted。
 
 正式來源為 [00 Overview](../specs/00-v1-overview.md)、[01 Domain](../specs/01-v1-domain-specification.md)（SUB／STA、§3.3）、[02 DB](../specs/02-v1-database-specification.md)、[03a Common](../specs/03a-v1-api-contract-common.md)（§5～6）、[03b Auth/User/Form](../specs/03b-v1-api-contract-auth-user-form.md)、[03c Submission/Statistics](../specs/03c-v1-api-contract-submission-statistics.md)（v1.1 已核准，§3.4～3.5、§7～8）、[04 Errors](../specs/04-v1-error-catalog.md)（§4.3／§10）及 [05 Constraints](../specs/05-v1-system-constraints.md)（§5.3、§10～15／§20）。
 
@@ -16,11 +16,11 @@ R10 前局部修正獨立 review 已完成，見 [局部 review](../implementati
 
 ## 2. 共用變數、測資與紀錄方式
 
-計畫 RunId：`r10-acceptance-20261010-01`，apiBase：`http://localhost:5011`（避免沿用舊 5000 API）。每次 AI／人工執行或重驗使用新的未用 RunId，兩檔同步 RunId／emails／證據目錄；不得重送非冪等 POST 或重用舊 JWT／UUID 取得假成功。若變更案例語意／測資／請求／預期，重新交 Owner review。
+計畫 RunId：`r10-acceptance-20261011-02`，apiBase：`http://localhost:5011`（避免沿用舊 5000 API）。每次 AI／人工執行或重驗使用新的未用 RunId，兩檔同步 RunId／emails／證據目錄；不得重送非冪等 POST 或重用舊 JWT／UUID 取得假成功。若變更案例語意／測資／請求／預期，重新交 Owner review。
 
 | 變數 | 初始值／取得方式 |
 | --- | --- |
-| ownerEmail / respondentEmail / otherEmail | r10-owner-r10-acceptance-20261010-01@example.test / r10-respondent-r10-acceptance-20261010-01@example.test / r10-other-r10-acceptance-20261010-01@example.test；01 DB 證明尚不存在 |
+| ownerEmail / respondentEmail / otherEmail | r10-owner-r10-acceptance-20261011-02@example.test / r10-respondent-r10-acceptance-20261011-02@example.test / r10-other-r10-acceptance-20261011-02@example.test；01 DB 證明尚不存在 |
 | testPassword | 本機生成 10～128 字元隨機密碼，只在記憶體或受保護本機操作暫存；文件保持 placeholder |
 | ownerId / respondentId / otherId | 03a/c/e 回應 id，03b/d/f 登入再核對；三者不同 |
 | ownerToken / respondentToken / otherToken | 03b/d/f Set-Cookie 的 access_token 值；只在本機使用，不記錄可用 token |
@@ -69,7 +69,7 @@ A 為 Owner，也提交零 Answer 及 identified 答卷；B 是 Respondent；C �
 
 ```powershell
 $RepoRoot = (Resolve-Path 'C:/Users/user/Desktop/custom-form-service').Path
-$RunId = 'r10-acceptance-20261010-01'
+$RunId = 'r10-acceptance-20261011-02'
 $EvidenceRoot = Join-Path $RepoRoot "artifacts/r10-acceptance/$RunId"
 if (Test-Path -LiteralPath $EvidenceRoot) { throw 'RunId already used; preserve evidence and choose a new RunId in both files.' }
 New-Item -ItemType Directory -Path $EvidenceRoot | Out-Null
@@ -128,51 +128,51 @@ Number values H／H2 的 ValueKind 為 Number，兩個值精確分開、按數�
 
 | 編號 | 請求／身份 | HTTP 預期與斷言 | AI 實際結果 | 人工實際結果 |
 | --- | --- | --- | --- | --- |
-| 01a 本次產物原生 health | GET `/health`；無 Cookie | 200；{"status":"healthy"}；必須是 01 已確認的本次新 DLL 程序 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 01b 本次產物原生 readiness | GET `/health/ready`；無 Cookie | 200；Healthy；本次新 API 可讀本機開發 PostgreSQL | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 03a 註冊 owner | POST `/api/v1/auth/register`；無 Cookie | 201；Active 合成 User；記錄 ownerId，email={{ownerEmail}}；不可保存 password/hash | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 03b 登入 owner | POST `/api/v1/auth/login`；無 Cookie | 200；User ID 與 03a 相同；Set-Cookie access_token，值僅放本機 ownerToken，Body 無 token | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 03c 註冊 respondent | POST `/api/v1/auth/register`；無 Cookie | 201；Active 合成 User；記錄 respondentId，email={{respondentEmail}}；不可保存 password/hash | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 03d 登入 respondent | POST `/api/v1/auth/login`；無 Cookie | 200；User ID 與 03c 相同；Set-Cookie access_token，值僅放本機 respondentToken，Body 無 token | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 03e 註冊 other | POST `/api/v1/auth/register`；無 Cookie | 201；Active 合成 User；記錄 otherId，email={{otherEmail}}；不可保存 password/hash | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 03f 登入 other | POST `/api/v1/auth/login`；無 Cookie | 200；User ID 與 03e 相同；Set-Cookie access_token，值僅放本機 otherToken，Body 無 token | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 04a 建立 main 五題型 Draft | POST `/api/v1/forms`；A Cookie | 201；Draft FormDetail；Owner A；記錄 mainFormId／全部 Question、Option IDs；五題與四 Options；測資依 §共用變數 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 04b 建立 identified 五題型 Draft | POST `/api/v1/forms`；A Cookie | 201；Draft FormDetail；Owner A；記錄 identifiedFormId／全部 Question、Option IDs；五題與四 Options；測資依 §共用變數 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 04c 建立 zero 五題型 Draft | POST `/api/v1/forms`；A Cookie | 201；Draft FormDetail；Owner A；記錄 zeroFormId／全部 Question、Option IDs；五題與四 Options；測資依 §共用變數 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 05a UUID 優先於 invalid auth | GET `/api/v1/forms/not-a-uuid/statistics`；bad Cookie | 400；VALIDATION_ERROR；至少一個 detail path=formId、code=INVALID_VALUE；Error Envelope | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 05b missing Form 優先於 invalid auth | GET `/api/v1/forms/{{missingFormId}}/statistics`；bad Cookie | 404；FORM_NOT_FOUND；01 已以 DB 確認該 UUID 不存在 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 05c Draft Active Owner 得知未開放 | GET `/api/v1/forms/{{mainFormId}}/statistics`；A Cookie | 409；FORM_STATISTICS_NOT_AVAILABLE | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 05d Draft 非 Owner 存在性保護 | GET `/api/v1/forms/{{mainFormId}}/statistics`；C Cookie | 404；FORM_NOT_FOUND | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 05e Draft bad Cookie 存在性保護 | GET `/api/v1/forms/{{mainFormId}}/statistics`；bad Cookie | 404；FORM_NOT_FOUND | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 06a Publish main | POST `/api/v1/forms/{{mainFormId}}/publish`；A Cookie | 200；FormDetail.status=published；不送 Body／Content-Type | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 06b Publish identified | POST `/api/v1/forms/{{identifiedFormId}}/publish`；A Cookie | 200；FormDetail.status=published；不送 Body／Content-Type | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 06c Publish zero | POST `/api/v1/forms/{{zeroFormId}}/publish`；A Cookie | 200；FormDetail.status=published；不送 Body／Content-Type | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 06d Published 其他 Active User 未開放 public | GET `/api/v1/forms/{{identifiedFormId}}/statistics`；C Cookie | 409；FORM_STATISTICS_NOT_AVAILABLE；public 不提前開放 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 06e Published public bad Cookie 隱藏存在性 | GET `/api/v1/forms/{{identifiedFormId}}/statistics`；bad Cookie | 404；FORM_NOT_FOUND | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07a B 的 main 舊整份答卷 | POST `/api/v1/forms/{{mainFormId}}/responses`；B Cookie | 201；保存 Receipt；5 Answers，text=Old、number=1、single=no、multiple=one、rating=2；記錄 mainOldResponseId | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07b B 的 main 較新整份、刻意缺 Text | POST `/api/v1/forms/{{mainFormId}}/responses`；B Cookie | 201；Receipt 4 Answers，完全沒有 Text；number=100000000000000000000000000000000000001、single=yes、multiple=one/two、rating=1；記錄 mainLatestResponseId | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07c A 的 main 最新零 Answer | POST `/api/v1/forms/{{mainFormId}}/responses`；A Cookie | 201；Receipt answers=[]；記錄 mainOwnerResponseId；Root 仍計入 A | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07d A 的 identified 整份 | POST `/api/v1/forms/{{identifiedFormId}}/responses`；A Cookie | 201；5 Answers；text=A、number=100000000000000000000000000000000000001、single=yes、multiple=one/two、rating=2；記錄 identifiedOwnerResponseId | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 07e B 的 identified 整份相近大數 | POST `/api/v1/forms/{{identifiedFormId}}/responses`；B Cookie | 201；5 Answers；text=a、number=100000000000000000000000000000000000002、single=no、multiple=one、rating=0；記錄 identifiedRespondentResponseId | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 08a Close main | POST `/api/v1/forms/{{mainFormId}}/close`；A Cookie | 200；FormDetail.status=closed；未到期提前 Close，表定 deadline 保持；不送 Body／Content-Type | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 08b Close identified | POST `/api/v1/forms/{{identifiedFormId}}/close`；A Cookie | 200；FormDetail.status=closed；deadline=null；不送 Body／Content-Type | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 08c Close zero | POST `/api/v1/forms/{{zeroFormId}}/close`；A Cookie | 200；FormDetail.status=closed；deadline=null；不送 Body／Content-Type | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 09a Closed private 沒 Cookie | GET `/api/v1/forms/{{mainFormId}}/statistics`；無 Cookie | 401；AUTH_REQUIRED | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 09b Closed private invalid Cookie | GET `/api/v1/forms/{{mainFormId}}/statistics`；bad Cookie | 401；AUTH_TOKEN_INVALID | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 09c owner_only 拒絕 Active Respondent | GET `/api/v1/forms/{{mainFormId}}/statistics`；B Cookie | 403；STATISTICS_ACCESS_DENIED | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 09d owner_only Owner 匿名統計 | GET `/api/v1/forms/{{mainFormId}}/statistics`；A Cookie | 200；完整 main 分布 §4：Root=2、Question counts=0/1/1/1/1；目前 Creator=R10 Owner、mode=multiple、visibility=owner_only、精確保存 deadline；Owner 也無 respondents | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 10a main 改 respondents | PATCH `/api/v1/forms/{{mainFormId}}/result-visibility`；A Cookie | 200；FormDetail.resultVisibility=respondents；Definition／Response 不改 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 10b respondents 允許 B | GET `/api/v1/forms/{{mainFormId}}/statistics`；B Cookie | 200；與 09d 分布相同，只有 resultVisibility=respondents；Root 四欄位仍完整，anonymous 無 respondents | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 10c respondents 拒絕未提交 C | GET `/api/v1/forms/{{mainFormId}}/statistics`；C Cookie | 403；STATISTICS_ACCESS_DENIED | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 11a main 改 public | PATCH `/api/v1/forms/{{mainFormId}}/result-visibility`；A Cookie | 200；FormDetail.resultVisibility=public | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 11b Closed public bad Cookie 直接統計 | GET `/api/v1/forms/{{mainFormId}}/statistics`；bad Cookie | 200；與 09d 分布相同，resultVisibility=public；bad Cookie 不阻擋，無 Respondent 身分 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 12a A 提交後改 Creator／Respondent 名稱 | PATCH `/api/v1/users/me`；A Cookie | 200；public User.displayName=R10 Owner Updated；只改本次 A | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 12b B 提交後改 Respondent 名稱 | PATCH `/api/v1/users/me`；B Cookie | 200；public User.displayName=R10 Respondent Updated；只改本次 B | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 12c identified public 精確分布／目前名單 | GET `/api/v1/forms/{{identifiedFormId}}/statistics`；無 Cookie | 200；完整 identified 分布 §4：Root=2、每題=2、兩個大數精確分開排序、text=A/a；每 Item respondents 僅 id/目前名稱，零票 []；四 Root 欄位與 deadline=null | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 12d anonymous Creator 改名可見 | GET `/api/v1/forms/{{mainFormId}}/statistics`；無 Cookie | 200；main 分布不變；creatorDisplayName=R10 Owner Updated；其他 Root 值與 11b 相同，anonymous 仍完全省略 respondents | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 13a Closed public identified 五題型零資料 | GET `/api/v1/forms/{{zeroFormId}}/statistics`；無 Cookie | 200；Root=0、全部 Question=0；text/number=[]；Choice 全 Options count=0；rating 0..2 全零；每 Item respondents=[]；Root 九欄位含目前 Creator／single／public／deadline=null | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 14a 只 Soft Delete 本次 main | DELETE `/api/v1/forms/{{mainFormId}}`；A Cookie | 204；無 Body；main 的 Questions／Options／Responses／Answers 保留 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 14b Deleted 優先於 invalid auth | GET `/api/v1/forms/{{mainFormId}}/statistics`；bad Cookie | 404；FORM_NOT_FOUND；不回 Root／答案 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 01a 本次產物原生 health | GET `/health`；無 Cookie | 200；{"status":"healthy"}；必須是 01 已確認的本次新 DLL 程序 | PASS（-02；HTTP 200；2026-10-11T05:46:21.9526426+00:00；證據 01a.json） | 未執行（本次僅 AI） |
+| 01b 本次產物原生 readiness | GET `/health/ready`；無 Cookie | 200；Healthy；本次新 API 可讀本機開發 PostgreSQL | PASS（-02；HTTP 200；2026-10-11T05:46:25.0298416+00:00；證據 01b.json） | 未執行（本次僅 AI） |
+| 03a 註冊 owner | POST `/api/v1/auth/register`；無 Cookie | 201；Active 合成 User；記錄 ownerId，email={{ownerEmail}}；不可保存 password/hash | PASS（-02；HTTP 201；2026-10-11T05:50:48.7318891+00:00；證據 03a.json） | 未執行（本次僅 AI） |
+| 03b 登入 owner | POST `/api/v1/auth/login`；無 Cookie | 200；User ID 與 03a 相同；Set-Cookie access_token，值僅放本機 ownerToken，Body 無 token | PASS（-02；HTTP 200；2026-10-11T05:50:49.7292145+00:00；證據 03b.json） | 未執行（本次僅 AI） |
+| 03c 註冊 respondent | POST `/api/v1/auth/register`；無 Cookie | 201；Active 合成 User；記錄 respondentId，email={{respondentEmail}}；不可保存 password/hash | PASS（-02；HTTP 201；2026-10-11T05:50:49.9425188+00:00；證據 03c.json） | 未執行（本次僅 AI） |
+| 03d 登入 respondent | POST `/api/v1/auth/login`；無 Cookie | 200；User ID 與 03c 相同；Set-Cookie access_token，值僅放本機 respondentToken，Body 無 token | PASS（-02；HTTP 200；2026-10-11T05:50:50.0440774+00:00；證據 03d.json） | 未執行（本次僅 AI） |
+| 03e 註冊 other | POST `/api/v1/auth/register`；無 Cookie | 201；Active 合成 User；記錄 otherId，email={{otherEmail}}；不可保存 password/hash | PASS（-02；HTTP 201；2026-10-11T05:50:50.1330999+00:00；證據 03e.json） | 未執行（本次僅 AI） |
+| 03f 登入 other | POST `/api/v1/auth/login`；無 Cookie | 200；User ID 與 03e 相同；Set-Cookie access_token，值僅放本機 otherToken，Body 無 token | PASS（-02；HTTP 200；2026-10-11T05:50:50.2493527+00:00；證據 03f.json） | 未執行（本次僅 AI） |
+| 04a 建立 main 五題型 Draft | POST `/api/v1/forms`；A Cookie | 201；Draft FormDetail；Owner A；記錄 mainFormId／全部 Question、Option IDs；五題與四 Options；測資依 §共用變數 | PASS（-02；HTTP 201；2026-10-11T05:50:50.3470967+00:00；證據 04a.json） | 未執行（本次僅 AI） |
+| 04b 建立 identified 五題型 Draft | POST `/api/v1/forms`；A Cookie | 201；Draft FormDetail；Owner A；記錄 identifiedFormId／全部 Question、Option IDs；五題與四 Options；測資依 §共用變數 | PASS（-02；HTTP 201；2026-10-11T05:50:50.6130913+00:00；證據 04b.json） | 未執行（本次僅 AI） |
+| 04c 建立 zero 五題型 Draft | POST `/api/v1/forms`；A Cookie | 201；Draft FormDetail；Owner A；記錄 zeroFormId／全部 Question、Option IDs；五題與四 Options；測資依 §共用變數 | PASS（-02；HTTP 201；2026-10-11T05:50:50.6445228+00:00；證據 04c.json） | 未執行（本次僅 AI） |
+| 05a UUID 優先於 invalid auth | GET `/api/v1/forms/not-a-uuid/statistics`；bad Cookie | 400；VALIDATION_ERROR；至少一個 detail path=formId、code=INVALID_VALUE；Error Envelope | PASS（-02；HTTP 400；2026-10-11T05:50:50.6684400+00:00；證據 05a.json） | 未執行（本次僅 AI） |
+| 05b missing Form 優先於 invalid auth | GET `/api/v1/forms/{{missingFormId}}/statistics`；bad Cookie | 404；FORM_NOT_FOUND；01 已以 DB 確認該 UUID 不存在 | PASS（-02；HTTP 404；2026-10-11T05:50:50.9787595+00:00；證據 05b.json） | 未執行（本次僅 AI） |
+| 05c Draft Active Owner 得知未開放 | GET `/api/v1/forms/{{mainFormId}}/statistics`；A Cookie | 409；FORM_STATISTICS_NOT_AVAILABLE | PASS（-02；HTTP 409；2026-10-11T05:50:51.0135231+00:00；證據 05c.json） | 未執行（本次僅 AI） |
+| 05d Draft 非 Owner 存在性保護 | GET `/api/v1/forms/{{mainFormId}}/statistics`；C Cookie | 404；FORM_NOT_FOUND | PASS（-02；HTTP 404；2026-10-11T05:50:51.0372706+00:00；證據 05d.json） | 未執行（本次僅 AI） |
+| 05e Draft bad Cookie 存在性保護 | GET `/api/v1/forms/{{mainFormId}}/statistics`；bad Cookie | 404；FORM_NOT_FOUND | PASS（-02；HTTP 404；2026-10-11T05:50:51.0529662+00:00；證據 05e.json） | 未執行（本次僅 AI） |
+| 06a Publish main | POST `/api/v1/forms/{{mainFormId}}/publish`；A Cookie | 200；FormDetail.status=published；不送 Body／Content-Type | PASS（-02；HTTP 200；2026-10-11T05:50:51.3572739+00:00；證據 06a.json） | 未執行（本次僅 AI） |
+| 06b Publish identified | POST `/api/v1/forms/{{identifiedFormId}}/publish`；A Cookie | 200；FormDetail.status=published；不送 Body／Content-Type | PASS（-02；HTTP 200；2026-10-11T05:50:51.5595212+00:00；證據 06b.json） | 未執行（本次僅 AI） |
+| 06c Publish zero | POST `/api/v1/forms/{{zeroFormId}}/publish`；A Cookie | 200；FormDetail.status=published；不送 Body／Content-Type | PASS（-02；HTTP 200；2026-10-11T05:50:51.5837098+00:00；證據 06c.json） | 未執行（本次僅 AI） |
+| 06d Published 其他 Active User 未開放 public | GET `/api/v1/forms/{{identifiedFormId}}/statistics`；C Cookie | 409；FORM_STATISTICS_NOT_AVAILABLE；public 不提前開放 | PASS（-02；HTTP 409；2026-10-11T05:50:51.6089315+00:00；證據 06d.json） | 未執行（本次僅 AI） |
+| 06e Published public bad Cookie 隱藏存在性 | GET `/api/v1/forms/{{identifiedFormId}}/statistics`；bad Cookie | 404；FORM_NOT_FOUND | PASS（-02；HTTP 404；2026-10-11T05:50:51.8833683+00:00；證據 06e.json） | 未執行（本次僅 AI） |
+| 07a B 的 main 舊整份答卷 | POST `/api/v1/forms/{{mainFormId}}/responses`；B Cookie | 201；保存 Receipt；5 Answers，text=Old、number=1、single=no、multiple=one、rating=2；記錄 mainOldResponseId | PASS（-02；HTTP 201；2026-10-11T05:50:52.1451562+00:00；證據 07a.json） | 未執行（本次僅 AI） |
+| 07b B 的 main 較新整份、刻意缺 Text | POST `/api/v1/forms/{{mainFormId}}/responses`；B Cookie | 201；Receipt 4 Answers，完全沒有 Text；number=100000000000000000000000000000000000001、single=yes、multiple=one/two、rating=1；記錄 mainLatestResponseId | PASS（-02；HTTP 201；2026-10-11T05:50:52.2532326+00:00；證據 07b.json） | 未執行（本次僅 AI） |
+| 07c A 的 main 最新零 Answer | POST `/api/v1/forms/{{mainFormId}}/responses`；A Cookie | 201；Receipt answers=[]；記錄 mainOwnerResponseId；Root 仍計入 A | PASS（-02；HTTP 201；2026-10-11T05:50:52.2839485+00:00；證據 07c.json） | 未執行（本次僅 AI） |
+| 07d A 的 identified 整份 | POST `/api/v1/forms/{{identifiedFormId}}/responses`；A Cookie | 201；5 Answers；text=A、number=100000000000000000000000000000000000001、single=yes、multiple=one/two、rating=2；記錄 identifiedOwnerResponseId | PASS（-02；HTTP 201；2026-10-11T05:50:52.3111510+00:00；證據 07d.json） | 未執行（本次僅 AI） |
+| 07e B 的 identified 整份相近大數 | POST `/api/v1/forms/{{identifiedFormId}}/responses`；B Cookie | 201；5 Answers；text=a、number=100000000000000000000000000000000000002、single=no、multiple=one、rating=0；記錄 identifiedRespondentResponseId | PASS（-02；HTTP 201；2026-10-11T05:50:52.3405072+00:00；證據 07e.json） | 未執行（本次僅 AI） |
+| 08a Close main | POST `/api/v1/forms/{{mainFormId}}/close`；A Cookie | 200；FormDetail.status=closed；未到期提前 Close，表定 deadline 保持；不送 Body／Content-Type | PASS（-02；HTTP 200；2026-10-11T05:50:52.3703779+00:00；證據 08a.json） | 未執行（本次僅 AI） |
+| 08b Close identified | POST `/api/v1/forms/{{identifiedFormId}}/close`；A Cookie | 200；FormDetail.status=closed；deadline=null；不送 Body／Content-Type | PASS（-02；HTTP 200；2026-10-11T05:50:52.4037948+00:00；證據 08b.json） | 未執行（本次僅 AI） |
+| 08c Close zero | POST `/api/v1/forms/{{zeroFormId}}/close`；A Cookie | 200；FormDetail.status=closed；deadline=null；不送 Body／Content-Type | PASS（-02；HTTP 200；2026-10-11T05:50:52.4257432+00:00；證據 08c.json） | 未執行（本次僅 AI） |
+| 09a Closed private 沒 Cookie | GET `/api/v1/forms/{{mainFormId}}/statistics`；無 Cookie | 401；AUTH_REQUIRED | PASS（-02；HTTP 401；2026-10-11T05:50:52.4478972+00:00；證據 09a.json） | 未執行（本次僅 AI） |
+| 09b Closed private invalid Cookie | GET `/api/v1/forms/{{mainFormId}}/statistics`；bad Cookie | 401；AUTH_TOKEN_INVALID | PASS（-02；HTTP 401；2026-10-11T05:50:52.7346939+00:00；證據 09b.json） | 未執行（本次僅 AI） |
+| 09c owner_only 拒絕 Active Respondent | GET `/api/v1/forms/{{mainFormId}}/statistics`；B Cookie | 403；STATISTICS_ACCESS_DENIED | PASS（-02；HTTP 403；2026-10-11T05:50:52.7458651+00:00；證據 09c.json） | 未執行（本次僅 AI） |
+| 09d owner_only Owner 匿名統計 | GET `/api/v1/forms/{{mainFormId}}/statistics`；A Cookie | 200；完整 main 分布 §4：Root=2、Question counts=0/1/1/1/1；目前 Creator=R10 Owner、mode=multiple、visibility=owner_only、精確保存 deadline；Owner 也無 respondents | PASS（-02；HTTP 200；2026-10-11T05:50:52.7585583+00:00；證據 09d.json） | 未執行（本次僅 AI） |
+| 10a main 改 respondents | PATCH `/api/v1/forms/{{mainFormId}}/result-visibility`；A Cookie | 200；FormDetail.resultVisibility=respondents；Definition／Response 不改 | PASS（-02；HTTP 200；2026-10-11T05:50:53.1625745+00:00；證據 10a.json） | 未執行（本次僅 AI） |
+| 10b respondents 允許 B | GET `/api/v1/forms/{{mainFormId}}/statistics`；B Cookie | 200；與 09d 分布相同，只有 resultVisibility=respondents；Root 四欄位仍完整，anonymous 無 respondents | PASS（-02；HTTP 200；2026-10-11T05:50:53.1955328+00:00；證據 10b.json） | 未執行（本次僅 AI） |
+| 10c respondents 拒絕未提交 C | GET `/api/v1/forms/{{mainFormId}}/statistics`；C Cookie | 403；STATISTICS_ACCESS_DENIED | PASS（-02；HTTP 403；2026-10-11T05:50:53.4993618+00:00；證據 10c.json） | 未執行（本次僅 AI） |
+| 11a main 改 public | PATCH `/api/v1/forms/{{mainFormId}}/result-visibility`；A Cookie | 200；FormDetail.resultVisibility=public | PASS（-02；HTTP 200；2026-10-11T05:50:53.7786761+00:00；證據 11a.json） | 未執行（本次僅 AI） |
+| 11b Closed public bad Cookie 直接統計 | GET `/api/v1/forms/{{mainFormId}}/statistics`；bad Cookie | 200；與 09d 分布相同，resultVisibility=public；bad Cookie 不阻擋，無 Respondent 身分 | PASS（-02；HTTP 200；2026-10-11T05:50:53.8257263+00:00；證據 11b.json） | 未執行（本次僅 AI） |
+| 12a A 提交後改 Creator／Respondent 名稱 | PATCH `/api/v1/users/me`；A Cookie | 200；public User.displayName=R10 Owner Updated；只改本次 A | PASS（-02；HTTP 200；2026-10-11T05:50:54.3956884+00:00；證據 12a.json） | 未執行（本次僅 AI） |
+| 12b B 提交後改 Respondent 名稱 | PATCH `/api/v1/users/me`；B Cookie | 200；public User.displayName=R10 Respondent Updated；只改本次 B | PASS（-02；HTTP 200；2026-10-11T05:50:54.4184061+00:00；證據 12b.json） | 未執行（本次僅 AI） |
+| 12c identified public 精確分布／目前名單 | GET `/api/v1/forms/{{identifiedFormId}}/statistics`；無 Cookie | 200；完整 identified 分布 §4：Root=2、每題=2、兩個大數精確分開排序、text=A/a；每 Item respondents 僅 id/目前名稱，零票 []；四 Root 欄位與 deadline=null | PASS（-02；HTTP 200；2026-10-11T05:50:54.4345829+00:00；證據 12c.json） | 未執行（本次僅 AI） |
+| 12d anonymous Creator 改名可見 | GET `/api/v1/forms/{{mainFormId}}/statistics`；無 Cookie | 200；main 分布不變；creatorDisplayName=R10 Owner Updated；其他 Root 值與 11b 相同，anonymous 仍完全省略 respondents | PASS（-02；HTTP 200；2026-10-11T05:50:54.7674173+00:00；證據 12d.json） | 未執行（本次僅 AI） |
+| 13a Closed public identified 五題型零資料 | GET `/api/v1/forms/{{zeroFormId}}/statistics`；無 Cookie | 200；Root=0、全部 Question=0；text/number=[]；Choice 全 Options count=0；rating 0..2 全零；每 Item respondents=[]；Root 九欄位含目前 Creator／single／public／deadline=null | PASS（-02；HTTP 200；2026-10-11T05:50:55.0600003+00:00；證據 13a.json） | 未執行（本次僅 AI） |
+| 14a 只 Soft Delete 本次 main | DELETE `/api/v1/forms/{{mainFormId}}`；A Cookie | 204；無 Body；main 的 Questions／Options／Responses／Answers 保留 | PASS（-02；HTTP 204；2026-10-11T05:50:55.6233779+00:00；證據 14a.json） | 未執行（本次僅 AI） |
+| 14b Deleted 優先於 invalid auth | GET `/api/v1/forms/{{mainFormId}}/statistics`；bad Cookie | 404；FORM_NOT_FOUND；不回 Root／答案 | PASS（-02；HTTP 404；2026-10-11T05:50:55.6478188+00:00；證據 14b.json） | 未執行（本次僅 AI） |
 
 ## 6. 非 HTTP 02 — 同次新 build 回歸、細部與快照承接
 
@@ -187,7 +187,7 @@ $TestExit = $LASTEXITCODE
 
 full 一次即可承接 R10 focused 細項，基準 **420 total，R10 43**（10 methods 的 DataRows）。核對實際 discovery／執行數／0 failed／0 skipped、不以歷史數字代填；數量差異須列原因及受影響覆蓋。TRX 或 testhost 來源須為同次新 BuildRoot，API／tests hash 與 01 manifest 一致。02 前後七表／migration 完整 baseline 必須相同；suite 對自己合成資料的精確 cleanup 不得刪既有 fixtures。
 
-來源：[FormEndpointsTests.Statistics.cs](../../tests/CustomFormService.IntegrationTests/FormEndpointsTests.Statistics.cs)；下列對應是**待本次實際執行**，不是目前 PASS：
+來源：[FormEndpointsTests.Statistics.cs](../../tests/CustomFormService.IntegrationTests/FormEndpointsTests.Statistics.cs)；下列 10 methods／43 DataRows 已由本次 -02 的同版 TRX 核對全部 PASS，證據見 §9／執行報告；不沿用歷史產物結果：
 
 | 自動化 method（FullyQualifiedName~方法名） | DataRows | 承接範圍／原生案例 |
 | --- | --- | --- |
@@ -285,10 +285,24 @@ ORDER BY form_id, user_id;
 
 | 編號 | 預期／證據 | AI 實際結果 | 人工實際結果 |
 | --- | --- | --- | --- |
-| 01 | 本次 restore/build 成功；source/PDB/新產物 manifest；七表 baseline／未用測資；native 同次 DLL PID 可核對；01a/b 另列 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 02 | 同次新產物 full 420（R10 43）及實際 TRX／SQL／快照證據；baseline 不變 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
-| 15 | 舊列完整不變、實際新 delta／Effective SQL／GET 無寫入；合法資料保留、秘密／本人程序／暫時環境清理 | 未執行（等待 Owner review） | 未執行（等待 Owner review） |
+| 01 | 本次 restore/build 成功；source/PDB/新產物 manifest；七表 baseline／未用測資；native 同次 DLL PID 可核對；01a/b 另列 | PASS（-02；restore/build 0 warnings/errors；88/88 PDB；新 PID 36360／01a/b；證據 native-stage.json） | 未執行（本次僅 AI） |
+| 02 | 同次新產物 full 420（R10 43）及實際 TRX／SQL／快照證據；baseline 不變 | PASS（-02；同次新 DLL full 420/420、R10 43/43；四組同快照、九 SELECT；七表 baseline 不變；證據 regression-summary.json／TRX） | 未執行（本次僅 AI） |
+| 15 | 舊列完整不變、實際新 delta／Effective SQL／GET 無寫入；合法資料保留、秘密／本人程序／暫時環境清理 | PASS（-02；舊 223 列完整不變、Migration 不變；新 delta 3/0/3/15/12/5/19；只清理本次 API／秘密，保留兩次 fixtures；證據 db-verification.json／cleanup.json） | 未執行（本次僅 AI） |
 
 執行後交付核准版本／RunId、實際命令與產物／程序身分、45 HTTP 與 3 非 HTTP 的 AI 結果及獨立人工欄位、SQL／同快照證據、所有 FAIL／BLOCKED／未執行／清理與保留明細。Windows 新 DLL runtime 阻擋仍未解除時明確列為限制，不把既有產物 PASS 或 TestServer 成功轉成新 native PASS。細部 JWT／相等數值／id tie-break／競爭由 02 承接，本原生計畫不重複擴張；若 02 未執行，對應覆蓋仍未證實。Google、部署／HTTPS、R11 及未結案的其他 Round 不在本計畫。
 
-本次交付僅規劃，所有欄位待執行；**停止於「R10 驗收計畫待 review」**。
+本次 AI Execute 已完成，結果待 Owner review；人工未執行，不自行 accepted。**停止於「R10 驗收結果待 Owner review」**。
+
+
+## 9. 執行紀錄與保留的首次結果（2026-10-11）
+
+Owner 核准版本 `f072b4c`、產品／tests/specs 候選 `a4f9402`；兩次 source/tests/specs 均無未 review 差異。當初 2026-10-10 Prepare 的全部「未執行（等待 Owner review）」為歷史，核准原文在 Git `f072b4c`；-01 同步 RunId 的計畫快照留在其 EvidenceRoot，未覆寫舊 artifacts。重跑只有新 RunId／新合成身份與 IDs，不變更請求語意或預期。
+
+| 執行 | AI HTTP | 非 HTTP | 人工 | 說明 |
+| --- | --- | --- | --- | --- |
+| r10-acceptance-20261011-01（歷史） | 40 PASS／1 FAIL／4 BLOCKED | 01／02／15 PASS | 未執行（本次僅 AI） | 12c HTTP 200 raw JSON 符合契約，執行器將單元素 role 字串取第 0 字元，誤報 ID；首次 FAIL、12d／13a／14a／14b BLOCKED 及全部 fixtures 保留。補核對 raw JSON PASS，未重送該 GET，不改寫首次結果 |
+| r10-acceptance-20261011-02（目前） | 45 PASS／0 FAIL／0 BLOCKED／0 未執行 | 3 PASS | 未執行（本次僅 AI） | 同次新 restore/build、native PID 36360／5011、health/readiness、full 420/420／R10 43/43、8 組 GET 無寫入／SQL／清理 PASS |
+
+本次新 API／Tests DLL runtime 成功，**未重現** review 的 Windows 0x800711C7；沒有改 Windows 政策、沒有換舊 binaries，不能因此抹除歷史限制或宣稱政策已永久解除。首次 restore sandbox exit 1 空 log、PDB generated virtual path／DB 匯出與時間解析／-02 preflight 摘要解析的工具診斷皆保留，具體證據及校正見執行報告。
+
+[目前 TRX](../../artifacts/r10-acceptance/r10-acceptance-20261011-02/full/r10-acceptance-full.trx)、[45 案結果](../../artifacts/r10-acceptance/r10-acceptance-20261011-02/all-http-results.json)、[SQL／快照](../../artifacts/r10-acceptance/r10-acceptance-20261011-02/snapshot-evidence.txt)、[DB 核對](../../artifacts/r10-acceptance/r10-acceptance-20261011-02/db-verification.json)、[清理](../../artifacts/r10-acceptance/r10-acceptance-20261011-02/cleanup.json)；[首次 45 案結果](../../artifacts/r10-acceptance/r10-acceptance-20261011-01/all-http-results.json)、[12c 首次 FAIL](../../artifacts/r10-acceptance/r10-acceptance-20261011-01/12c.json)、[12c raw 補核對](../../artifacts/r10-acceptance/r10-acceptance-20261011-01/12c-reinspection.json)。兩次各保留 3 Users／3 Forms／15 Questions／12 Options／5 Responses／19 Answers，首次 main 未刪、目前 main 合法 soft-deleted，全部子列／歷史答卷保留；原先全部完整列／Migration 不變。無產品缺陷觀察或未清理的本人程序／秘密；人工驗收、Owner confirmation、既有其他 Round pending 保持待處理。
