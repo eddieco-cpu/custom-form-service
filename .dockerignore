@@ -1,0 +1,76 @@
+# Repository-root Docker context for the future backend image.
+# Keep solution/test sources so solution-level restore/build remains possible.
+# Git retention and Docker build inputs have separate purposes.
+.git
+**/.git
+.gitignore
+.agents
+.codex
+.aws
+AGENTS.md
+README.md
+SNAPSHOT.md
+docs
+frontend-docs
+review
+evidence
+**/evidence
+artifacts
+test-results
+compose*.yaml
+compose*.yml
+docker-compose*.yaml
+docker-compose*.yml
+**/*.http
+**/TestResults
+**/test-results
+**/output
+**/bin
+**/obj
+**/node_modules
+**/packages
+**/.nuget
+**/.vs
+**/.vscode
+**/.idea
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.venv
+**/venv
+**/.playwright
+**/playwright-report
+**/.cache
+**/logs
+**/log
+**/*.log
+**/*.trx
+**/*.binlog
+**/*.pid
+**/*.tmp
+**/*.swp
+**/*.user
+**/*.suo
+**/*.code-workspace
+**/.DS_Store
+**/Thumbs.db
+
+# Credentials and local configuration never belong in the build context.
+**/.env
+**/.env.*
+**/.envrc
+**/*.env
+**/appsettings.[Ll]ocal.json
+**/appsettings.*.[Ll]ocal.json
+**/http-client.private.env.json
+**/secrets.json
+**/.secrets
+**/*.private.*
+**/*.pfx
+**/*.p12
+**/*.key
+**/*.pem
+**/*.snk
+
+# global.json, *.sln, *.csproj, dotnet-tools.json, source, migrations,
+# shared/environment appsettings, and future Dockerfile/railway config stay included.

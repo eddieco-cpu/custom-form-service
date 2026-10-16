@@ -5,6 +5,45 @@
 
 # dotenv files
 .env
+.env.*
+.envrc
+!.env.example
+!.env.*.example
+!.env.template
+!.env.*.template
+
+# Local secret overrides; committed appsettings and synthetic fixtures stay tracked.
+appsettings.[Ll]ocal.json
+appsettings.*.[Ll]ocal.json
+http-client.private.env.json
+*.local.env
+*.private.env
+secrets.json
+.secrets/
+
+# Private key containers (review any intentional synthetic key fixture separately).
+*.p12
+*.key
+*.pem
+*.snk
+
+# Local execution output and caches. Keep durable reports/evidence under docs/.
+# artifacts/ and test-results/ below already hold raw, potentially sensitive runs.
+**/output/
+*.pid
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+.nuget/packages/
+.playwright/
+playwright-report/
+
+# Raw evidence can be retained locally beside a reviewed, sanitized public copy.
+*.private.*
+**/evidence/raw/
+
+# Do not ignore docs/, tests/, review/, evidence/, AGENTS.md, or .agents/ wholesale.
 
 # User-specific files
 *.rsuser
