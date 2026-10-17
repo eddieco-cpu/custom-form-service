@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using CustomFormService.Api.Authentication;
 using CustomFormService.Api.Contracts.Errors;
 using CustomFormService.Api.Infrastructure.Persistence;
+using CustomFormService.Api.Hosting;
 using CustomFormService.Api.Middleware;
 using CustomFormService.Api.Validation;
 using CustomFormService.Api.Queries;
@@ -12,7 +13,20 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-var builder = WebApplication.CreateBuilder(args);
+var migrateOnly = args.Contains("--migrate", StringComparer.Ordinal);
+if (migrateOnly && args.Length != 1)
+{
+    Console.Error.WriteLine("Usage: dotnet CustomFormService.Api.dll --migrate");
+    Environment.ExitCode = 2;
+    return;
+}
+
+var builder = WebApplication.CreateBuilder(migrateOnly ? [] : args);
+if (migrateOnly)
+{
+    builder.Logging.ClearProviders();
+}
+builder.Services.AddReverseProxyConfiguration(builder.Configuration);
 
 builder.Services
     .AddControllers(options => options.Filters.Add(new UnsupportedJsonContentTypeFilter()))
@@ -62,6 +76,14 @@ builder.Services
 
 var app = builder.Build();
 
+if (migrateOnly)
+{
+    Environment.ExitCode = await MigrationCommand.RunAsync(app.Services);
+    await app.DisposeAsync();
+    return;
+}
+
+app.UseForwardedHeaders();
 app.UseMiddleware<ApiExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())
@@ -74,9 +96,11 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-if (!app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment() &&
+    app.Services.GetRequiredService<IOptions<ReverseProxyOptions>>().Value.HttpsRedirectionEnabled)
 {
-    app.UseHttpsRedirection();
+    app.UseWhen(context => !ReverseProxyConfiguration.IsHealthRequest(context),
+        branch => branch.UseHttpsRedirection());
 }
 
 app.UseCors(V1Cors.PolicyName);

@@ -1,5 +1,4 @@
-# Repository-root Docker context for the future backend image.
-# Keep solution/test sources so solution-level restore/build remains possible.
+# Repository-root context; Dockerfile restores and publishes the API explicitly.
 # Git retention and Docker build inputs have separate purposes.
 .git
 **/.git
@@ -17,6 +16,9 @@ evidence
 **/evidence
 artifacts
 test-results
+tests
+CustomFormService.sln
+dotnet-tools.json
 compose*.yaml
 compose*.yml
 docker-compose*.yaml
