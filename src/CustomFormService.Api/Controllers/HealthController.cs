@@ -14,4 +14,4 @@ public sealed class HealthController : ControllerBase
     }
 }
 
-public sealed record HealthResponse(string Status);
+public sealed record HealthResponse(string Status, string Message = "Custom Form Service API is running.");
